@@ -6,7 +6,7 @@
 
   <groupId>io.github.raniagus</groupId>
   <artifactId>javalidation</artifactId>
-  <version>0.1.0</version>
+  <version>0.2.0-SNAPSHOT</version>
 
   <name>Javalidation</name>
   <description>Example library for validating Java code</description>
