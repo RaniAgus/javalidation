@@ -4,7 +4,9 @@ Example library for validating Java code.
 
 ## Installation
 
-1. Add this to `pom.xml`:
+Javalidation is hosted in the Maven Central Repository. Simply add the following
+dependency into your `pom.xml` file:
+
 ```xml
     <dependency>
       <groupId>io.github.raniagus</groupId>
@@ -13,8 +15,26 @@ Example library for validating Java code.
     </dependency>
 ```
 
-2. Run via command line:
+### Snapshots
 
-```bash
-mvn install
+Also, snapshots of the master branch are deployed automatically with each
+successful commit. Instead of Maven Central, use the Sonatype snapshots
+repository at:
+
+```xml
+<url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+```
+
+You can add the repository in your `pom.xml` file:
+  
+```xml
+  <repositories>
+    <repository>
+      <id>sonatype-snapshots</id>
+      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 ```
