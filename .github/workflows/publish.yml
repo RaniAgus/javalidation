@@ -5,6 +5,9 @@ on:
       - main
     tags:
       - "v*.*.*"
+    paths:
+      - "pom.xml"
+      - "src/**"
   workflow_dispatch:
 jobs:
   publish:
