@@ -12,6 +12,28 @@
   <description>Example library for validating Java code</description>
   <url>https://github.com/RaniAgus/javalidation</url>
 
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://github.com/RaniAgus/javalidation/blob/main/LICENSE</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Agustin Ranieri</name>
+      <email>aguseranieri@gmail.com</email>
+      <organization>io.github.raniagus</organization>
+      <organizationUrl>https://github.com/RaniAgus</organizationUrl>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:git://github.com/RaniAgus/javalidation.git</connection>
+    <developerConnection>scm:git:ssh://github.com:RaniAgus/javalidation.git</developerConnection>
+    <url>http://github.com/RaniAgus/javalidation/tree/main</url>
+  </scm>
+
   <properties>
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
