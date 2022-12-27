@@ -5,8 +5,8 @@ import java.util.function.Predicate;
 public interface Validacion<T> extends Predicate<T> {
   String getMensajeDeError();
 
-  default Try<T> validar(T valor) {
-    return test(valor) ? Try.exitoso(valor) : Try.fallido(getMensajeDeError());
+  default Resultado<T> validar(T valor) {
+    return test(valor) ? Resultado.exitoso(valor) : Resultado.fallido(getMensajeDeError());
   }
 
   static <T> Validacion<T> create(Predicate<T> chequeo, String mensajeDeError) {

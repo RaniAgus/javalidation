@@ -10,7 +10,7 @@ public class ValidadorTest {
     Validador<String> chequeador = new Validador<>("123456");
     chequeador.agregarValidacion((valor) -> valor.length() > 5, "El valor debe tener más de 5 caracteres");
 
-    Try<String> resultado = chequeador.validar();
+    Resultado<String> resultado = chequeador.validar();
 
     assertThat(resultado.getValor()).isEqualTo("123456");
   }
@@ -21,7 +21,7 @@ public class ValidadorTest {
         .agregarValidacion((valor) -> valor.length() > 7, "El valor debe tener más de 7 caracteres")
         .agregarValidacion((valor) -> valor.length() > 5, "El valor debe tener más de 5 caracteres");
 
-    Try<String> resultado = chequeador.validar();
+    Resultado<String> resultado = chequeador.validar();
 
     assertThat(resultado.esExitoso()).isFalse();
     assertThat(resultado.getErrores()).containsExactlyInAnyOrder(
@@ -35,7 +35,7 @@ public class ValidadorTest {
         .agregarValidacion((valor) -> valor.length() > 6, "El valor debe tener más de 5 caracteres")
         .agregarValidacion((valor) -> valor.length() > 4, "El valor debe tener más de 3 caracteres");
 
-    Try<String> resultado = chequeador.validar();
+    Resultado<String> resultado = chequeador.validar();
 
     assertThat(resultado.esExitoso()).isFalse();
     assertThat(resultado.getErrores()).containsExactlyInAnyOrder(

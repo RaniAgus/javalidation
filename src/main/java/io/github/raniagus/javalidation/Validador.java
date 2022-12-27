@@ -23,13 +23,13 @@ public class Validador<T> {
     return this;
   }
 
-  public Try<T> validar() {
-    List<Try<T>> resultados = getResultados(valor);
-    return resultados.stream().allMatch(Try::esExitoso)
-        ? Try.exitoso(valor) : Try.fallido(Try.collectErrors(resultados));
+  public Resultado<T> validar() {
+    List<Resultado<T>> resultados = getResultados(valor);
+    return resultados.stream().allMatch(Resultado::esExitoso)
+        ? Resultado.exitoso(valor) : Resultado.fallido(Resultado.collectErrors(resultados));
   }
 
-  private List<Try<T>> getResultados(T valor) {
+  private List<Resultado<T>> getResultados(T valor) {
     return validaciones.stream()
         .map(x -> x.validar(valor))
         .collect(Collectors.toList());
