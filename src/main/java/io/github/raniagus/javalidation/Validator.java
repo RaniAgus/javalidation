@@ -6,32 +6,32 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class Validator<T> {
-  private final List<Validation<T>> validaciones = new ArrayList<>();
-  private final T valor;
+  private final List<Validation<T>> validations = new ArrayList<>();
+  private final T value;
 
-  public Validator(T valor) {
-    this.valor = valor;
+  public Validator(T value) {
+    this.value = value;
   }
 
-  public Validator<T> agregarValidacion(Predicate<T> chequeo, ErrorCode code) {
-    validaciones.add(Validation.create(chequeo, code));
+  public Validator<T> add(Predicate<T> check, ErrorCode code) {
+    validations.add(Validation.create(check, code));
     return this;
   }
 
-  public Validator<T> agregarValidaciones(List<Validation<T>> validaciones) {
-    this.validaciones.addAll(validaciones);
+  public Validator<T> addAll(List<Validation<T>> validations) {
+    this.validations.addAll(validations);
     return this;
   }
 
-  public Result<T> validar() {
-    List<Result<T>> resultados = getResultados(valor);
-    return resultados.stream().allMatch(Result::isSuccess)
-        ? Result.success(valor) : Result.failure(Result.collectErrors(resultados));
+  public Result<T> validate() {
+    List<Result<T>> results = getResults(value);
+    return results.stream().allMatch(Result::isSuccess)
+        ? Result.success(value) : Result.failure(Result.collectErrors(results));
   }
 
-  private List<Result<T>> getResultados(T valor) {
-    return validaciones.stream()
-        .map(x -> x.validate(valor))
+  private List<Result<T>> getResults(T value) {
+    return validations.stream()
+        .map(x -> x.validate(value))
         .collect(Collectors.toList());
   }
 }
