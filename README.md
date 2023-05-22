@@ -1,5 +1,7 @@
 # javalidation
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.raniagus/javalidation/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.raniagus/javalidation)
+
 Example library for validating Java code.
 
 ## Installation
