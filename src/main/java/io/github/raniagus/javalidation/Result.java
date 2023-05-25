@@ -1,7 +1,16 @@
 package io.github.raniagus.javalidation;
 
+import io.github.raniagus.javalidation.function.DecaFunction;
+import io.github.raniagus.javalidation.function.HeptaFunction;
+import io.github.raniagus.javalidation.function.HexaFunction;
+import io.github.raniagus.javalidation.function.NonaFunction;
+import io.github.raniagus.javalidation.function.OctaFunction;
+import io.github.raniagus.javalidation.function.PentaFunction;
+import io.github.raniagus.javalidation.function.TetraFunction;
+import io.github.raniagus.javalidation.function.TriFunction;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -56,13 +65,44 @@ public interface Result<T> {
     return collectErrors(List.of(results));
   }
 
-  static <T> Result<T> merge(Supplier<T> valorExitoso, Result<?>... results) {
-    List<ValidationException> errores = Stream.of(results)
-        .flatMap(t -> t.getErrors().stream())
-        .toList();
+  static <A, B, R> Result<R> merge(Result<A> result1, Result<B> result2, BiFunction<A, B, R> onSuccess) {
+    return merge(() -> onSuccess.apply(result1.getValue(), result2.getValue()), result1, result2);
+  }
 
-    return errores.isEmpty()
-        ? Result.success(valorExitoso.get())
-        : Result.failure(errores);
+  static <A, B, C, R> Result<R> merge(Result<A> result1, Result<B> result2, Result<C> result3, TriFunction<A, B, C, R> onSuccess) {
+    return merge(() -> onSuccess.apply(result1.getValue(), result2.getValue(), result3.getValue()), result1, result2, result3);
+  }
+
+  static <A, B, C, D, R> Result<R> merge(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, TetraFunction<A, B, C, D, R> onSuccess) {
+    return merge(() -> onSuccess.apply(result1.getValue(), result2.getValue(), result3.getValue(), result4.getValue()), result1, result2, result3, result4);
+  }
+
+  static <A, B, C, D, E, R> Result<R> merge(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, Result<E> result5, PentaFunction<A, B, C, D, E, R> onSuccess) {
+    return merge(() -> onSuccess.apply(result1.getValue(), result2.getValue(), result3.getValue(), result4.getValue(), result5.getValue()), result1, result2, result3, result4, result5);
+  }
+
+  static <A, B, C, D, E, F, R> Result<R> merge(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, Result<E> result5, Result<F> result6, HexaFunction<A, B, C, D, E, F, R> onSuccess) {
+    return merge(() -> onSuccess.apply(result1.getValue(), result2.getValue(), result3.getValue(), result4.getValue(), result5.getValue(), result6.getValue()), result1, result2, result3, result4, result5, result6);
+  }
+
+  static <A, B, C, D, E, F, G, R> Result<R> merge(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, Result<E> result5, Result<F> result6, Result<G> result7, HeptaFunction<A, B, C, D, E, F, G, R> onSuccess) {
+    return merge(() -> onSuccess.apply(result1.getValue(), result2.getValue(), result3.getValue(), result4.getValue(), result5.getValue(), result6.getValue(), result7.getValue()), result1, result2, result3, result4, result5, result6, result7);
+  }
+
+  static <A, B, C, D, E, F, G, H, R> Result<R> merge(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, Result<E> result5, Result<F> result6, Result<G> result7, Result<H> result8, OctaFunction<A, B, C, D, E, F, G, H, R> onSuccess) {
+    return merge(() -> onSuccess.apply(result1.getValue(), result2.getValue(), result3.getValue(), result4.getValue(), result5.getValue(), result6.getValue(), result7.getValue(), result8.getValue()), result1, result2, result3, result4, result5, result6, result7, result8);
+  }
+
+  static <A, B, C, D, E, F, G, H, I, R> Result<R> merge(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, Result<E> result5, Result<F> result6, Result<G> result7, Result<H> result8, Result<I> result9, NonaFunction<A, B, C, D, E, F, G, H, I, R> onSuccess) {
+    return merge(() -> onSuccess.apply(result1.getValue(), result2.getValue(), result3.getValue(), result4.getValue(), result5.getValue(), result6.getValue(), result7.getValue(), result8.getValue(), result9.getValue()), result1, result2, result3, result4, result5, result6, result7, result8, result9);
+  }
+
+  static <A, B, C, D, E, F, G, H, I, J, R> Result<R> merge(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, Result<E> result5, Result<F> result6, Result<G> result7, Result<H> result8, Result<I> result9, Result<J> result10, DecaFunction<A, B, C, D, E, F, G, H, I, J, R> onSuccess) {
+    return merge(() -> onSuccess.apply(result1.getValue(), result2.getValue(), result3.getValue(), result4.getValue(), result5.getValue(), result6.getValue(), result7.getValue(), result8.getValue(), result9.getValue(), result10.getValue()), result1, result2, result3, result4, result5, result6, result7, result8, result9, result10);
+  }
+
+  private static <R> Result<R> merge(Supplier<R> onSuccess, Result<?>... results) {
+    List<ValidationException> errors = Stream.of(results).flatMap(t -> t.getErrors().stream()).toList();
+    return errors.isEmpty() ? Result.success(onSuccess.get()) : Result.failure(errors);
   }
 }

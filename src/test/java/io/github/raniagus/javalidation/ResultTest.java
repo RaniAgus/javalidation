@@ -129,28 +129,6 @@ class ResultTest {
   }
 
   @Test
-  void sePuedeConcatenarResultadosExitosos() {
-    Result<Integer> resultado1 = Result.success(6);
-    Result<Integer> resultado2 = Result.success(7);
-
-    Result<Integer> resultadoConcatenado = Result.merge(() -> resultado1.getValue() + resultado2.getValue(), resultado1, resultado2);
-
-    assertThat(resultadoConcatenado.getValue()).isEqualTo(13);
-  }
-
-  @Test
-  void sePuedeConcatenarResultadosFallidos() {
-    Result<Integer> resultado1 = Result.failure(ErrorCodes.ERROR_1);
-    Result<Integer> resultado2 = Result.failure(ErrorCodes.ERROR_2);
-
-    Result<Integer> resultadoConcatenado = Result.merge(() -> resultado1.getValue() + resultado2.getValue(), resultado1, resultado2);
-
-    assertThat(resultadoConcatenado.getErrors())
-        .extracting(ValidationException::getCode)
-        .containsExactly("ERROR_1", "ERROR_2");
-  }
-
-  @Test
   void sePuedeTransformarUnEitherExitoso() {
     Result<Integer> resultado = Result.success(6);
 
