@@ -21,11 +21,6 @@ public enum ErrorCodes implements ErrorCode {
   }
 
   @Override
-  public String getCode() {
-    return name();
-  }
-
-  @Override
   public String getMessage() {
     return message;
   }

@@ -1,12 +1,10 @@
 package io.github.raniagus.javalidation;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public interface Result<T> {
@@ -36,20 +34,32 @@ public interface Result<T> {
     return new Failure<>(errors);
   }
 
-  static <T> Result<T> failure(ValidationException error) {
-    return failure(Collections.singletonList(error));
+  static <T> Result<T> failure(ValidationException... errors) {
+    return failure(List.of(errors));
+  }
+
+  static <T> Result<T> failure(ErrorCode... errorCodes) {
+    return new Failure<>(Stream.of(errorCodes)
+        .map(ValidationException::new)
+        .toList()
+    );
   }
 
   static <T> List<ValidationException> collectErrors(List<Result<T>> results) {
     return results.stream()
         .flatMap(t -> t.getErrors().stream())
-        .collect(Collectors.toList());
+        .toList();
+  }
+
+  @SafeVarargs
+  static <T> List<ValidationException> collectErrors(Result<T>... results) {
+    return collectErrors(List.of(results));
   }
 
   static <T> Result<T> merge(Supplier<T> valorExitoso, Result<?>... results) {
     List<ValidationException> errores = Stream.of(results)
         .flatMap(t -> t.getErrors().stream())
-        .collect(Collectors.toList());
+        .toList();
 
     return errores.isEmpty()
         ? Result.success(valorExitoso.get())

@@ -23,7 +23,7 @@ public class Failure<T> implements Result<T> {
   public T getValue() {
     throw new NoSuchElementException(errors.stream()
         .map(ValidationException::getMessage)
-        .collect(Collectors.joining(", ")));
+        .collect(Collectors.joining(", ")), errors.get(0));
   }
 
   @Override

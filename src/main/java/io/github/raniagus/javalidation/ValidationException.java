@@ -5,12 +5,12 @@ public class ValidationException extends RuntimeException {
 
   public ValidationException(ErrorCode errorCode) {
     super(errorCode.getMessage());
-    this.code = errorCode.getCode();
+    this.code = errorCode.name();
   }
 
   public ValidationException(ErrorCode errorCode, Throwable cause) {
     super(errorCode.getMessage(), cause);
-    this.code = errorCode.getCode();
+    this.code = errorCode.name();
   }
 
   public String getCode() {

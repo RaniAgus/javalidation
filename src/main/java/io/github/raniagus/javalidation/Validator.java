@@ -3,7 +3,6 @@ package io.github.raniagus.javalidation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 public class Validator<T> {
   private final List<Validation<T>> validations = new ArrayList<>();
@@ -23,6 +22,11 @@ public class Validator<T> {
     return this;
   }
 
+  @SafeVarargs
+  public final Validator<T> addAll(Validation<T>... validations) {
+    return this.addAll(List.of(validations));
+  }
+
   public Result<T> validate() {
     List<Result<T>> results = getResults(value);
     return results.stream().allMatch(Result::isSuccess)
@@ -32,6 +36,6 @@ public class Validator<T> {
   private List<Result<T>> getResults(T value) {
     return validations.stream()
         .map(x -> x.validate(value))
-        .collect(Collectors.toList());
+        .toList();
   }
 }

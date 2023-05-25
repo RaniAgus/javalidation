@@ -8,15 +8,15 @@ public interface Validation<T> extends Predicate<T>, ErrorCode {
   }
 
   static <T> Validation<T> create(Predicate<T> chequeo, ErrorCode errorCode) {
-    return new Validation<T>() {
+    return new Validation<>() {
       @Override
       public boolean test(T valor) {
         return chequeo.test(valor);
       }
 
       @Override
-      public String getCode() {
-        return errorCode.getCode();
+      public String name() {
+        return errorCode.name();
       }
 
       @Override
