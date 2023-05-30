@@ -53,32 +53,32 @@ class FunctionTest {
 
   @Test
   void hexaFunctionAndThen() {
-    HexaFunction<String, String, String, String, String, String, String> hexaFunction = (a, b, c, d, e, f) -> a + b + c + d + e + f;
-    HexaFunction<String, String, String, String, String, String, String> hexaFunctionAndThen = hexaFunction.andThen((g) -> g + "g");
+    HexFunction<String, String, String, String, String, String, String> hexFunction = (a, b, c, d, e, f) -> a + b + c + d + e + f;
+    HexFunction<String, String, String, String, String, String, String> hexFunctionAndThen = hexFunction.andThen((g) -> g + "g");
 
-    assertThat(hexaFunctionAndThen.apply("a", "b", "c", "d", "e", "f")).isEqualTo("abcdefg");
+    assertThat(hexFunctionAndThen.apply("a", "b", "c", "d", "e", "f")).isEqualTo("abcdefg");
   }
 
   @Test
   void hexaFunctionAndThenWithNull() {
-    HexaFunction<String, String, String, String, String, String, String> hexaFunction = (a, b, c, d, e, f) -> a + b + c + d + e + f;
+    HexFunction<String, String, String, String, String, String, String> hexFunction = (a, b, c, d, e, f) -> a + b + c + d + e + f;
 
-    assertThatThrownBy(() -> hexaFunction.andThen(null)).isInstanceOf(NullPointerException.class);
+    assertThatThrownBy(() -> hexFunction.andThen(null)).isInstanceOf(NullPointerException.class);
   }
 
   @Test
   void heptaFunctionAndThen() {
-    HeptaFunction<String, String, String, String, String, String, String, String> heptaFunction = (a, b, c, d, e, f, g) -> a + b + c + d + e + f + g;
-    HeptaFunction<String, String, String, String, String, String, String, String> heptaFunctionAndThen = heptaFunction.andThen((h) -> h + "h");
+    SeptaFunction<String, String, String, String, String, String, String, String> septaFunction = (a, b, c, d, e, f, g) -> a + b + c + d + e + f + g;
+    SeptaFunction<String, String, String, String, String, String, String, String> septaFunctionAndThen = septaFunction.andThen((h) -> h + "h");
 
-    assertThat(heptaFunctionAndThen.apply("a", "b", "c", "d", "e", "f", "g")).isEqualTo("abcdefgh");
+    assertThat(septaFunctionAndThen.apply("a", "b", "c", "d", "e", "f", "g")).isEqualTo("abcdefgh");
   }
 
   @Test
   void heptaFunctionAndThenWithNull() {
-    HeptaFunction<String, String, String, String, String, String, String, String> heptaFunction = (a, b, c, d, e, f, g) -> a + b + c + d + e + f + g;
+    SeptaFunction<String, String, String, String, String, String, String, String> septaFunction = (a, b, c, d, e, f, g) -> a + b + c + d + e + f + g;
 
-    assertThatThrownBy(() -> heptaFunction.andThen(null)).isInstanceOf(NullPointerException.class);
+    assertThatThrownBy(() -> septaFunction.andThen(null)).isInstanceOf(NullPointerException.class);
   }
 
   @Test

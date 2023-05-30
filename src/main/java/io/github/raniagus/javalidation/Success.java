@@ -57,7 +57,7 @@ public class Success<T> implements Result<T> {
   }
 
   @Override
-  public <R> R fold(Function<List<ValidationException>, R> onError, Function<T, R> onSuccess) {
+  public <R> R fold(Function<List<ValidationException>, R> onFailure, Function<T, R> onSuccess) {
     return onSuccess.apply(value);
   }
 }

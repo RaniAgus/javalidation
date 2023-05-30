@@ -32,7 +32,7 @@ public class Failure<T> implements Result<T> {
   }
 
   @Override
-  public Result<T> filter(Predicate<T> predicado, ErrorCode mensajeDeError) {
+  public Result<T> filter(Predicate<T> predicate, ErrorCode errorCode) {
     return this;
   }
 
@@ -57,7 +57,7 @@ public class Failure<T> implements Result<T> {
   }
 
   @Override
-  public <R> R fold(Function<List<ValidationException>, R> error, Function<T, R> exito) {
-    return error.apply(errors);
+  public <R> R fold(Function<List<ValidationException>, R> onFailure, Function<T, R> onSuccess) {
+    return onFailure.apply(errors);
   }
 }
