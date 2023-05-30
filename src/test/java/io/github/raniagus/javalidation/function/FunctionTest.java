@@ -52,7 +52,7 @@ class FunctionTest {
   }
 
   @Test
-  void hexaFunctionAndThen() {
+  void hexFunctionAndThen() {
     HexFunction<String, String, String, String, String, String, String> hexFunction = (a, b, c, d, e, f) -> a + b + c + d + e + f;
     HexFunction<String, String, String, String, String, String, String> hexFunctionAndThen = hexFunction.andThen((g) -> g + "g");
 
@@ -60,14 +60,14 @@ class FunctionTest {
   }
 
   @Test
-  void hexaFunctionAndThenWithNull() {
+  void hexFunctionAndThenWithNull() {
     HexFunction<String, String, String, String, String, String, String> hexFunction = (a, b, c, d, e, f) -> a + b + c + d + e + f;
 
     assertThatThrownBy(() -> hexFunction.andThen(null)).isInstanceOf(NullPointerException.class);
   }
 
   @Test
-  void heptaFunctionAndThen() {
+  void septaFunctionAndThen() {
     SeptaFunction<String, String, String, String, String, String, String, String> septaFunction = (a, b, c, d, e, f, g) -> a + b + c + d + e + f + g;
     SeptaFunction<String, String, String, String, String, String, String, String> septaFunctionAndThen = septaFunction.andThen((h) -> h + "h");
 
@@ -75,7 +75,7 @@ class FunctionTest {
   }
 
   @Test
-  void heptaFunctionAndThenWithNull() {
+  void septaFunctionAndThenWithNull() {
     SeptaFunction<String, String, String, String, String, String, String, String> septaFunction = (a, b, c, d, e, f, g) -> a + b + c + d + e + f + g;
 
     assertThatThrownBy(() -> septaFunction.andThen(null)).isInstanceOf(NullPointerException.class);
