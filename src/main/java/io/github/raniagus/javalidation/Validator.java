@@ -34,8 +34,6 @@ public class Validator<T> {
   }
 
   private List<Result<T>> getResults(T value) {
-    return validations.stream()
-        .map(x -> x.validate(value))
-        .toList();
+    return validations.stream().map(x -> x.validate(value)).toList();
   }
 }

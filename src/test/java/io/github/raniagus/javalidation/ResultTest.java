@@ -55,14 +55,14 @@ class ResultTest {
 
   @Test
   void sePuedeParsearUnValorExitosamente() {
-    Result<Integer> resultado = Result.from(() -> Integer.parseInt("6"), ErrorCodes.NUMBER_FORMAT_ERROR);
+    Result<Integer> resultado = Result.of(() -> Integer.parseInt("6"), ErrorCodes.NUMBER_FORMAT_ERROR);
 
     assertThat(resultado.getValue()).isEqualTo(6);
   }
 
   @Test
   void sePuedeParsearUnValorConError() {
-    Result<Integer> resultado = Result.from(() -> Integer.parseInt("6a"), ErrorCodes.NUMBER_FORMAT_ERROR);
+    Result<Integer> resultado = Result.of(() -> Integer.parseInt("6a"), ErrorCodes.NUMBER_FORMAT_ERROR);
 
     assertThat(resultado.getErrors())
         .extracting(ValidationException::getCode)

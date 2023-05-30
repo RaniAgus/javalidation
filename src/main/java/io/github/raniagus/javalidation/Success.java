@@ -30,7 +30,7 @@ public class Success<T> implements Result<T> {
 
   @Override
   public Result<T> filter(Predicate<T> predicate, ErrorCode errorCode) {
-    return predicate.test(value) ? this : Result.failure(new ValidationException(errorCode));
+    return predicate.test(value) ? this : Result.failure(errorCode);
   }
 
   @Override
@@ -40,7 +40,7 @@ public class Success<T> implements Result<T> {
 
   @Override
   public <R> Result<R> mapCatching(Function<T, R> function, ErrorCode errorCode) {
-    return Result.from(() -> function.apply(value), errorCode);
+    return Result.of(() -> function.apply(value), errorCode);
   }
 
   @Override
@@ -51,8 +51,9 @@ public class Success<T> implements Result<T> {
   @Override
   public <R> Result<R> flatMapCatching(Function<T, Optional<R>> function, ErrorCode errorCode) {
     return mapCatching(function, errorCode)
-        .flatMap(o -> o.map(Result::success)
-            .orElseGet(() -> Result.failure(new ValidationException(errorCode)))
+        .flatMap(o -> o
+            .map(Result::success)
+            .orElseGet(() -> Result.failure(errorCode))
         );
   }
 
