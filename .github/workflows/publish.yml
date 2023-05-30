@@ -39,7 +39,7 @@ jobs:
       - name: Update README.md and pom.xml
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-            sed -i "s/<version>.*<\/version>/<version>${VERSION:?}<\/version>/" README.md
+            sed -i "s/<version>.*<\/version>/<version>${GITHUB_REF_NAME#v}<\/version>/" README.md
             mvn versions:set -DnewVersion=${GITHUB_REF_NAME#v}-SNAPSHOT -DgenerateBackupPoms=false
             git config --global user.name ${{ github.actor }}
             git config --global user.email ${{ github.actor }}@users.noreply.github.com
