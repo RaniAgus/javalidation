@@ -1,16 +1,16 @@
 package io.github.raniagus.javalidation;
 
-import io.github.raniagus.javalidation.function.DecaFunction;
-import io.github.raniagus.javalidation.function.SeptaFunction;
-import io.github.raniagus.javalidation.function.HexFunction;
-import io.github.raniagus.javalidation.function.NonaFunction;
-import io.github.raniagus.javalidation.function.OctaFunction;
-import io.github.raniagus.javalidation.function.PentaFunction;
-import io.github.raniagus.javalidation.function.TetraFunction;
-import io.github.raniagus.javalidation.function.TriFunction;
+import io.github.raniagus.javalidation.forcomprehension.BiFor;
+import io.github.raniagus.javalidation.forcomprehension.DecaFor;
+import io.github.raniagus.javalidation.forcomprehension.HexFor;
+import io.github.raniagus.javalidation.forcomprehension.NonaFor;
+import io.github.raniagus.javalidation.forcomprehension.OctaFor;
+import io.github.raniagus.javalidation.forcomprehension.PentaFor;
+import io.github.raniagus.javalidation.forcomprehension.SeptaFor;
+import io.github.raniagus.javalidation.forcomprehension.TetraFor;
+import io.github.raniagus.javalidation.forcomprehension.TriFor;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -60,61 +60,43 @@ public interface Result<T> {
     return collectErrors(List.of(results));
   }
 
-  static <A, B, R> Result<R> merge(Result<A> result1, Result<B> result2, BiFunction<A, B, R> onSuccess) {
-    return merge(
-        () -> onSuccess.apply(result1.getValue(), result2.getValue()),
-        result1, result2);
+  static <A, B> BiFor<A, B> join(Result<A> result1, Result<B> result2) {
+    return new BiFor<>(result1, result2);
   }
 
-  static <A, B, C, R> Result<R> merge(Result<A> result1, Result<B> result2, Result<C> result3, TriFunction<A, B, C, R> onSuccess) {
-    return merge(
-        () -> onSuccess.apply(result1.getValue(), result2.getValue(), result3.getValue()),
-        result1, result2, result3);
+  static <A, B, C> TriFor<A, B, C> join(Result<A> result1, Result<B> result2, Result<C> result3) {
+    return new TriFor<>(result1, result2, result3);
   }
 
-  static <A, B, C, D, R> Result<R> merge(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, TetraFunction<A, B, C, D, R> onSuccess) {
-    return merge(
-        () -> onSuccess.apply(result1.getValue(), result2.getValue(), result3.getValue(), result4.getValue()),
-        result1, result2, result3, result4);
+  static <A, B, C, D> TetraFor<A, B, C, D> join(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4) {
+    return new TetraFor<>(result1, result2, result3, result4);
   }
 
-  static <A, B, C, D, E, R> Result<R> merge(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, Result<E> result5, PentaFunction<A, B, C, D, E, R> onSuccess) {
-    return merge(
-        () -> onSuccess.apply(result1.getValue(), result2.getValue(), result3.getValue(), result4.getValue(), result5.getValue()),
-        result1, result2, result3, result4, result5);
+  static <A, B, C, D, E> PentaFor<A, B, C, D, E> join(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, Result<E> result5) {
+    return new PentaFor<>(result1, result2, result3, result4, result5);
   }
 
-  static <A, B, C, D, E, F, R> Result<R> merge(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, Result<E> result5, Result<F> result6, HexFunction<A, B, C, D, E, F, R> onSuccess) {
-    return merge(
-        () -> onSuccess.apply(result1.getValue(), result2.getValue(), result3.getValue(), result4.getValue(), result5.getValue(), result6.getValue()),
-        result1, result2, result3, result4, result5, result6);
+  static <A, B, C, D, E, F> HexFor<A, B, C, D, E, F> join(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, Result<E> result5, Result<F> result6) {
+    return new HexFor<>(result1, result2, result3, result4, result5, result6);
   }
 
-  static <A, B, C, D, E, F, G, R> Result<R> merge(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, Result<E> result5, Result<F> result6, Result<G> result7, SeptaFunction<A, B, C, D, E, F, G, R> onSuccess) {
-    return merge(
-        () -> onSuccess.apply(result1.getValue(), result2.getValue(), result3.getValue(), result4.getValue(), result5.getValue(), result6.getValue(), result7.getValue()),
-        result1, result2, result3, result4, result5, result6, result7);
+  static <A, B, C, D, E, F, G> SeptaFor<A, B, C, D, E, F, G> join(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, Result<E> result5, Result<F> result6, Result<G> result7) {
+    return new SeptaFor<>(result1, result2, result3, result4, result5, result6, result7);
   }
 
-  static <A, B, C, D, E, F, G, H, R> Result<R> merge(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, Result<E> result5, Result<F> result6, Result<G> result7, Result<H> result8, OctaFunction<A, B, C, D, E, F, G, H, R> onSuccess) {
-    return merge(
-        () -> onSuccess.apply(result1.getValue(), result2.getValue(), result3.getValue(), result4.getValue(), result5.getValue(), result6.getValue(), result7.getValue(), result8.getValue()),
-        result1, result2, result3, result4, result5, result6, result7, result8);
+  static <A, B, C, D, E, F, G, H> OctaFor<A, B, C, D, E, F, G, H> join(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, Result<E> result5, Result<F> result6, Result<G> result7, Result<H> result8) {
+    return new OctaFor<>(result1, result2, result3, result4, result5, result6, result7, result8);
   }
 
-  static <A, B, C, D, E, F, G, H, I, R> Result<R> merge(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, Result<E> result5, Result<F> result6, Result<G> result7, Result<H> result8, Result<I> result9, NonaFunction<A, B, C, D, E, F, G, H, I, R> onSuccess) {
-    return merge(
-        () -> onSuccess.apply(result1.getValue(), result2.getValue(), result3.getValue(), result4.getValue(), result5.getValue(), result6.getValue(), result7.getValue(), result8.getValue(), result9.getValue()),
-        result1, result2, result3, result4, result5, result6, result7, result8, result9);
+  static <A, B, C, D, E, F, G, H, I> NonaFor<A, B, C, D, E, F, G, H, I> join(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, Result<E> result5, Result<F> result6, Result<G> result7, Result<H> result8, Result<I> result9) {
+    return new NonaFor<>(result1, result2, result3, result4, result5, result6, result7, result8, result9);
   }
 
-  static <A, B, C, D, E, F, G, H, I, J, R> Result<R> merge(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, Result<E> result5, Result<F> result6, Result<G> result7, Result<H> result8, Result<I> result9, Result<J> result10, DecaFunction<A, B, C, D, E, F, G, H, I, J, R> onSuccess) {
-    return merge(
-        () -> onSuccess.apply(result1.getValue(), result2.getValue(), result3.getValue(), result4.getValue(), result5.getValue(), result6.getValue(), result7.getValue(), result8.getValue(), result9.getValue(), result10.getValue()),
-        result1, result2, result3, result4, result5, result6, result7, result8, result9, result10);
+  static <A, B, C, D, E, F, G, H, I, J> DecaFor<A, B, C, D, E, F, G, H, I, J> join(Result<A> result1, Result<B> result2, Result<C> result3, Result<D> result4, Result<E> result5, Result<F> result6, Result<G> result7, Result<H> result8, Result<I> result9, Result<J> result10) {
+    return new DecaFor<>(result1, result2, result3, result4, result5, result6, result7, result8, result9, result10);
   }
 
-  private static <R> Result<R> merge(Supplier<R> onSuccess, Result<?>... results) {
+  static <R> Result<R> merge(Supplier<R> onSuccess, Result<?>... results) {
     List<ValidationException> errors = Stream.of(results).flatMap(t -> t.getErrors().stream()).toList();
     return errors.isEmpty() ? Result.success(onSuccess.get()) : Result.failure(errors);
   }
