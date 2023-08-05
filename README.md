@@ -13,7 +13,7 @@ dependency into your `pom.xml` file:
     <dependency>
       <groupId>io.github.raniagus</groupId>
       <artifactId>javalidation</artifactId>
-      <version>0.4.3</version>
+      <version>0.4.4</version>
     </dependency>
 ```
 
