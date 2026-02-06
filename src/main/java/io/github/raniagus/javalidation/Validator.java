@@ -1,39 +1,91 @@
 package io.github.raniagus.javalidation;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.function.Predicate;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
 
-public class Validator<T> {
-  private final List<Validation<T>> validations = new ArrayList<>();
-  private final T value;
+public class Validator {
+    private final List<String> rootErrors = new ArrayList<>();
+    private final Map<String, List<String>> fieldErrors = new HashMap<>();
 
-  public Validator(T value) {
-    this.value = value;
-  }
+    public Validator add(String message) {
+        Objects.requireNonNull(message);
+        rootErrors.add(message);
+        return this;
+    }
 
-  public Validator<T> add(Predicate<T> check, ErrorCode code) {
-    validations.add(Validation.create(check, code));
-    return this;
-  }
+    public Validator addAll(List<String> messages) {
+        Objects.requireNonNull(messages);
+        rootErrors.addAll(messages);
+        return this;
+    }
 
-  public Validator<T> addAll(List<Validation<T>> validations) {
-    this.validations.addAll(validations);
-    return this;
-  }
+    public Validator add(String field, String message) {
+        Objects.requireNonNull(field);
+        Objects.requireNonNull(message);
+        fieldErrors.computeIfAbsent(field, k -> new ArrayList<>(1)).add(message);
+        return this;
+    }
 
-  @SafeVarargs
-  public final Validator<T> addAll(Validation<T>... validations) {
-    return this.addAll(List.of(validations));
-  }
+    public Validator add(String field, List<String> messages) {
+        Objects.requireNonNull(field);
+        Objects.requireNonNull(messages);
+        if (!messages.isEmpty()) {
+            fieldErrors.computeIfAbsent(field, k -> new ArrayList<>(messages.size())).addAll(messages);
+        }
+        return this;
+    }
 
-  public Result<T> validate() {
-    List<Result<T>> results = getResults(value);
-    return results.stream().allMatch(Result::isSuccess)
-        ? Result.success(value) : Result.failure(Result.collectErrors(results));
-  }
+    public Validator addAll(Map<String, List<String>> fieldErrors) {
+        Objects.requireNonNull(fieldErrors);
+        fieldErrors.forEach(this::add);
+        return this;
+    }
 
-  private List<Result<T>> getResults(T value) {
-    return validations.stream().map(x -> x.validate(value)).toList();
-  }
+    public Validator addAll(ValidationErrors errors) {
+        Objects.requireNonNull(errors);
+        addAll(errors.rootErrors());
+        addAll(errors.fieldErrors());
+        return this;
+    }
+
+    public Validator addAll(String prefix, ValidationErrors errors) {
+        Objects.requireNonNull(prefix);
+        Objects.requireNonNull(errors);
+        if (!errors.rootErrors().isEmpty()) {
+            add(prefix, errors.rootErrors());
+        }
+        for (Map.Entry<String, List<String>> entry : errors.fieldErrors().entrySet()) {
+            add(prefix + "." + entry.getKey(), entry.getValue());
+        }
+        return this;
+    }
+
+    public ValidationErrors finish() {
+        return new ValidationErrors(rootErrors, fieldErrors);
+    }
+
+    public <T extends @Nullable Object> Result<T> asResult(Supplier<T> supplier) {
+        ValidationErrors errors = finish();
+        if (errors.isNotEmpty()) {
+            return Result.err(errors);
+        }
+        return Result.of(supplier);
+    }
+
+    public void check() {
+        ValidationErrors errors = finish();
+        if (errors.isNotEmpty()) {
+            throw new ValidationException(errors);
+        }
+    }
+
+    public <T extends @Nullable Object> T checkAndGet(Supplier<T> supplier) {
+        check();
+        return supplier.get();
+    }
 }
