@@ -1,6 +1,6 @@
 package io.github.raniagus.javalidation;
 
-import io.github.raniagus.javalidation.joiner.Joiner2;
+import io.github.raniagus.javalidation.combiner.ResultCombiner2;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
@@ -36,8 +36,8 @@ public sealed interface Result<T extends @Nullable Object> {
         return withPrefix(prefix);
     }
 
-    default <U> Joiner2<T, U> with(Result<U> result) {
-        return new Joiner2<>(this, result);
+    default <U> ResultCombiner2<T, U> and(Result<U> result) {
+        return new ResultCombiner2<>(this, result);
     }
 
     static <T extends @Nullable Object> Result<T> of(Supplier<T> supplier) {
@@ -64,7 +64,7 @@ public sealed interface Result<T extends @Nullable Object> {
         return new Err<>(errors);
     }
 
-    static <R> Result<R> merge(Supplier<R> onSuccess, Result<?>... results) {
+    static <R> Result<R> combine(Supplier<R> onSuccess, Result<?>... results) {
         Validator validator = new Validator();
         for (Result<?> result : results) {
             if (result instanceof Err(ValidationErrors errors)) {
