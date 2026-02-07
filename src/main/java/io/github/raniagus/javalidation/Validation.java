@@ -86,7 +86,7 @@ public class Validation {
     public void check() {
         ValidationErrors errors = finish();
         if (errors.isNotEmpty()) {
-            throw new ValidationException(errors);
+            throw new JavalidationException(errors);
         }
     }
 

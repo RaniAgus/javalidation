@@ -18,7 +18,7 @@ class ResultTest {
         var result = Result.<Integer>err("Invalid value");
 
         assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(ValidationException.class);
+                .isInstanceOf(JavalidationException.class);
     }
 
     @Test
@@ -72,7 +72,7 @@ class ResultTest {
         var result = Result.<Integer>err("invalid").map(x -> x * 2);
 
         assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(ValidationException.class);
+                .isInstanceOf(JavalidationException.class);
     }
 
     @Test
@@ -94,7 +94,7 @@ class ResultTest {
         var result = Result.ok(5).flatMap(x -> Result.err("failed"));
 
         assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(ValidationException.class);
+                .isInstanceOf(JavalidationException.class);
     }
 
     @Test
@@ -102,7 +102,7 @@ class ResultTest {
         var result = Result.<Integer>err("initial error").flatMap(x -> Result.ok(x * 2));
 
         assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(ValidationException.class);
+                .isInstanceOf(JavalidationException.class);
     }
 
     @Test
@@ -195,7 +195,7 @@ class ResultTest {
                 .combine((num, str) -> num + str.length());
 
         assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(ValidationException.class);
+                .isInstanceOf(JavalidationException.class);
     }
 
     @Test
@@ -205,7 +205,7 @@ class ResultTest {
                 .combine((num, str) -> num + str.length());
 
         assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(ValidationException.class);
+                .isInstanceOf(JavalidationException.class);
     }
 
     @Test
@@ -218,11 +218,26 @@ class ResultTest {
     @Test
     void of_withSupplierThrowingValidationException_returnsErr() {
         var result = Result.of(() -> {
-            throw new ValidationException(ValidationErrors.of("error"));
+            throw new JavalidationException(ValidationErrors.of("error"));
         });
 
         assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(ValidationException.class);
+                .isInstanceOf(JavalidationException.class);
+    }
+
+    @Test
+    void of_withRunnableSucceeding_returnsOk() {
+        var result = Result.of(() -> {});
+
+        assertThat(result.getOrThrow()).isEqualTo(null);
+    }
+
+    @Test
+    void of_withRunnableThrowingException_returnsErr() {
+        var result = Result.of(this::raiseJavalidationException);
+
+        assertThatThrownBy(result::getOrThrow)
+                .isInstanceOf(JavalidationException.class);
     }
 
     @Test
@@ -247,7 +262,7 @@ class ResultTest {
         );
 
         assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(ValidationException.class);
+                .isInstanceOf(JavalidationException.class);
     }
 
     @Test
@@ -261,5 +276,9 @@ class ResultTest {
         var errors = result.getErrors();
         assertThat(errors.rootErrors()).hasSize(1);
         assertThat(errors.fieldErrors()).hasSize(1);
+    }
+
+    private void raiseJavalidationException() {
+        throw new JavalidationException("error");
     }
 }

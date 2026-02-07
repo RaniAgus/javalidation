@@ -15,7 +15,7 @@ public sealed interface Result<T extends @Nullable Object> {
     default T getOrThrow() {
         return switch (this) {
             case Ok<T>(T value) -> value;
-            case Err<T>(ValidationErrors errors) -> throw new ValidationException(errors);
+            case Err<T>(ValidationErrors errors) -> throw new JavalidationException(errors);
         };
     }
 
@@ -90,9 +90,16 @@ public sealed interface Result<T extends @Nullable Object> {
      static <T extends @Nullable Object> Result<T> of(Supplier<T> supplier) {
         try {
             return new Ok<>(supplier.get());
-        } catch (ValidationException e) {
+        } catch (JavalidationException e) {
             return new Err<>(e.getErrors());
         }
+    }
+
+    static Result<Void> of(Runnable runnable) {
+        return of(() -> {
+            runnable.run();
+            return null;
+        });
     }
 
     static <T extends @Nullable Object> Result<T> ok(T value) {

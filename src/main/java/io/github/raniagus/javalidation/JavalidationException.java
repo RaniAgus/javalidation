@@ -1,17 +1,17 @@
 package io.github.raniagus.javalidation;
 
-public class ValidationException extends RuntimeException {
+public class JavalidationException extends RuntimeException {
     private final ValidationErrors errors;
 
-    public ValidationException(ValidationErrors errors) {
+    public JavalidationException(ValidationErrors errors) {
         this.errors = errors;
     }
 
-    public ValidationException(String message, Object... args) {
+    public JavalidationException(String message, Object... args) {
         this(ValidationErrors.of(message, args));
     }
 
-    public ValidationException(String field, String message, Object... args) {
+    public JavalidationException(String field, String message, Object... args) {
         this(ValidationErrors.of(field, message, args));
     }
 

@@ -184,7 +184,7 @@ class ValidationTest {
 
         var result = validation.asResult(() -> "value");
         assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(ValidationException.class);
+                .isInstanceOf(JavalidationException.class);
     }
 
     @Test
@@ -200,10 +200,10 @@ class ValidationTest {
         var validation = Validation.create();
 
         var result = validation.asResult(() -> {
-            throw new ValidationException(ValidationErrors.of("error"));
+            throw new JavalidationException(ValidationErrors.of("error"));
         });
         assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(ValidationException.class);
+                .isInstanceOf(JavalidationException.class);
     }
 
     @Test
@@ -212,7 +212,7 @@ class ValidationTest {
                 .addFieldError("field", "error");
 
         assertThatThrownBy(validation::check)
-                .isInstanceOf(ValidationException.class);
+                .isInstanceOf(JavalidationException.class);
     }
 
     @Test
@@ -236,7 +236,7 @@ class ValidationTest {
                 .addFieldError("field", "error");
 
         assertThatThrownBy(() -> validation.checkAndGet(() -> "value"))
-                .isInstanceOf(ValidationException.class);
+                .isInstanceOf(JavalidationException.class);
     }
 
     @Test

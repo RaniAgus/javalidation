@@ -29,9 +29,9 @@ class ResultCollectorTest {
                 .collect(ResultCollector.toList());
 
         assertThatThrownBy(listSupplier::get)
-                .isInstanceOf(ValidationException.class)
-                .asInstanceOf(throwable(ValidationException.class))
-                .extracting(ValidationException::getErrors)
+                .isInstanceOf(JavalidationException.class)
+                .asInstanceOf(throwable(JavalidationException.class))
+                .extracting(JavalidationException::getErrors)
                 .extracting(ValidationErrors::fieldErrors)
                 .asInstanceOf(MAP)
                 .containsAllEntriesOf(Map.of(
