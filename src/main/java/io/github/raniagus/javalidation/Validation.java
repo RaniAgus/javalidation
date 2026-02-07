@@ -7,45 +7,45 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
+import io.github.raniagus.javalidation.template.TemplateString;
 
 public class Validation {
-    private final List<String> rootErrors = new ArrayList<>();
-    private final Map<String, List<String>> fieldErrors = new HashMap<>();
+    private final List<TemplateString> rootErrors = new ArrayList<>();
+    private final Map<String, List<TemplateString>> fieldErrors = new HashMap<>();
 
     private Validation() {}
 
     public Validation addRootError(String message) {
         Objects.requireNonNull(message);
-        rootErrors.add(message);
+        rootErrors.add(new TemplateString(message));
         return this;
     }
 
-    public Validation addRootErrors(List<String> messages) {
+    private void addRootErrors(List<TemplateString> messages) {
         Objects.requireNonNull(messages);
         rootErrors.addAll(messages);
-        return this;
     }
 
     public Validation addFieldError(String field, String message) {
         Objects.requireNonNull(field);
         Objects.requireNonNull(message);
-        fieldErrors.computeIfAbsent(field, k -> new ArrayList<>(1)).add(message);
+        fieldErrors.computeIfAbsent(field, k -> new ArrayList<>(1))
+                .add(new TemplateString(message));
         return this;
     }
 
-    public Validation addFieldErrors(String field, List<String> messages) {
+    private void addFieldErrors(String field, List<TemplateString> messages) {
         Objects.requireNonNull(field);
         Objects.requireNonNull(messages);
         if (!messages.isEmpty()) {
-            fieldErrors.computeIfAbsent(field, k -> new ArrayList<>(messages.size())).addAll(messages);
+            fieldErrors.computeIfAbsent(field, k -> new ArrayList<>(messages.size()))
+                    .addAll(messages);
         }
-        return this;
     }
 
-    public Validation addFieldErrors(Map<String, List<String>> fieldErrors) {
+    private void addFieldErrors(Map<String, List<TemplateString>> fieldErrors) {
         Objects.requireNonNull(fieldErrors);
         fieldErrors.forEach(this::addFieldErrors);
-        return this;
     }
 
     public Validation addAll(ValidationErrors errors) {
@@ -63,7 +63,7 @@ public class Validation {
         }
         StringBuilder prefixBuilder = new StringBuilder(prefix).append(".");
         int prefixLength = prefixBuilder.length();
-        for (Map.Entry<String, List<String>> entry : errors.fieldErrors().entrySet()) {
+        for (Map.Entry<String, List<TemplateString>> entry : errors.fieldErrors().entrySet()) {
             prefixBuilder.append(entry.getKey());
             addFieldErrors(prefixBuilder.toString(), entry.getValue());
             prefixBuilder.setLength(prefixLength);

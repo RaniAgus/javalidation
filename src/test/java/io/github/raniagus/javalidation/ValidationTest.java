@@ -2,6 +2,9 @@ package io.github.raniagus.javalidation;
 
 import static org.assertj.core.api.Assertions.*;
 
+import io.github.raniagus.javalidation.template.TemplateString;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class ValidationTest {
@@ -12,7 +15,7 @@ class ValidationTest {
                 .addRootError("error message");
 
         var errors = validation.finish();
-        assertThat(errors.rootErrors()).containsExactly("error message");
+        assertThat(errors.rootErrors()).containsExactly(new TemplateString("error message"));
     }
 
     @Test
@@ -23,7 +26,11 @@ class ValidationTest {
                 .addRootError("error 3");
 
         var errors = validation.finish();
-        assertThat(errors.rootErrors()).containsExactly("error 1", "error 2", "error 3");
+        assertThat(errors.rootErrors()).containsExactly(
+                new TemplateString("error 1"),
+                new TemplateString("error 2"),
+                new TemplateString("error 3")
+        );
     }
 
     @Test
@@ -35,39 +42,13 @@ class ValidationTest {
     }
 
     @Test
-    void addRootErrors_emptyList_doesNothing() {
-        var validation = Validation.create()
-                .addRootErrors(java.util.List.of());
-
-        var errors = validation.finish();
-        assertThat(errors.rootErrors()).isEmpty();
-    }
-
-    @Test
-    void addRootErrors_multipleMessages() {
-        var validation = Validation.create()
-                .addRootErrors(java.util.List.of("error 1", "error 2", "error 3"));
-
-        var errors = validation.finish();
-        assertThat(errors.rootErrors()).containsExactly("error 1", "error 2", "error 3");
-    }
-
-    @Test
-    void addRootErrors_nullList_throwsNullPointerException() {
-        var validation = Validation.create();
-
-        assertThatThrownBy(() -> validation.addRootErrors(null))
-                .isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
     void addFieldError_singleError() {
         var validation = Validation.create()
                 .addFieldError("field", "error message");
 
         var errors = validation.finish();
         assertThat(errors.fieldErrors()).containsKey("field");
-        assertThat(errors.fieldErrors().get("field")).containsExactly("error message");
+        assertThat(errors.fieldErrors().get("field")).containsExactly(new TemplateString("error message"));
     }
 
     @Test
@@ -77,7 +58,10 @@ class ValidationTest {
                 .addFieldError("field", "error 2");
 
         var errors = validation.finish();
-        assertThat(errors.fieldErrors().get("field")).containsExactly("error 1", "error 2");
+        assertThat(errors.fieldErrors().get("field")).containsExactly(
+                new TemplateString("error 1"),
+                new TemplateString("error 2")
+        );
     }
 
     @Test
@@ -103,63 +87,6 @@ class ValidationTest {
         var validation = Validation.create();
 
         assertThatThrownBy(() -> validation.addFieldError("field", null))
-                .isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    void addFieldErrors_withMessages() {
-        var validation = Validation.create()
-                .addFieldErrors("field", java.util.List.of("error 1", "error 2"));
-
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors().get("field")).containsExactly("error 1", "error 2");
-    }
-
-    @Test
-    void addFieldErrors_emptyList_doesNotCreateEntry() {
-        var validation = Validation.create()
-                .addFieldErrors("field", java.util.List.of());
-
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors()).doesNotContainKey("field");
-    }
-
-    @Test
-    void addFieldErrors_nullField_throwsNullPointerException() {
-        var validation = Validation.create();
-
-        assertThatThrownBy(() -> validation.addFieldErrors(null, java.util.List.of("error")))
-                .isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    void addFieldErrors_nullMessages_throwsNullPointerException() {
-        var validation = Validation.create();
-
-        assertThatThrownBy(() -> validation.addFieldErrors("field", null))
-                .isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    void addFieldErrors_withMap() {
-        var fieldErrors = java.util.Map.of(
-                "field1", java.util.List.of("error 1"),
-                "field2", java.util.List.of("error 2", "error 3")
-        );
-        var validation = Validation.create()
-                .addFieldErrors(fieldErrors);
-
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsOnlyKeys("field1", "field2");
-        assertThat(errors.fieldErrors().get("field1")).containsExactly("error 1");
-        assertThat(errors.fieldErrors().get("field2")).containsExactly("error 2", "error 3");
-    }
-
-    @Test
-    void addFieldErrors_nullMap_throwsNullPointerException() {
-        var validation = Validation.create();
-
-        assertThatThrownBy(() -> validation.addFieldErrors((java.util.Map<String, java.util.List<String>>) null))
                 .isInstanceOf(NullPointerException.class);
     }
 
@@ -193,11 +120,11 @@ class ValidationTest {
 
     @Test
     void addAll_withPrefix_multipleFieldErrors() {
-        var fieldErrors = java.util.Map.of(
-                "field1", java.util.List.of("error 1"),
-                "field2", java.util.List.of("error 2")
+        var fieldErrors = Map.of(
+                "field1", List.of(new TemplateString("error 1")),
+                "field2", List.of(new TemplateString("error 2"))
         );
-        var validationErrors = new ValidationErrors(java.util.List.of(), fieldErrors);
+        var validationErrors = new ValidationErrors(List.of(), fieldErrors);
         var validation = Validation.create()
                 .addAll("prefix", validationErrors);
 
@@ -207,7 +134,7 @@ class ValidationTest {
 
     @Test
     void addAll_withPrefix_rootErrors() {
-        var validationErrors = ValidationErrors.of(java.util.List.of("root error 1", "root error 2"));
+        var validationErrors = ValidationErrors.of("root error");
         var validation = Validation.create()
                 .addAll("prefix", validationErrors);
 
@@ -316,9 +243,9 @@ class ValidationTest {
     void fluent_chainMultipleCalls() {
         var validation = Validation.create()
                 .addRootError("root error")
+                .addRootError("root error 2")
                 .addFieldError("field1", "error 1")
-                .addFieldError("field2", "error 2")
-                .addRootErrors(java.util.List.of("root error 2"));
+                .addFieldError("field2", "error 2");
 
         var errors = validation.finish();
         assertThat(errors.rootErrors()).hasSize(2);
@@ -333,7 +260,7 @@ class ValidationTest {
         var errors1 = validation1.finish();
         var errors2 = validation2.finish();
 
-        assertThat(errors1.rootErrors()).containsExactly("error 1");
-        assertThat(errors2.rootErrors()).containsExactly("error 2");
+        assertThat(errors1.rootErrors()).containsExactly(new TemplateString("error 1"));
+        assertThat(errors2.rootErrors()).containsExactly(new TemplateString("error 2"));
     }
 }
