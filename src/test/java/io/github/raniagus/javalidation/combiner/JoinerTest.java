@@ -1,10 +1,11 @@
 package io.github.raniagus.javalidation.combiner;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
 
 import io.github.raniagus.javalidation.Result;
 import io.github.raniagus.javalidation.ValidationErrors;
+import io.github.raniagus.javalidation.template.TemplateString;
 import io.github.raniagus.javalidation.util.ErrorStrings;
 import io.github.raniagus.javalidation.util.Person;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,8 @@ class JoinerTest {
 
         assertThat(resultadoConcatenado.getErrors())
                 .extracting(ValidationErrors::rootErrors)
-                .asInstanceOf(LIST)
+                .asInstanceOf(list(TemplateString.class))
+                .map(TemplateString::template)
                 .containsExactly("Error 1", "Error 2");
     }
 
@@ -64,7 +66,8 @@ class JoinerTest {
 
         assertThat(resultadoConcatenado.getErrors())
                 .extracting(ValidationErrors::rootErrors)
-                .asInstanceOf(LIST)
+                .asInstanceOf(list(TemplateString.class))
+                .map(TemplateString::template)
                 .containsExactly("Error 1", "Error 2", "Error 3");
     }
 
@@ -99,7 +102,8 @@ class JoinerTest {
 
         assertThat(resultadoConcatenado.getErrors())
                 .extracting(ValidationErrors::rootErrors)
-                .asInstanceOf(LIST)
+                .asInstanceOf(list(TemplateString.class))
+                .map(TemplateString::template)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4");
     }
 
@@ -138,7 +142,8 @@ class JoinerTest {
 
         assertThat(resultadoConcatenado.getErrors())
                 .extracting(ValidationErrors::rootErrors)
-                .asInstanceOf(LIST)
+                .asInstanceOf(list(TemplateString.class))
+                .map(TemplateString::template)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4", "Error 5");
     }
 
@@ -181,7 +186,8 @@ class JoinerTest {
 
         assertThat(resultadoConcatenado.getErrors())
                 .extracting(ValidationErrors::rootErrors)
-                .asInstanceOf(LIST)
+                .asInstanceOf(list(TemplateString.class))
+                .map(TemplateString::template)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4", "Error 5", "Error 6");
     }
 
@@ -228,7 +234,8 @@ class JoinerTest {
 
         assertThat(resultadoConcatenado.getErrors())
                 .extracting(ValidationErrors::rootErrors)
-                .asInstanceOf(LIST)
+                .asInstanceOf(list(TemplateString.class))
+                .map(TemplateString::template)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4", "Error 5", "Error 6", "Error 7");
     }
 
@@ -279,7 +286,8 @@ class JoinerTest {
 
         assertThat(resultadoConcatenado.getErrors())
                 .extracting(ValidationErrors::rootErrors)
-                .asInstanceOf(LIST)
+                .asInstanceOf(list(TemplateString.class))
+                .map(TemplateString::template)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4", "Error 5", "Error 6", "Error 7", "Error 8");
     }
 
@@ -334,7 +342,8 @@ class JoinerTest {
 
         assertThat(resultadoConcatenado.getErrors())
                 .extracting(ValidationErrors::rootErrors)
-                .asInstanceOf(LIST)
+                .asInstanceOf(list(TemplateString.class))
+                .map(TemplateString::template)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4", "Error 5", "Error 6", "Error 7", "Error 8", "Error 9");
     }
 
@@ -394,7 +403,8 @@ class JoinerTest {
 
         assertThat(resultadoConcatenado.getErrors())
                 .extracting(ValidationErrors::rootErrors)
-                .asInstanceOf(LIST)
+                .asInstanceOf(list(TemplateString.class))
+                .map(TemplateString::template)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4", "Error 5", "Error 6", "Error 7", "Error 8", "Error 9", "Error 10");
     }
 }

@@ -1,12 +1,15 @@
 package io.github.raniagus.javalidation;
 
+import io.github.raniagus.javalidation.template.TemplateString;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public record ValidationErrors(
-        List<String> rootErrors,
-        Map<String, List<String>> fieldErrors
+        List<TemplateString> rootErrors,
+        Map<String, List<TemplateString>> fieldErrors
 ) {
     public ValidationErrors {
         rootErrors = List.copyOf(rootErrors);
@@ -19,24 +22,22 @@ public record ValidationErrors(
     }
 
     public static ValidationErrors of(String message) {
-        return new ValidationErrors(List.of(message), Map.of());
-    }
-
-    public static ValidationErrors of(List<String> messages) {
-        return new ValidationErrors(List.copyOf(messages), Map.of());
+        return new ValidationErrors(List.of(new TemplateString(message)), Map.of());
     }
 
     public static ValidationErrors of(String field, String message) {
-        return new ValidationErrors(List.of(), Map.of(field, List.of(message)));
+        return new ValidationErrors(List.of(), Map.of(field, List.of(new TemplateString(message))));
     }
 
     public ValidationErrors withPrefix(String prefix) {
-        Validation validation = Validation.create();
-        validation.addFieldErrors(prefix, rootErrors);
-        for (Map.Entry<String, List<String>> entry : fieldErrors.entrySet()) {
-            validation.addFieldErrors(prefix + entry.getKey(), entry.getValue());
+        Map<String, List<TemplateString>> prefixedFieldErrors = new HashMap<>(fieldErrors.size() + 1);
+        if (!rootErrors.isEmpty()) {
+            prefixedFieldErrors.put(prefix, rootErrors);
         }
-        return validation.finish();
+        for (Map.Entry<String, List<TemplateString>> entry : fieldErrors.entrySet()) {
+            prefixedFieldErrors.put(prefix + entry.getKey(), entry.getValue());
+        }
+        return new ValidationErrors(new ArrayList<>(), prefixedFieldErrors);
     }
 
     public ValidationErrors withPrefix(Object first, Object... rest) {

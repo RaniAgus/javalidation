@@ -2,6 +2,9 @@ package io.github.raniagus.javalidation;
 
 import static org.assertj.core.api.Assertions.*;
 
+import io.github.raniagus.javalidation.template.TemplateString;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class ValidationErrorsTest {
@@ -14,7 +17,7 @@ class ValidationErrorsTest {
 
         assertThat(prefixed.rootErrors()).isEmpty();
         assertThat(prefixed.fieldErrors()).containsOnlyKeys("user");
-        assertThat(prefixed.fieldErrors().get("user")).containsExactly("root error");
+        assertThat(prefixed.fieldErrors().get("user")).containsExactly(new TemplateString("root error"));
     }
 
     @Test
@@ -24,20 +27,20 @@ class ValidationErrorsTest {
         var prefixed = errors.withPrefix("form");
 
         assertThat(prefixed.fieldErrors()).containsOnlyKeys("formemail");
-        assertThat(prefixed.fieldErrors().get("formemail")).containsExactly("invalid");
+        assertThat(prefixed.fieldErrors().get("formemail")).containsExactly(new TemplateString("invalid"));
     }
 
     @Test
     void withPrefix_string_preservesMultipleErrors() {
         var errors = new ValidationErrors(
-                java.util.List.of(),
-                java.util.Map.of("field", java.util.List.of("error1", "error2"))
+                List.of(),
+                Map.of("field", List.of(new TemplateString("error1"), new TemplateString("error2")))
         );
 
         var prefixed = errors.withPrefix("prefix");
 
         assertThat(prefixed.fieldErrors().get("prefixfield"))
-                .containsExactly("error1", "error2");
+                .containsExactly(new TemplateString("error1"), new TemplateString("error2"));
     }
 
     @Test
@@ -53,7 +56,7 @@ class ValidationErrorsTest {
     void withPrefix_varargs_acceptsMixedTypes() {
         var errors = ValidationErrors.of("field", "error");
 
-        var prefixed = errors.withPrefix("user", "[", "0", "]");
+        var prefixed = errors.withPrefix("user", "[", 0, "]");
 
         assertThat(prefixed.fieldErrors()).containsOnlyKeys("user[0]field");
     }
