@@ -21,12 +21,12 @@ public record ValidationErrors(
         return new ValidationErrors(List.of(), Map.of());
     }
 
-    public static ValidationErrors of(String message) {
-        return new ValidationErrors(List.of(new TemplateString(message)), Map.of());
+    public static ValidationErrors of(String message, Object... args) {
+        return new ValidationErrors(List.of(new TemplateString(message, args)), Map.of());
     }
 
-    public static ValidationErrors of(String field, String message) {
-        return new ValidationErrors(List.of(), Map.of(field, List.of(new TemplateString(message))));
+    public static ValidationErrors of(String field, String message, Object... args) {
+        return new ValidationErrors(List.of(), Map.of(field, List.of(new TemplateString(message, args))));
     }
 
     public ValidationErrors withPrefix(String prefix) {

@@ -15,9 +15,9 @@ public class Validation {
 
     private Validation() {}
 
-    public Validation addRootError(String message) {
+    public Validation addRootError(String message, Object... args) {
         Objects.requireNonNull(message);
-        rootErrors.add(new TemplateString(message));
+        rootErrors.add(new TemplateString(message, args));
         return this;
     }
 
@@ -26,11 +26,11 @@ public class Validation {
         rootErrors.addAll(messages);
     }
 
-    public Validation addFieldError(String field, String message) {
+    public Validation addFieldError(String field, String message, Object... args) {
         Objects.requireNonNull(field);
         Objects.requireNonNull(message);
         fieldErrors.computeIfAbsent(field, k -> new ArrayList<>(1))
-                .add(new TemplateString(message));
+                .add(new TemplateString(message, args));
         return this;
     }
 
