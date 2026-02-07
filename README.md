@@ -1,6 +1,6 @@
 # javalidation
 
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.raniagus/javalidation/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.raniagus/javalidation)
+[![MvnRepository](https://badges.mvnrepository.com/badge/io.github.raniagus/javalidation/badge.svg?label=MvnRepository)](https://mvnrepository.com/artifact/io.github.raniagus/javalidation)
 
 Example library for validating Java code.
 
@@ -24,7 +24,7 @@ successful commit. Instead of Maven Central, use the Sonatype snapshots
 repository at:
 
 ```xml
-<url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+<url>https://central.sonatype.com/repository/maven-snapshots/</url>
 ```
 
 You can add the repository in your `pom.xml` file:
@@ -33,7 +33,7 @@ You can add the repository in your `pom.xml` file:
   <repositories>
     <repository>
       <id>sonatype-snapshots</id>
-      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
       <snapshots>
         <enabled>true</enabled>
       </snapshots>
