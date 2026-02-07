@@ -5,7 +5,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.MAP;
 import static org.assertj.core.api.InstanceOfAssertFactories.throwable;
 
-import io.github.raniagus.javalidation.template.TemplateString;
+import io.github.raniagus.javalidation.format.TemplateString;
 import io.github.raniagus.javalidation.util.ErrorStrings;
 import java.util.List;
 import java.util.Map;

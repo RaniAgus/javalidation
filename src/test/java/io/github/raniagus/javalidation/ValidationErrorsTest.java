@@ -2,7 +2,7 @@ package io.github.raniagus.javalidation;
 
 import static org.assertj.core.api.Assertions.*;
 
-import io.github.raniagus.javalidation.template.TemplateString;
+import io.github.raniagus.javalidation.format.TemplateString;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,6 @@
 package io.github.raniagus.javalidation;
 
-import io.github.raniagus.javalidation.template.TemplateString;
+import io.github.raniagus.javalidation.format.TemplateString;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

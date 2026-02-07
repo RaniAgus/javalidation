@@ -1,4 +1,4 @@
-package io.github.raniagus.javalidation.template;
+package io.github.raniagus.javalidation.format;
 
 import java.util.Arrays;
 import java.util.Objects;
