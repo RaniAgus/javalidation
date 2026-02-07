@@ -112,12 +112,12 @@ public sealed interface Result<T extends @Nullable Object> {
     }
 
     static <R> Result<R> combine(Supplier<R> onSuccess, Result<?>... results) {
-        Validator validator = new Validator();
+        Validation validation = Validation.create();
         for (Result<?> result : results) {
             if (result instanceof Err(ValidationErrors errors)) {
-                validator.addAll(errors);
+                validation.addAll(errors);
             }
         }
-        return validator.asResult(onSuccess);
+        return validation.asResult(onSuccess);
     }
 }
