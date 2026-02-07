@@ -8,30 +8,32 @@ import java.util.Objects;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
-public class Validator {
+public class Validation {
     private final List<String> rootErrors = new ArrayList<>();
     private final Map<String, List<String>> fieldErrors = new HashMap<>();
 
-    public Validator add(String message) {
+    private Validation() {}
+
+    public Validation addRootError(String message) {
         Objects.requireNonNull(message);
         rootErrors.add(message);
         return this;
     }
 
-    public Validator addAll(List<String> messages) {
+    public Validation addRootErrors(List<String> messages) {
         Objects.requireNonNull(messages);
         rootErrors.addAll(messages);
         return this;
     }
 
-    public Validator add(String field, String message) {
+    public Validation addFieldError(String field, String message) {
         Objects.requireNonNull(field);
         Objects.requireNonNull(message);
         fieldErrors.computeIfAbsent(field, k -> new ArrayList<>(1)).add(message);
         return this;
     }
 
-    public Validator add(String field, List<String> messages) {
+    public Validation addFieldErrors(String field, List<String> messages) {
         Objects.requireNonNull(field);
         Objects.requireNonNull(messages);
         if (!messages.isEmpty()) {
@@ -40,27 +42,31 @@ public class Validator {
         return this;
     }
 
-    public Validator addAll(Map<String, List<String>> fieldErrors) {
+    public Validation addFieldErrors(Map<String, List<String>> fieldErrors) {
         Objects.requireNonNull(fieldErrors);
-        fieldErrors.forEach(this::add);
+        fieldErrors.forEach(this::addFieldErrors);
         return this;
     }
 
-    public Validator addAll(ValidationErrors errors) {
+    public Validation addAll(ValidationErrors errors) {
         Objects.requireNonNull(errors);
-        addAll(errors.rootErrors());
-        addAll(errors.fieldErrors());
+        addRootErrors(errors.rootErrors());
+        addFieldErrors(errors.fieldErrors());
         return this;
     }
 
-    public Validator addAll(String prefix, ValidationErrors errors) {
+    public Validation addAll(String prefix, ValidationErrors errors) {
         Objects.requireNonNull(prefix);
         Objects.requireNonNull(errors);
         if (!errors.rootErrors().isEmpty()) {
-            add(prefix, errors.rootErrors());
+            addFieldErrors(prefix, errors.rootErrors());
         }
+        StringBuilder prefixBuilder = new StringBuilder(prefix).append(".");
+        int prefixLength = prefixBuilder.length();
         for (Map.Entry<String, List<String>> entry : errors.fieldErrors().entrySet()) {
-            add(prefix + "." + entry.getKey(), entry.getValue());
+            prefixBuilder.append(entry.getKey());
+            addFieldErrors(prefixBuilder.toString(), entry.getValue());
+            prefixBuilder.setLength(prefixLength);
         }
         return this;
     }
@@ -87,5 +93,9 @@ public class Validator {
     public <T extends @Nullable Object> T checkAndGet(Supplier<T> supplier) {
         check();
         return supplier.get();
+    }
+
+    public static Validation create() {
+        return new Validation();
     }
 }

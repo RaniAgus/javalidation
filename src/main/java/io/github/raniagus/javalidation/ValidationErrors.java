@@ -31,12 +31,12 @@ public record ValidationErrors(
     }
 
     public ValidationErrors withPrefix(String prefix) {
-        Validator validator = new Validator();
-        validator.add(prefix, rootErrors);
+        Validation validation = Validation.create();
+        validation.addFieldErrors(prefix, rootErrors);
         for (Map.Entry<String, List<String>> entry : fieldErrors.entrySet()) {
-            validator.add(prefix + entry.getKey(), entry.getValue());
+            validation.addFieldErrors(prefix + entry.getKey(), entry.getValue());
         }
-        return validator.finish();
+        return validation.finish();
     }
 
     public ValidationErrors withPrefix(Object first, Object... rest) {
