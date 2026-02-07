@@ -6,7 +6,7 @@ import org.jspecify.annotations.NonNull;
 
 public record TemplateString(String message, Object... args) {
     public TemplateString {
-        args = Arrays.copyOf(args, args.length);
+        args = args == null ? null : Arrays.copyOf(args, args.length);
     }
 
     @Override

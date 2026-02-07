@@ -19,6 +19,13 @@ class TemplateStringSerializerTest {
     }
 
     @Test
+    void shouldSerializeSimpleString() {
+        TemplateString ts = new TemplateString("test");
+        String json = mapper.writeValueAsString(ts);
+        assertEquals("\"test\"", json);
+    }
+
+    @Test
     void shouldSerializeWithMessageFormat() {
         TemplateString ts = new TemplateString("Hello {0}, you have {1} messages", "Alice", 5);
         String json = mapper.writeValueAsString(ts);
