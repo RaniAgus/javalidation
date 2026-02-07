@@ -1,5 +1,6 @@
 package io.github.raniagus.javalidation.jackson;
 
+import io.github.raniagus.javalidation.ValidationErrors;
 import io.github.raniagus.javalidation.format.TemplateString;
 import io.github.raniagus.javalidation.format.TemplateStringFormatter;
 import tools.jackson.databind.module.SimpleModule;
@@ -12,5 +13,6 @@ public class JavalidationModule extends SimpleModule {
     public JavalidationModule(TemplateStringFormatter formatter) {
         super(JavalidationModule.class.getSimpleName());
         addSerializer(TemplateString.class, new TemplateStringSerializer(formatter));
+        addSerializer(ValidationErrors.class, new ValidationErrorsSerializer());
     }
 }
