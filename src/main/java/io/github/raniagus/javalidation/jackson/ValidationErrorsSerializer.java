@@ -1,6 +1,9 @@
 package io.github.raniagus.javalidation.jackson;
 
+import static tools.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS;
+
 import io.github.raniagus.javalidation.ValidationErrors;
+import java.util.Map;
 import org.jspecify.annotations.NonNull;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.SerializationContext;
@@ -16,7 +19,11 @@ public class ValidationErrorsSerializer extends ValueSerializer<ValidationErrors
         }
 
         if (value.fieldErrors() != null) {
-            for (var entry : value.fieldErrors().entrySet()) {
+            var entries = context.hasSerializationFeatures(ORDER_MAP_ENTRIES_BY_KEYS.getMask()) ?
+                      value.fieldErrors().entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()
+                    : value.fieldErrors().entrySet();
+
+            for (var entry : entries) {
                 context.defaultSerializeProperty(entry.getKey(), entry.getValue(), gen);
             }
         }

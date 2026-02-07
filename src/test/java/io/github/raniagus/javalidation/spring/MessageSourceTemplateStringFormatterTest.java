@@ -10,7 +10,7 @@ import org.springframework.test.context.TestPropertySource;
 import tools.jackson.databind.json.JsonMapper;
 
 @SpringBootTest(classes = TestApplication.class)
-@TestPropertySource(properties = "javalidation.use-message-source=true")
+@TestPropertySource(properties = "io.github.raniagus.javalidation.use-message-source=true")
 class MessageSourceTemplateStringFormatterTest {
     @Autowired
     private JsonMapper jsonMapper;
