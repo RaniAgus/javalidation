@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
-import io.github.raniagus.javalidation.template.TemplateString;
+import io.github.raniagus.javalidation.format.TemplateString;
 
 public class Validation {
     private final List<TemplateString> rootErrors = new ArrayList<>();
