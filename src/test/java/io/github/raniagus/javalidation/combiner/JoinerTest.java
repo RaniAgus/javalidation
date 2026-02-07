@@ -35,7 +35,7 @@ class JoinerTest {
         assertThat(resultadoConcatenado.getErrors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
-                .map(TemplateString::template)
+                .map(TemplateString::message)
                 .containsExactly("Error 1", "Error 2");
     }
 
@@ -67,7 +67,7 @@ class JoinerTest {
         assertThat(resultadoConcatenado.getErrors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
-                .map(TemplateString::template)
+                .map(TemplateString::message)
                 .containsExactly("Error 1", "Error 2", "Error 3");
     }
 
@@ -103,7 +103,7 @@ class JoinerTest {
         assertThat(resultadoConcatenado.getErrors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
-                .map(TemplateString::template)
+                .map(TemplateString::message)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4");
     }
 
@@ -143,7 +143,7 @@ class JoinerTest {
         assertThat(resultadoConcatenado.getErrors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
-                .map(TemplateString::template)
+                .map(TemplateString::message)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4", "Error 5");
     }
 
@@ -187,7 +187,7 @@ class JoinerTest {
         assertThat(resultadoConcatenado.getErrors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
-                .map(TemplateString::template)
+                .map(TemplateString::message)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4", "Error 5", "Error 6");
     }
 
@@ -235,7 +235,7 @@ class JoinerTest {
         assertThat(resultadoConcatenado.getErrors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
-                .map(TemplateString::template)
+                .map(TemplateString::message)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4", "Error 5", "Error 6", "Error 7");
     }
 
@@ -287,7 +287,7 @@ class JoinerTest {
         assertThat(resultadoConcatenado.getErrors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
-                .map(TemplateString::template)
+                .map(TemplateString::message)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4", "Error 5", "Error 6", "Error 7", "Error 8");
     }
 
@@ -343,7 +343,7 @@ class JoinerTest {
         assertThat(resultadoConcatenado.getErrors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
-                .map(TemplateString::template)
+                .map(TemplateString::message)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4", "Error 5", "Error 6", "Error 7", "Error 8", "Error 9");
     }
 
@@ -404,7 +404,7 @@ class JoinerTest {
         assertThat(resultadoConcatenado.getErrors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
-                .map(TemplateString::template)
+                .map(TemplateString::message)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4", "Error 5", "Error 6", "Error 7", "Error 8", "Error 9", "Error 10");
     }
 }
