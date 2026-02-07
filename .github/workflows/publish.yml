@@ -8,6 +8,7 @@ on:
     paths:
       - "pom.xml"
       - "src/**"
+      - ".github/workflows/publish.yml"
   workflow_dispatch:
 jobs:
   publish:
