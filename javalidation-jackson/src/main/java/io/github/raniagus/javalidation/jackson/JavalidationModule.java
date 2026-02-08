@@ -14,7 +14,7 @@ import tools.jackson.databind.module.SimpleModule;
  * This module registers custom serializers to control how validation types are serialized to JSON.
  * By default, it uses:
  * <ul>
- *   <li>{@link ResultSerializer} for {@link Result} - discriminated union with {@code ok} boolean field</li>
+ *   <li>{@link ResultMixIn} for {@link Result} - discriminated union with {@code ok} string discriminator field</li>
  *   <li>{@link TemplateStringSerializer} for {@link TemplateString} - formats templates using {@link TemplateStringFormatter}</li>
  *   <li>{@link ValidationErrorsMixIn} for {@link ValidationErrors} - structures errors as {@code {root: [...], fields: {...}}}</li>
  * </ul>
@@ -40,36 +40,47 @@ import tools.jackson.databind.module.SimpleModule;
  *     .build();
  * }</pre>
  *
- * @see ResultSerializer
  * @see TemplateStringSerializer
  * @see FlattenedErrorsSerializer
  * @see ValidationErrorsMixIn
  */
 public class JavalidationModule extends SimpleModule {
-    private final boolean useDefaultSerializer;
+    private final boolean useDefaultResultSerializer;
+    private final boolean useDefaultErrorSerializer;
 
     private JavalidationModule(
-            ValueSerializer<Result<?>> resultSerializer,
+            @Nullable ValueSerializer<Result<?>> resultSerializer,
             ValueSerializer<TemplateString> templateStringSerializer,
             @Nullable ValueSerializer<ValidationErrors> validationErrorsSerializer
     ) {
         super(JavalidationModule.class.getSimpleName());
 
-        addSerializer(resultSerializer);
+        if (resultSerializer != null) {
+            addSerializer(resultSerializer);
+            this.useDefaultResultSerializer = false;
+        } else {
+            this.useDefaultResultSerializer = true;
+        }
+
         addSerializer(TemplateString.class, templateStringSerializer);
 
         if (validationErrorsSerializer != null) {
             addSerializer(ValidationErrors.class, validationErrorsSerializer);
-            this.useDefaultSerializer = false;
+            this.useDefaultErrorSerializer = false;
         } else {
-            this.useDefaultSerializer = true;
+            this.useDefaultErrorSerializer = true;
         }
     }
 
     @Override
     public void setupModule(SetupContext context) {
         super.setupModule(context);
-        if (useDefaultSerializer) {
+        if (useDefaultResultSerializer) {
+            context.setMixIn(Result.class, ResultMixIn.class);
+            context.setMixIn(Result.Ok.class, ResultMixIn.OkMixin.class);
+            context.setMixIn(Result.Err.class, ResultMixIn.ErrMixin.class);
+        }
+        if (useDefaultErrorSerializer) {
             context.setMixIn(ValidationErrors.class, ValidationErrorsMixIn.class);
         }
     }
@@ -104,7 +115,7 @@ public class JavalidationModule extends SimpleModule {
      * @see #withFlattenedErrors()
      */
     public static class Builder {
-        private ValueSerializer<Result<?>> resultSerializer = new ResultSerializer();
+        private @Nullable ValueSerializer<Result<?>> resultSerializer;
         private ValueSerializer<TemplateString> templateStringSerializer = new TemplateStringSerializer();
         private @Nullable ValueSerializer<ValidationErrors> validationErrorsSerializer;
 

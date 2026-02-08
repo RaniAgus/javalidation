@@ -5,15 +5,15 @@ import io.github.raniagus.javalidation.format.TemplateString;
 import java.util.List;
 import java.util.Map;
 
-public abstract class ValidationErrorsMixIn {
+public interface ValidationErrorsMixIn {
 
-    abstract List<TemplateString> rootErrors();
+    List<TemplateString> rootErrors();
 
-    abstract Map<String, List<TemplateString>> fieldErrors();
-
-    @JsonIgnore
-    abstract boolean isEmpty();
+    Map<String, List<TemplateString>> fieldErrors();
 
     @JsonIgnore
-    abstract boolean isNotEmpty();
+    boolean isEmpty();
+
+    @JsonIgnore
+    boolean isNotEmpty();
 }

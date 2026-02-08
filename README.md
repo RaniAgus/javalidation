@@ -782,13 +782,13 @@ Set `io.github.raniagus.javalidation.flatten-errors: true`:
 **Ok variant:**
 ```java
 Result<String> result = Result.ok("success");
-// Serializes to: {"ok": true, "value": "success"}
+// Serializes to: {"ok": "true", "value": "success"}
 ```
 
 **Err variant:**
 ```java
 Result<String> result = Result.err("email", "Invalid format");
-// Serializes to: {"ok": false, "errors": {"rootErrors": [], "fieldErrors": {"email": ["Invalid format"]}}}
+// Serializes to: {"ok": "false", "errors": {"rootErrors": [], "fieldErrors": {"email": ["Invalid format"]}}}
 ```
 
 **Nested in API responses:**
@@ -796,7 +796,7 @@ Result<String> result = Result.err("email", "Invalid format");
 record ApiResponse(String id, Result<User> result) {}
 
 ApiResponse response = new ApiResponse("123", Result.ok(new User("Alice", 30)));
-// Serializes to: {"id": "123", "result": {"ok": true, "value": {"name": "Alice", "age": 30}}}
+// Serializes to: {"id": "123", "result": {"ok": "true", "value": {"name": "Alice", "age": 30}}}
 ```
 
 ### Internationalization

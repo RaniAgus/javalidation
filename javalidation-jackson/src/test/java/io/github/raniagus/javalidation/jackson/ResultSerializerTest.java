@@ -30,7 +30,7 @@ class ResultSerializerTest {
         String json = mapper.writeValueAsString(result);
 
         assertThat(json).isEqualTo("""
-                {"ok":true,"value":"hello"}\
+                {"ok":"true","value":"hello"}\
                 """);
     }
 
@@ -41,7 +41,7 @@ class ResultSerializerTest {
         String json = mapper.writeValueAsString(result);
 
         assertThat(json).isEqualTo("""
-                {"ok":true,"value":42}\
+                {"ok":"true","value":42}\
                 """);
     }
 
@@ -52,7 +52,7 @@ class ResultSerializerTest {
         String json = mapper.writeValueAsString(result);
 
         assertThat(json).isEqualTo("""
-                {"ok":true,"value":null}\
+                {"ok":"true","value":null}\
                 """);
     }
 
@@ -64,7 +64,7 @@ class ResultSerializerTest {
         String json = mapper.writeValueAsString(result);
 
         assertThat(json).isEqualTo("""
-                {"ok":true,"value":{"name":"Alice","age":30}}\
+                {"ok":"true","value":{"name":"Alice","age":30}}\
                 """);
     }
 
@@ -77,7 +77,7 @@ class ResultSerializerTest {
         String json = mapper.writeValueAsString(result);
 
         assertThat(json).isEqualTo("""
-                {"errors":{"rootErrors":["Invalid input"],"fieldErrors":{}},"ok":false}\
+                {"ok":"false","errors":{"rootErrors":["Invalid input"],"fieldErrors":{}}}\
                 """);
     }
 
@@ -88,7 +88,7 @@ class ResultSerializerTest {
         String json = mapper.writeValueAsString(result);
 
         assertThat(json).isEqualTo("""
-                {"errors":{"rootErrors":[],"fieldErrors":{"email":["Invalid format"]}},"ok":false}\
+                {"ok":"false","errors":{"rootErrors":[],"fieldErrors":{"email":["Invalid format"]}}}\
                 """);
     }
 
@@ -104,7 +104,7 @@ class ResultSerializerTest {
         String json = mapper.writeValueAsString(result);
 
         assertThat(json).isEqualTo("""
-                {"errors":{"rootErrors":["Global error"],"fieldErrors":{"age":["Must be positive"],"name":["Required"]}},"ok":false}\
+                {"ok":"false","errors":{"rootErrors":["Global error"],"fieldErrors":{"age":["Must be positive"],"name":["Required"]}}}\
                 """);
     }
 
@@ -118,7 +118,7 @@ class ResultSerializerTest {
         String json = mapper.writeValueAsString(response);
 
         assertThat(json).isEqualTo("""
-                {"id":"123","result":{"ok":true,"value":"success"}}\
+                {"id":"123","result":{"ok":"true","value":"success"}}\
                 """);
     }
 
