@@ -255,6 +255,10 @@ Result<Address> addressResult = validation.asResult(address);
 
 ### Validating Collections
 
+#### Imperative Approach
+
+Use `Validation` for explicit iteration:
+
 ```java
 List<Item> items = ...;
 Validation validation = Validation.create();
@@ -268,20 +272,161 @@ for (int i = 0; i < items.size(); i++) {
 Result<List<Item>> result = validation.asResult(items);
 ```
 
-Or using streams:
+#### Stream-Based Approach with ResultCollector
+
+The `ResultCollector` class provides three specialized collectors for validating streams. **All three collectors
+accumulate ALL validation errors** before returning/throwing - they do not fail fast.
+
+**1. toResultList() - Functional Style (Recommended)**
+
+Returns `Result<List<T>>` with all validation errors accumulated:
 
 ```java
 import io.github.raniagus.javalidation.ResultCollector;
 
-Result<List<User>> users = items.stream()
-    .map(this::validateItem)
+// Validate all items, collect ALL errors
+Result<List<User>> result = items.stream()
+        .map(this::validateUser)
     .collect(ResultCollector.toResultList());
+
+// Handle result
+switch(result){
+        case Result.
+
+        Ok(List<User> users) ->
+
+        processUsers(users);
+    case Result.
+
+        Err(ValidationErrors errors) ->{
+
+        // errors contain all validation failures with indexes:
+        // "[0].email": ["Invalid format"]
+        // "[2].age": ["Must be 18 or older"]
+        logErrors(errors);
+    }
+            }
 ```
+
+**2. toList() - Imperative Style**
+
+Returns `List<T>` directly, throwing `JavalidationException` with all accumulated errors if any validation fails:
+
+```java
+try{
+List<User> users = items.stream()
+        .map(this::validateUser)
+        .collect(ResultCollector.toList());
+
+// All items valid
+processUsers(users);
+}catch(
+JavalidationException e){
+
+// Contains ALL indexed errors: "[0].email", "[2].age", etc.
+logErrors(e.getErrors());
+        }
+```
+
+**3. toPartitioned() - Process Valid Items Regardless**
+
+Returns `PartitionedResult<List<T>>` with both valid items and all errors:
+
+```java
+var partitioned = items.stream()
+        .map(this::validateUser)
+        .collect(ResultCollector.toPartitioned());
+
+// Process valid items even if some failed
+List<User> validUsers = partitioned.value();
+ValidationErrors errors = partitioned.errors();
+
+if(errors.
+
+isNotEmpty()){
+        logger.
+
+warn("Processed {} valid users, {} failed",
+     validUsers.size(),errors.
+
+count());
+
+logErrors(errors);
+}
+
+// Continue with valid users
+processUsers(validUsers);
+```
+
+**Error Indexing:**
+
+All three collectors automatically index errors by their position in the stream:
+
+```java
+// Input stream with 3 items (indices 0, 1, 2)
+// Items at index 0 and 2 have validation errors
+
+Result<List<Item>> result = stream.collect(ResultCollector.toResultList());
+
+// Errors are prefixed with "[index]":
+// "[0].field1": ["Error message"]
+// "[0].field2": ["Another error"]  
+// "[2].price": ["Must be positive"]
+```
+
+**Choosing the Right Collector:**
+
+| Collector         | Use When                                              | Returns                      |
+|-------------------|-------------------------------------------------------|------------------------------|
+| `toResultList()`  | You want functional error handling with `Result` type | `Result<List<T>>`            |
+| `toList()`        | You want imperative error handling with exceptions    | `List<T>`                    |
+| `toPartitioned()` | You want to process valid items even if some fail     | `PartitionedResult<List<T>>` |
+
+**Note:** All collectors process the entire stream and accumulate ALL validation errors before returning or throwing.
+None of them fail fast on the first error.
 
 ## Error Handling: The Error Channel
 
-javalidation implements a dual error handling approach, distinguishing between expected validation failures and
-unexpected exceptions.
+javalidation implements a sophisticated dual error handling approach, inspired by Effect.TS, that distinguishes
+between **expected validation failures** and **unexpected programming errors**. This design decision is fundamental
+to the library's architecture.
+
+### Design Philosophy
+
+Traditional validation approaches force a choice:
+
+1. **Fail-fast with exceptions**: `if (!valid) throw new ValidationException();`
+    - Problem: Loses type safety, requires try-catch everywhere, only reports first error
+
+2. **Return Either/Validation types**: `Either<Error, Value>` or `Validation<List<Error>, Value>`
+    - Problem: ALL errors become values, including bugs like NullPointerException
+    - Debugging becomes harder when programming errors don't fail fast
+
+**The Error Channel Pattern solves this dilemma** by maintaining two separate error handling paths:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Error Channel Pattern                    │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  JavalidationException ──→ Caught by .map()/.flatMap()      │
+│      (Expected)            Converted to Err<T>              │
+│                            Accumulated with other errors    │
+│                            Safe to return to API clients    │
+│                                                             │
+│  Other Exceptions  ──────→ Propagate normally               │
+│      (Unexpected)          Fail fast                        │
+│                            Caught by global handlers        │
+│                            Logged and monitored             │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+This enables:
+
+- **Type-safe error accumulation** for business validation (via JavalidationException)
+- **Fail-fast debugging** for programming errors (via normal exception propagation)
+- **Clean separation** between "this is invalid user input" and "this is a bug"
 
 ### Error Channel (Well-Known Errors)
 
@@ -324,6 +469,46 @@ Result<User> result = Result.ok(userId)
 - **Should be monitored**: Log these errors and alert on them
 - **Generic responses**: Result in 500-level HTTP responses to clients
 
+### Real-World Example
+
+```java
+// Service layer with both error types
+public Result<Order> processOrder(OrderRequest request) {
+    return validateOrderRequest(request)                    // JavalidationException → Err
+            .map(req -> checkInventory(req))                    // JavalidationException → Err
+            .flatMap(req -> reserveInventory(req))              // JavalidationException → Err
+            .map(inv -> calculateShipping(inv))                 // IOException → PROPAGATES
+            .flatMap(order -> chargePayment(order));            // JavalidationException → Err
+}
+
+// Controller handles both paths
+@PostMapping("/orders")
+public ResponseEntity<?> createOrder(@RequestBody OrderRequest request) {
+    try {
+        Result<Order> result = orderService.processOrder(request);
+
+        return switch (result) {
+            case Result.Ok(Order order) -> ResponseEntity.ok(order);
+            case Result.Err(ValidationErrors errors) ->
+                // 409 Conflict: Request is valid but conflicts with current state
+                // (e.g., insufficient inventory, payment declined, business rule violation)
+                    ResponseEntity.status(409).body(Map.of(
+                            "errors", errors,
+                            "message", "Your order could not be processed"
+                    ));
+        };
+    } catch (IOException e) {
+        // 500-level: Infrastructure failure - log and alert
+        logger.error("Payment service unreachable", e);
+        return ResponseEntity.status(500).body("Service temporarily unavailable");
+    } catch (Exception e) {
+        // 500-level: Unknown bug - log and alert
+        logger.error("Unexpected error processing order", e);
+        return ResponseEntity.status(500).body("Internal server error");
+    }
+}
+```
+
 ### Best Practices
 
 **For validation failures in your domain logic:**
@@ -354,7 +539,11 @@ public ResponseEntity<?> createUser(@RequestBody UserRequest request) {
         
         return switch (result) {
             case Result.Ok(User u) -> ResponseEntity.ok(u);
-            case Result.Err(ValidationErrors e) -> ResponseEntity.status(409).body(e);
+            case Result.Err(ValidationErrors e) ->
+                // 409 Conflict: Valid request but business rules prevent processing
+                // Use 400 Bad Request for malformed input (handled by framework)
+                // Use 422 Unprocessable Content for semantic validation errors
+                    ResponseEntity.status(409).body(e);
         };
     } catch (Exception e) {
         logger.error("Unexpected error creating user", e);
@@ -372,13 +561,23 @@ public ResponseEntity<?> createUser(@RequestBody UserRequest request) {
 
 **When NOT to use JavalidationException:**
 
-- Null pointer access (it's recommended to use JSpecify nullness annotations instead)
+- Null pointer access (use JSpecify nullness annotations instead to prevent at compile-time)
 - Database connection failures (infrastructure errors)
 - Programming logic errors (assertions, IllegalStateException)
 - External service failures (IO exceptions, timeout errors)
 
+### Comparison with Other Approaches
+
+| Approach                         | Validation Errors | Programming Errors | Error Accumulation | Type Safety |
+|----------------------------------|-------------------|--------------------|--------------------|-------------|
+| **Exceptions**                   | ❌ Not accumulated | ✅ Fail fast        | ❌ No               | ❌ Unchecked |
+| **Either\<E,A\>**                | ✅ Type safe       | ❌ Become values    | ⚠️ Manual          | ✅ Yes       |
+| **Validation\<E,A\>**            | ✅ Accumulated     | ❌ Become values    | ✅ Automatic        | ✅ Yes       |
+| **Error Channel (This library)** | ✅ Accumulated     | ✅ Fail fast        | ✅ Automatic        | ✅ Yes       |
+
 This design philosophy keeps the validation error channel clean and predictable while preserving fail-fast behavior for
-genuine bugs and infrastructure problems.
+genuine bugs and infrastructure problems. It's the best of both worlds: **functional error accumulation for business
+validation, imperative exception handling for programming errors**.
 
 ## Spring Boot Integration
 

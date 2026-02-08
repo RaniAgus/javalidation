@@ -136,4 +136,109 @@ class ResultCollectorTest {
                         )
                 ));
     }
+
+    // -- edge cases --
+
+    @Test
+    void givenEmptyStream_whenToList_thenReturnsEmptyList() {
+        var list = Stream.<Result<String>>empty()
+                .collect(ResultCollector.toList());
+
+        assertThat(list).isEmpty();
+    }
+
+    @Test
+    void givenEmptyStream_whenToResultList_thenReturnsOkWithEmptyList() {
+        var result = Stream.<Result<String>>empty()
+                .collect(ResultCollector.toResultList());
+
+        assertThat(result).isInstanceOf(Result.Ok.class);
+        assertThat(result.getOrThrow()).isEmpty();
+    }
+
+    @Test
+    void givenEmptyStream_whenToPartitioned_thenReturnsEmptyValuesAndNoErrors() {
+        var partitioned = Stream.<Result<String>>empty()
+                .collect(ResultCollector.toPartitioned());
+
+        assertThat(partitioned.value()).isEmpty();
+        assertThat(partitioned.errors().isEmpty()).isTrue();
+    }
+
+    @Test
+    void givenResultsWithFieldErrors_whenToList_thenThrowsWithIndexedFieldErrors() {
+        Result<String> result1 = Result.ok("value1");
+        Result<String> result2 = Result.err("field", "Field error");
+        Result<String> result3 = Result.ok("value3");
+
+        assertThatThrownBy(() -> Stream.of(result1, result2, result3)
+                .collect(ResultCollector.toList()))
+                .isInstanceOf(JavalidationException.class)
+                .asInstanceOf(throwable(JavalidationException.class))
+                .extracting(JavalidationException::getErrors)
+                .extracting(ValidationErrors::fieldErrors)
+                .asInstanceOf(MAP)
+                .containsEntry("[0].field", List.of(TemplateString.of("Field error")));
+    }
+
+    @Test
+    void givenResultsWithFieldErrors_whenToResultList_thenReturnsErrWithIndexedFieldErrors() {
+        Result<String> result1 = Result.ok("value1");
+        Result<String> result2 = Result.err("field", "Field error");
+        Result<String> result3 = Result.ok("value3");
+
+        var result = Stream.of(result1, result2, result3)
+                .collect(ResultCollector.toResultList());
+
+        assertThat(result).isInstanceOf(Result.Err.class);
+        assertThat(result.getErrors())
+                .extracting(ValidationErrors::fieldErrors)
+                .asInstanceOf(MAP)
+                .containsEntry("[0].field", List.of(TemplateString.of("Field error")));
+    }
+
+    @Test
+    void givenResultsWithFieldErrors_whenToPartitioned_thenReturnsOkValuesAndIndexedFieldErrors() {
+        Result<String> result1 = Result.ok("value1");
+        Result<String> result2 = Result.err("field", "Field error");
+        Result<String> result3 = Result.ok("value3");
+
+        var partitioned = Stream.of(result1, result2, result3)
+                .collect(ResultCollector.toPartitioned());
+
+        assertThat(partitioned.value()).containsExactly("value1", "value3");
+        assertThat(partitioned.errors())
+                .extracting(ValidationErrors::fieldErrors)
+                .asInstanceOf(MAP)
+                .containsEntry("[0].field", List.of(TemplateString.of("Field error")));
+    }
+
+    @Test
+    void givenLargeStream_whenToResultList_thenAccumulatesAllErrors() {
+        var results = Stream.iterate(0, i -> i < 20, i -> i + 1)
+                .map(i -> i % 3 == 0
+                        ? Result.<Integer>err("error", "Error at " + i)
+                        : Result.ok(i))
+                .collect(ResultCollector.toResultList());
+
+        assertThat(results).isInstanceOf(Result.Err.class);
+        assertThat(results.getErrors().fieldErrors()).hasSize(7);
+        assertThat(results.getErrors().fieldErrors())
+                .containsKeys("[0].error", "[1].error", "[2].error", "[3].error",
+                        "[4].error", "[5].error", "[6].error");
+    }
+
+    @Test
+    void givenAllErrResults_whenToPartitioned_thenReturnsEmptyValuesWithAllErrors() {
+        Result<String> result1 = Result.err(ErrorStrings.ERROR_1);
+        Result<String> result2 = Result.err(ErrorStrings.ERROR_2);
+        Result<String> result3 = Result.err(ErrorStrings.ERROR_3);
+
+        var partitioned = Stream.of(result1, result2, result3)
+                .collect(ResultCollector.toPartitioned());
+
+        assertThat(partitioned.value()).isEmpty();
+        assertThat(partitioned.errors().isNotEmpty()).isTrue();
+        assertThat(partitioned.errors().fieldErrors()).hasSize(3);
+    }
 }

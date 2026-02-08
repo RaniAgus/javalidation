@@ -321,6 +321,13 @@ public sealed interface Result<T extends @Nullable Object> {
      * @param mapper the function to transform the success value
      * @param <U> the type of the transformed value
      * @return a new result with the transformed value, or the same errors
+     * @implNote Only {@link JavalidationException} is caught and converted to {@link Err}. All other
+     *           exceptions (such as {@link NullPointerException}, {@link IllegalStateException},
+     *           {@link java.io.IOException}, etc.) propagate normally through the call stack. This
+     *           design distinguishes expected validation failures from unexpected programming errors,
+     *           enabling fail-fast behavior for bugs while maintaining functional error accumulation
+     *           for domain validation failures. See the "Error Channel" section in the class documentation
+     *           for the complete rationale.
      */
     default <U extends @Nullable Object> Result<U> map(Function<T, U> mapper) {
         try {
@@ -379,6 +386,13 @@ public sealed interface Result<T extends @Nullable Object> {
      * @param mapper the function that produces the next result
      * @param <U> the type of the next result's success value
      * @return the result produced by the mapper function, or the current errors
+     * @implNote Only {@link JavalidationException} is caught and converted to {@link Err}. All other
+     *           exceptions (such as {@link NullPointerException}, {@link IllegalStateException},
+     *           {@link java.io.IOException}, etc.) propagate normally through the call stack. This
+     *           design distinguishes expected validation failures from unexpected programming errors,
+     *           enabling fail-fast behavior for bugs while maintaining functional error accumulation
+     *           for domain validation failures. See the "Error Channel" section in the class documentation
+     *           for the complete rationale.
      */
     default <U extends @Nullable Object> Result<U> flatMap(Function<T, Result<U>> mapper) {
         try {
