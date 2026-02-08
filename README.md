@@ -106,6 +106,61 @@ repositories {
 }
 ```
 
+## API Overview
+
+### Result<T>
+
+| Method                                 | Description                           |
+|----------------------------------------|---------------------------------------|
+| `ok(T)`                                | Create successful result              |
+| `err(String)`                          | Create failed result with root error  |
+| `err(String, String)`                  | Create failed result with field error |
+| `map(Function)`                        | Transform success value               |
+| `flatMap(Function)`                    | Chain validations                     |
+| `filter(Predicate, String)`            | Conditional validation (root error)   |
+| `filter(Predicate, String, String)`    | Conditional validation (field error)  |
+| `check(BiConsumer)`                    | Add imperative validation logic       |
+| `and(Result)`                          | Start applicative combiner chain      |
+| `or(Result)` / `or(Supplier)`          | Provide fallback                      |
+| `fold(Function, Function)`             | Handle both cases                     |
+| `getOrThrow()`                         | Extract value or throw                |
+| `getOrElse(T)` / `getOrElse(Supplier)` | Extract value or default              |
+| `withPrefix(String)`                   | Namespace errors for nested objects   |
+
+### ResultCollector
+
+| Method                                      | Description                                                          |
+|---------------------------------------------|----------------------------------------------------------------------|
+| `toResultList()` / `toResultList(String)`   | Returns `Result<List<T>>` (`Ok` if all valid, `Err` with all errors) |
+| `toList()` / `toList(String)`               | Returns `List<T>` or throws with all accumulated errors              |
+| `toPartitioned()` / `toPartitioned(String)` | Returns valid items + errors (partial success)                       |
+
+### Validation
+
+| Method                                     | Description                              |
+|--------------------------------------------|------------------------------------------|
+| `create()`                                 | Create new empty validation              |
+| `addRootError(String, Object...)`          | Add root-level error                     |
+| `addFieldError(String, String, Object...)` | Add field-specific error                 |
+| `addAll(ValidationErrors)`                 | Merge errors                             |
+| `addAll(String, ValidationErrors)`         | Merge errors with prefix                 |
+| `finish()`                                 | Convert to immutable ValidationErrors    |
+| `asResult(T)`                              | Convert to Result                        |
+| `asResult(Supplier)`                       | Convert to Result (lazy)                 |
+| `check()`                                  | Throw if errors exist                    |
+| `checkAndGet(Supplier)`                    | Throw if errors exist, else return value |
+
+### ValidationErrors
+
+| Method                          | Description                    |
+|---------------------------------|--------------------------------|
+| `empty()`                       | Create empty errors            |
+| `of(String, Object...)`         | Create with single root error  |
+| `of(String, String, Object...)` | Create with single field error |
+| `mergeWith(ValidationErrors)`   | Merge two error sets           |
+| `withPrefix(String)`            | Add prefix to all fields       |
+| `isEmpty()` / `isNotEmpty()`    | Check if errors exist          |
+
 ### Basic Example
 
 ```java
@@ -877,53 +932,6 @@ Result<User> user = UserValidators.validateUser("John", 25, "john@example.com");
 
 **Key principle:** Use `.flatMap()` for fail-fast validation within a single field, and use `.and()` + `.combine()` to
 accumulate errors across multiple fields.
-
-## API Overview
-
-### Result<T>
-
-| Method                                 | Description                           |
-|----------------------------------------|---------------------------------------|
-| `ok(T)`                                | Create successful result              |
-| `err(String)`                          | Create failed result with root error  |
-| `err(String, String)`                  | Create failed result with field error |
-| `map(Function)`                        | Transform success value               |
-| `flatMap(Function)`                    | Chain validations                     |
-| `filter(Predicate, String)`            | Conditional validation (root error)   |
-| `filter(Predicate, String, String)`    | Conditional validation (field error)  |
-| `check(BiConsumer)`                    | Add imperative validation logic       |
-| `and(Result)`                          | Start applicative combiner chain      |
-| `or(Result)` / `or(Supplier)`          | Provide fallback                      |
-| `fold(Function, Function)`             | Handle both cases                     |
-| `getOrThrow()`                         | Extract value or throw                |
-| `getOrElse(T)` / `getOrElse(Supplier)` | Extract value or default              |
-| `withPrefix(String)`                   | Namespace errors for nested objects   |
-
-### Validation
-
-| Method                                     | Description                              |
-|--------------------------------------------|------------------------------------------|
-| `create()`                                 | Create new empty validation              |
-| `addRootError(String, Object...)`          | Add root-level error                     |
-| `addFieldError(String, String, Object...)` | Add field-specific error                 |
-| `addAll(ValidationErrors)`                 | Merge errors                             |
-| `addAll(String, ValidationErrors)`         | Merge errors with prefix                 |
-| `finish()`                                 | Convert to immutable ValidationErrors    |
-| `asResult(T)`                              | Convert to Result                        |
-| `asResult(Supplier)`                       | Convert to Result (lazy)                 |
-| `check()`                                  | Throw if errors exist                    |
-| `checkAndGet(Supplier)`                    | Throw if errors exist, else return value |
-
-### ValidationErrors
-
-| Method                          | Description                    |
-|---------------------------------|--------------------------------|
-| `empty()`                       | Create empty errors            |
-| `of(String, Object...)`         | Create with single root error  |
-| `of(String, String, Object...)` | Create with single field error |
-| `mergeWith(ValidationErrors)`   | Merge two error sets           |
-| `withPrefix(String)`            | Add prefix to all fields       |
-| `isEmpty()` / `isNotEmpty()`    | Check if errors exist          |
 
 ## Requirements
 
