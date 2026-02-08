@@ -241,4 +241,175 @@ class ResultCollectorTest {
         assertThat(partitioned.errors().isNotEmpty()).isTrue();
         assertThat(partitioned.errors().fieldErrors()).hasSize(3);
     }
+
+    // -- toList with prefix --
+
+    @Test
+    void givenAllOkResults_whenToListWithPrefix_thenReturnsListOfValues() {
+        Result<String> result1 = Result.ok("value1");
+        Result<String> result2 = Result.ok("value2");
+        Result<String> result3 = Result.ok("value3");
+
+        var list = Stream.of(result1, result2, result3)
+                .collect(ResultCollector.toList("items"));
+
+        assertThat(list).containsExactly("value1", "value2", "value3");
+    }
+
+    @Test
+    void givenSomeErrResults_whenToListWithPrefix_thenThrowsWithPrefixedIndexedErrors() {
+        Result<String> result1 = Result.err(ErrorStrings.ERROR_1);
+        Result<String> result2 = Result.err(
+                Validation.create()
+                        .addRootError(ErrorStrings.ERROR_2)
+                        .addRootError(ErrorStrings.ERROR_3)
+                        .finish()
+        );
+        Result<String> result3 = Result.ok("value");
+
+        assertThatThrownBy(() -> Stream.of(result1, result2, result3)
+                .collect(ResultCollector.toList("items")))
+                .isInstanceOf(JavalidationException.class)
+                .asInstanceOf(throwable(JavalidationException.class))
+                .extracting(JavalidationException::getErrors)
+                .extracting(ValidationErrors::fieldErrors)
+                .asInstanceOf(MAP)
+                .containsAllEntriesOf(Map.of(
+                        "items[0]", List.of(TemplateString.of("Error 1")),
+                        "items[1]", List.of(
+                                TemplateString.of("Error 2"),
+                                TemplateString.of("Error 3")
+                        )
+                ));
+    }
+
+    @Test
+    void givenResultsWithFieldErrors_whenToListWithPrefix_thenThrowsWithPrefixedIndexedFieldErrors() {
+        Result<String> result1 = Result.ok("value1");
+        Result<String> result2 = Result.err("field", "Field error");
+        Result<String> result3 = Result.ok("value3");
+
+        assertThatThrownBy(() -> Stream.of(result1, result2, result3)
+                .collect(ResultCollector.toList("order.items")))
+                .isInstanceOf(JavalidationException.class)
+                .asInstanceOf(throwable(JavalidationException.class))
+                .extracting(JavalidationException::getErrors)
+                .extracting(ValidationErrors::fieldErrors)
+                .asInstanceOf(MAP)
+                .containsEntry("order.items[0].field", List.of(TemplateString.of("Field error")));
+    }
+
+    // -- toResultList with prefix --
+
+    @Test
+    void givenAllOkResults_whenToResultListWithPrefix_thenReturnsOkWithList() {
+        Result<String> result1 = Result.ok("value1");
+        Result<String> result2 = Result.ok("value2");
+        Result<String> result3 = Result.ok("value3");
+
+        var result = Stream.of(result1, result2, result3)
+                .collect(ResultCollector.toResultList("items"));
+
+        assertThat(result.getOrThrow()).containsExactly("value1", "value2", "value3");
+    }
+
+    @Test
+    void givenSomeErrResults_whenToResultListWithPrefix_thenReturnsErrWithPrefixedIndexedErrors() {
+        Result<String> result1 = Result.err(ErrorStrings.ERROR_1);
+        Result<String> result2 = Result.err(
+                Validation.create()
+                        .addRootError(ErrorStrings.ERROR_2)
+                        .addRootError(ErrorStrings.ERROR_3)
+                        .finish()
+        );
+        Result<String> result3 = Result.ok("value");
+
+        var result = Stream.of(result1, result2, result3)
+                .collect(ResultCollector.toResultList("items"));
+
+        assertThat(result.getErrors())
+                .extracting(ValidationErrors::fieldErrors)
+                .asInstanceOf(MAP)
+                .containsAllEntriesOf(Map.of(
+                        "items[0]", List.of(TemplateString.of("Error 1")),
+                        "items[1]", List.of(
+                                TemplateString.of("Error 2"),
+                                TemplateString.of("Error 3")
+                        )
+                ));
+    }
+
+    @Test
+    void givenResultsWithFieldErrors_whenToResultListWithPrefix_thenReturnsErrWithPrefixedIndexedFieldErrors() {
+        Result<String> result1 = Result.ok("value1");
+        Result<String> result2 = Result.err("field", "Field error");
+        Result<String> result3 = Result.ok("value3");
+
+        var result = Stream.of(result1, result2, result3)
+                .collect(ResultCollector.toResultList("order.items"));
+
+        assertThat(result).isInstanceOf(Result.Err.class);
+        assertThat(result.getErrors())
+                .extracting(ValidationErrors::fieldErrors)
+                .asInstanceOf(MAP)
+                .containsEntry("order.items[0].field", List.of(TemplateString.of("Field error")));
+    }
+
+    // -- toPartitioned with prefix --
+
+    @Test
+    void givenAllOkResults_whenToPartitionedWithPrefix_thenReturnsValuesWithNoErrors() {
+        Result<String> result1 = Result.ok("value1");
+        Result<String> result2 = Result.ok("value2");
+        Result<String> result3 = Result.ok("value3");
+
+        var partitioned = Stream.of(result1, result2, result3)
+                .collect(ResultCollector.toPartitioned("items"));
+
+        assertThat(partitioned.value()).containsExactly("value1", "value2", "value3");
+        assertThat(partitioned.errors().isEmpty()).isTrue();
+    }
+
+    @Test
+    void givenSomeErrResults_whenToPartitionedWithPrefix_thenReturnsOkValuesAndPrefixedIndexedErrors() {
+        Result<String> result1 = Result.err(ErrorStrings.ERROR_1);
+        Result<String> result2 = Result.err(
+                Validation.create()
+                        .addRootError(ErrorStrings.ERROR_2)
+                        .addRootError(ErrorStrings.ERROR_3)
+                        .finish()
+        );
+        Result<String> result3 = Result.ok("value");
+
+        var partitioned = Stream.of(result1, result2, result3)
+                .collect(ResultCollector.toPartitioned("items"));
+
+        assertThat(partitioned.value()).containsExactly("value");
+        assertThat(partitioned.errors())
+                .extracting(ValidationErrors::fieldErrors)
+                .asInstanceOf(MAP)
+                .containsAllEntriesOf(Map.of(
+                        "items[0]", List.of(TemplateString.of("Error 1")),
+                        "items[1]", List.of(
+                                TemplateString.of("Error 2"),
+                                TemplateString.of("Error 3")
+                        )
+                ));
+    }
+
+    @Test
+    void givenResultsWithFieldErrors_whenToPartitionedWithPrefix_thenReturnsOkValuesAndPrefixedIndexedFieldErrors() {
+        Result<String> result1 = Result.ok("value1");
+        Result<String> result2 = Result.err("field", "Field error");
+        Result<String> result3 = Result.ok("value3");
+
+        var partitioned = Stream.of(result1, result2, result3)
+                .collect(ResultCollector.toPartitioned("order.items"));
+
+        assertThat(partitioned.value()).containsExactly("value1", "value3");
+        assertThat(partitioned.errors())
+                .extracting(ValidationErrors::fieldErrors)
+                .asInstanceOf(MAP)
+                .containsEntry("order.items[0].field", List.of(TemplateString.of("Field error")));
+    }
 }
