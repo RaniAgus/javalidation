@@ -251,8 +251,7 @@ public record ValidationErrors(
      * Example:
      * <pre>{@code
      * logger.warn("Validation failed with {} errors", errors.errorCount());
-     * }
-     * </p>
+     * }</pre>
      *
      * @return the total number of errors
      */
