@@ -19,24 +19,45 @@ dependency into your `pom.xml` file:
 
 ### Snapshots
 
-Also, snapshots of the master branch are deployed automatically with each
-successful commit. Instead of Maven Central, use the Sonatype snapshots
-repository at:
+Also, snapshots of the master branch are deployed automatically on each successful
+commit. Instead of Maven Central, you have to consume the Sonatype snapshots
+repository and add `-SNAPSHOT` suffix to the version identifier.
 
-```xml
-<url>https://central.sonatype.com/repository/maven-snapshots/</url>
-```
+#### Consuming via Maven
 
-You can add the repository in your `pom.xml` file:
+Configure your `pom.xml` file with the following `<repositories>` section:
   
 ```xml
-  <repositories>
-    <repository>
-      <id>sonatype-snapshots</id>
-      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
+<repositories>
+  <repository>
+    <name>Central Portal Snapshots</name>
+    <id>central-portal-snapshots</id>
+    <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+    <releases>
+      <enabled>false</enabled>
+    </releases>
+    <snapshots>
+      <enabled>true</enabled>
+    </snapshots>
+  </repository>
+</repositories>
+```
+
+#### Consuming via Gradle
+
+Configure your `build.gradle` file with the following:
+
+```gradle
+repositories {
+  maven {
+    name = 'Central Portal Snapshots'
+    url = 'https://central.sonatype.com/repository/maven-snapshots/'
+
+    // Only search this repository for the specific dependency
+    content {
+      includeModule("io.github.raniagus", "javalidation")
+    }
+  }
+  mavenCentral()
+}
 ```
