@@ -179,8 +179,12 @@ public record ValidationErrors(
         if (!rootErrors.isEmpty()) {
             prefixedFieldErrors.put(prefix, rootErrors);
         }
+        StringBuilder prefixBuilder = new StringBuilder(prefix).append(".");
+        int prefixLength = prefixBuilder.length();
         for (Map.Entry<String, List<TemplateString>> entry : fieldErrors.entrySet()) {
-            prefixedFieldErrors.put(prefix + "." + entry.getKey(), entry.getValue());
+            prefixBuilder.append(entry.getKey());
+            prefixedFieldErrors.put(prefixBuilder.toString(), entry.getValue());
+            prefixBuilder.setLength(prefixLength);
         }
         return new ValidationErrors(new ArrayList<>(), prefixedFieldErrors);
     }
