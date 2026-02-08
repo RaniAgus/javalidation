@@ -31,7 +31,7 @@ import java.util.Objects;
  * @param message the message template (must not be null)
  * @param args the arguments for the template placeholders (defensive copy is made)
  * @see TemplateStringFormatter
- * @see ValidationErrors
+ * @see io.github.raniagus.javalidation.ValidationErrors
  */
 public record TemplateString(String message, Object[] args) {
     /**
