@@ -290,22 +290,16 @@ Result<List<User>> result = items.stream()
     .collect(ResultCollector.toResultList());
 
 // Handle result
-switch(result){
-        case Result.
-
-        Ok(List<User> users) ->
-
+switch (result) {
+    case Result.Ok(List<User> users) ->
         processUsers(users);
-    case Result.
-
-        Err(ValidationErrors errors) ->{
-
+    case Result.Err(ValidationErrors errors) -> {
         // errors contain all validation failures with indexes:
         // "[0].email": ["Invalid format"]
         // "[2].age": ["Must be 18 or older"]
         logErrors(errors);
     }
-            }
+}
 ```
 
 **2. toList() - Imperative Style**
@@ -313,19 +307,17 @@ switch(result){
 Returns `List<T>` directly, throwing `JavalidationException` with all accumulated errors if any validation fails:
 
 ```java
-try{
-List<User> users = items.stream()
-        .map(this::validateUser)
-        .collect(ResultCollector.toList());
-
-// All items valid
-processUsers(users);
-}catch(
-JavalidationException e){
-
-// Contains ALL indexed errors: "[0].email", "[2].age", etc.
-logErrors(e.getErrors());
-        }
+try {
+    List<User> users = items.stream()
+            .map(this::validateUser)
+            .collect(ResultCollector.toList());
+    
+    // All items valid
+    processUsers(users);
+} catch (JavalidationException e) {
+    // Contains ALL indexed errors: "[0].email", "[2].age", etc.
+    logErrors(e.getErrors());
+}
 ```
 
 **3. toPartitioned() - Process Valid Items Regardless**
@@ -341,17 +333,9 @@ var partitioned = items.stream()
 List<User> validUsers = partitioned.value();
 ValidationErrors errors = partitioned.errors();
 
-if(errors.
-
-isNotEmpty()){
-        logger.
-
-warn("Processed {} valid users, {} failed",
-     validUsers.size(),errors.
-
-count());
-
-logErrors(errors);
+if (errors.isNotEmpty()) {
+    logger.warn("Processed {} valid users, {} failed", validUsers.size(), errors.count());
+    logErrors(errors);
 }
 
 // Continue with valid users
