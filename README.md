@@ -306,9 +306,10 @@ Result<List<Item>> result = validation.asResult(items);
 #### Stream-Based Approach with ResultCollector
 
 The `ResultCollector` class provides three specialized collectors for validating streams. **All three collectors
-accumulate ALL validation errors** before returning/throwing - they do not fail fast.
+accumulate all validation errors** before returning/throwing - they do not fail fast, so you can get comprehensive
+feedback on all items in the collection.
 
-**1. toResultList() - Functional Style (Recommended)**
+**1. toResultList() - Functional Style**
 
 Returns `Result<List<T>>` with all validation errors accumulated:
 
@@ -389,16 +390,42 @@ Result<List<Item>> result = stream.collect(ResultCollector.toResultList());
 // "[2].price": ["Must be positive"]
 ```
 
+**Custom Prefix for Nested Collections:**
+
+Each collector has an overloaded variant accepting a `prefix` parameter to namespace errors for nested structures:
+
+```java
+// Validate items in an order
+Result<List<Item>> items = order.getItems().stream()
+        .map(this::validateItem)
+        .collect(ResultCollector.toResultList("order.items"));
+
+// Errors appear as: "order.items[0].price", "order.items[1].name", etc.
+
+// Process valid items with prefix
+var partitioned = order.getLineItems().stream()
+        .map(this::validateLineItem)
+        .collect(ResultCollector.toPartitioned("lineItems"));
+
+// Errors: "lineItems[0].quantity", "lineItems[2].discount", etc.
+
+// Throw on error with custom prefix
+try {
+    List<Address> addresses = user.getAddresses().stream()
+            .map(this::validateAddress)
+            .collect(ResultCollector.toList("addresses"));
+} catch (JavalidationException e) {
+    // Errors: "addresses[0].street", "addresses[1].zipCode", etc.
+}
+```
+
 **Choosing the Right Collector:**
 
-| Collector         | Use When                                              | Returns                      |
-|-------------------|-------------------------------------------------------|------------------------------|
-| `toResultList()`  | You want functional error handling with `Result` type | `Result<List<T>>`            |
-| `toList()`        | You want imperative error handling with exceptions    | `List<T>`                    |
-| `toPartitioned()` | You want to process valid items even if some fail     | `PartitionedResult<List<T>>` |
-
-**Note:** All collectors process the entire stream and accumulate ALL validation errors before returning or throwing.
-None of them fail fast on the first error.
+| Collector            | Use When                                              | Returns                      |
+|----------------------|-------------------------------------------------------|------------------------------|
+| `toResultList(...)`  | You want functional error handling with `Result` type | `Result<List<T>>`            |
+| `toList(...)`        | You want imperative error handling with exceptions    | `List<T>`                    |
+| `toPartitioned(...)` | You want to process valid items even if some fail     | `PartitionedResult<List<T>>` |
 
 ## Error Handling: The Error Channel
 

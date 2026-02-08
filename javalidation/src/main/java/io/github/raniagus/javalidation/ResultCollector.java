@@ -66,7 +66,6 @@ public sealed abstract class ResultCollector<T extends @Nullable Object, R, SELF
         }
     }
 
-
     /**
      * Returns a {@link Collector} that accumulates {@link Result} elements into a {@link List}.
      * <p>
@@ -93,6 +92,7 @@ public sealed abstract class ResultCollector<T extends @Nullable Object, R, SELF
     public static <T extends @Nullable Object> Collector<Result<T>, ToList<T>, List<T>> toList() {
         return toList("");
     }
+
     /**
      * Returns a {@link Collector} that accumulates {@link Result} elements into a {@link List},
      * with a custom prefix prepended to error field paths.
@@ -119,6 +119,7 @@ public sealed abstract class ResultCollector<T extends @Nullable Object, R, SELF
     public static <T extends @Nullable Object> Collector<Result<T>, ToList<T>, List<T>> toList(String prefix) {
         return Collector.of(() -> new ToList<>(prefix), ToList::add, ToList::combine, ToList::finish);
     }
+
     /**
      * Returns a {@link Collector} that accumulates {@link Result} elements into a {@link Result} of {@link List}.
      * <p>
@@ -141,6 +142,7 @@ public sealed abstract class ResultCollector<T extends @Nullable Object, R, SELF
     public static <T extends @Nullable Object> Collector<Result<T>, ToResultList<T>, Result<List<T>>> toResultList() {
         return toResultList("");
     }
+
     /**
      * Returns a {@link Collector} that accumulates {@link Result} elements into a {@link Result} of {@link List},
      * with a custom prefix prepended to error field paths.
@@ -164,6 +166,7 @@ public sealed abstract class ResultCollector<T extends @Nullable Object, R, SELF
     public static <T extends @Nullable Object> Collector<Result<T>, ToResultList<T>, Result<List<T>>> toResultList(String prefix) {
         return Collector.of(() -> new ToResultList<>(prefix), ToResultList::add, ToResultList::combine, ToResultList::finish);
     }
+
     /**
      * Returns a {@link Collector} that partitions {@link Result} elements into success values and errors.
      * <p>
@@ -192,6 +195,7 @@ public sealed abstract class ResultCollector<T extends @Nullable Object, R, SELF
     public static <T extends @Nullable Object> Collector<Result<T>, ToPartitioned<T>, PartitionedResult<List<T>>> toPartitioned() {
         return toPartitioned("");
     }
+
     /**
      * Returns a {@link Collector} that partitions {@link Result} elements into success values and errors,
      * with a custom prefix prepended to error field paths.
@@ -221,5 +225,4 @@ public sealed abstract class ResultCollector<T extends @Nullable Object, R, SELF
     public static <T extends @Nullable Object> Collector<Result<T>, ToPartitioned<T>, PartitionedResult<List<T>>> toPartitioned(String prefix) {
         return Collector.of(() -> new ToPartitioned<>(prefix), ToPartitioned::add, ToPartitioned::combine, ToPartitioned::finish);
     }
-
 }
