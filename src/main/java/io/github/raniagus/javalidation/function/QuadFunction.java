@@ -5,31 +5,31 @@ import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Functional interface for a function that accepts 9 arguments and produces a result.
+ * Functional interface for a function that accepts 4 arguments and produces a result.
  * <p>
  * This is an extension of Java's built-in functional interfaces ({@link Function}, {@link java.util.function.BiFunction})
  * to support higher arities needed for applicative validation combiners.
  * <p>
  * Example:
  * <pre>{@code
- * NonaFunction<A, B, C, D, E, F, G, H, I, String> formatter =
- *     (a, b, c, d, e, f, g, h, i) -> String.format("Combined result", a, b, c, d, e, f, g, h, i);
+ * QuadFunction<A, B, C, D, String> formatter =
+ *     (a, b, c, d) -> String.format("Combined result", a, b, c, d);
  * }</pre>
  *
- * @param <A> <B> <C> <D> <E> <F> <G> <H> <I>> the types of the input arguments
+ * @param <A> <B> <C> <D>> the types of the input arguments
  * @param <R> the type of the result
  * @see Function
  * @see java.util.function.BiFunction
  */
 @FunctionalInterface
-public interface NonaFunction<A extends @Nullable Object, B extends @Nullable Object, C extends @Nullable Object, D extends @Nullable Object, E extends @Nullable Object, F extends @Nullable Object, G extends @Nullable Object, H extends @Nullable Object, I extends @Nullable Object, R extends @Nullable Object> {
+public interface QuadFunction<A extends @Nullable Object, B extends @Nullable Object, C extends @Nullable Object, D extends @Nullable Object, R extends @Nullable Object> {
     /**
      * Applies this function to the given arguments.
      *
-     * @param a, b, c, d, e, f, g, h, i the function arguments
+     * @param a, b, c, d the function arguments
      * @return the function result
      */
-    R apply(A a, B b, C c, D d, E e, F f, G g, H h, I i);
+    R apply(A a, B b, C c, D d);
 
     /**
      * Returns a composed function that first applies this function to its input,
@@ -40,9 +40,9 @@ public interface NonaFunction<A extends @Nullable Object, B extends @Nullable Ob
      * @return a composed function
      * @throws NullPointerException if {@code after} is null
      */
-    default <V extends @Nullable Object> NonaFunction<A, B, C, D, E, F, G, H, I, V> andThen(
+    default <V extends @Nullable Object> QuadFunction<A, B, C, D, V> andThen(
             Function<? super @Nullable R, ? extends @Nullable V> after) {
         Objects.requireNonNull(after);
-        return (a, b, c, d, e, f, g, h, i) -> after.apply(apply(a, b, c, d, e, f, g, h, i));
+        return (a, b, c, d) -> after.apply(apply(a, b, c, d));
     }
 }

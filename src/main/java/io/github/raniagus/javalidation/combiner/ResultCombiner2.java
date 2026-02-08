@@ -5,7 +5,7 @@ import java.util.function.BiFunction;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Combines two {@link Result}s using the applicative functor pattern.
+ * Combines 2 {@link Result}s using the applicative functor pattern.
  * <p>
  * This is part of a chain of combiners (ResultCombiner2 through ResultCombiner10) that enable
  * combining multiple validation results while accumulating all errors. This combiner specifically
@@ -14,7 +14,7 @@ import org.jspecify.annotations.Nullable;
  * You typically create this via {@link Result#and(Result)} and either:
  * <ul>
  *   <li>Chain more results with {@link #and(Result)} (returns ResultCombiner3)</li>
- *   <li>Terminate with {@link #combine(BiFunction)} to produce the final result</li>
+ *   <li>Terminate with {@link #combine(BiFunction<T1, T2, R>)} to produce the final result</li>
  * </ul>
  * <p>
  * <b>All errors from all results are accumulated.</b> The success function is only called if
@@ -24,56 +24,52 @@ import org.jspecify.annotations.Nullable;
  * <pre>{@code
  * Result<Person> person = validateName(name)
  *     .and(validateAge(age))
- *     .combine((validName, validAge) -> new Person(validName, validAge));
+ *     .combine((v1, v2) -> new Person(v1, v2));
  * }</pre>
  * <p>
- * If {@code validateName} returns {@code Err("name", "Invalid")} and {@code validateAge} returns
- * {@code Err("age", "Too young")}, both errors are accumulated in the final {@code Err} result.
+ * If any validation fails, all errors are accumulated in the final {@code Err} result.
  *
- * @param result1 the first result
- * @param result2 the second result
- * @param <T1> the type of the first result's success value
- * @param <T2> the type of the second result's success value
+ * @param <T1> <T2>> the types of the results' success values
  * @see Result#and(Result)
- * @see ResultCombiner3
  */
 public record ResultCombiner2<T1 extends @Nullable Object, T2 extends @Nullable Object>(
         Result<T1> result1,
         Result<T2> result2
 ) {
     /**
-     * Chains a third result, producing a {@link ResultCombiner3}.
+     * Chains another result, producing a {@link ResultCombiner3}.
      * <p>
      * Example:
      * <pre>{@code
      * result1.and(result2)
      *     .and(result3)
-     *     .combine((v1, v2, v3) -> new Triple(v1, v2, v3));
+     *     .combine((v1, v2, v3) -> new Combined(v1, v2, v3));
      * }</pre>
      *
-     * @param result3 the third result to combine
-     * @param <T3> the type of the third result's success value
-     * @return a combiner for three results
+     * @param result3 the next result to combine
+     * @param <T3> the type of the next result's success value
+     * @return a combiner for 3 results
      */
     public <T3 extends @Nullable Object> ResultCombiner3<T1, T2, T3> and(Result<T3> result3) {
         return new ResultCombiner3<>(result1, result2, result3);
     }
 
+
     /**
-     * Combines the two results by applying the success function if both are {@link Result.Ok}.
+     * Combines the two results by applying the success function if all are {@link Result.Ok}.
      * <p>
-     * If either result is {@link Result.Err}, all errors are accumulated and no success function is called.
+     * If any result is {@link Result.Err}, all errors are accumulated and no success function is called.
      * <p>
      * Example:
      * <pre>{@code
-     * Result<Person> person = validateName("Alice")
-     *     .and(validateAge(30))
-     *     .combine((name, age) -> new Person(name, age));
+     * Result<Combined> result = combiner.combine((v1, v2) ->
+     *     new Combined(v1, v2)
+     * );
      * }</pre>
      *
-     * @param onSuccess function to apply to both success values
+     * @param onSuccess function to apply to all success values
      * @param <R> the type of the combined result
-     * @return {@link Result.Ok} with the combined value if both results succeed, otherwise {@link Result.Err}
+     * @return {@link Result.Ok} with the combined value if all results succeed, otherwise {@link Result.Err}
      */
     public <R extends @Nullable Object> Result<R> combine(BiFunction<T1, T2, R> onSuccess) {
         return Result.combine(

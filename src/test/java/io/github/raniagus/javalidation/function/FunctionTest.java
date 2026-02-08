@@ -22,18 +22,18 @@ class FunctionTest {
     }
 
     @Test
-    void tetraFunctionAndThen() {
-        TetraFunction<String, String, String, String, String> tetraFunction = (a, b, c, d) -> a + b + c + d;
-        TetraFunction<String, String, String, String, String> tetraFunctionAndThen = tetraFunction.andThen((e) -> e + "e");
+    void quadFunctionAndThen() {
+        QuadFunction<String, String, String, String, String> quadFunction = (a, b, c, d) -> a + b + c + d;
+        QuadFunction<String, String, String, String, String> quadFunctionAndThen = quadFunction.andThen((e) -> e + "e");
 
-        assertThat(tetraFunctionAndThen.apply("a", "b", "c", "d")).isEqualTo("abcde");
+        assertThat(quadFunctionAndThen.apply("a", "b", "c", "d")).isEqualTo("abcde");
     }
 
     @Test
-    void tetraFunctionAndThenWithNull() {
-        TetraFunction<String, String, String, String, String> tetraFunction = (a, b, c, d) -> a + b + c + d;
+    void quadFunctionAndThenWithNull() {
+        QuadFunction<String, String, String, String, String> quadFunction = (a, b, c, d) -> a + b + c + d;
 
-        assertThatThrownBy(() -> tetraFunction.andThen(null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> quadFunction.andThen(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
