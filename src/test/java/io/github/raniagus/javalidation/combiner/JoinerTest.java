@@ -11,397 +11,415 @@ import io.github.raniagus.javalidation.util.Person;
 import org.junit.jupiter.api.Test;
 
 class JoinerTest {
-    @Test
-    void sePuedeFusionarDosResultadosExitosos() {
-        Result<String> resultado1 = Result.ok("Agustin");
-        Result<Integer> resultado2 = Result.ok(23);
 
-        Result<Person> resultadoConcatenado = resultado1
-                .and(resultado2)
+    // -- ResultCombiner2 --
+
+    @Test
+    void givenTwoOkResults_whenCombine_thenCombinesValues() {
+        Result<String> result1 = Result.ok("Agustin");
+        Result<Integer> result2 = Result.ok(23);
+
+        Result<Person> combined = result1
+                .and(result2)
                 .combine(Person::new);
 
-        assertThat(resultadoConcatenado.getOrThrow()).isEqualTo(new Person("Agustin", 23));
+        assertThat(combined.getOrThrow()).isEqualTo(new Person("Agustin", 23));
     }
 
     @Test
-    void sePuedeFusionarDosResultadosFallidos() {
-        Result<String> resultado1 = Result.err(ErrorStrings.ERROR_1);
-        Result<Integer> resultado2 = Result.err(ErrorStrings.ERROR_2);
+    void givenTwoErrResults_whenCombine_thenAccumulatesErrors() {
+        Result<String> result1 = Result.err(ErrorStrings.ERROR_1);
+        Result<Integer> result2 = Result.err(ErrorStrings.ERROR_2);
 
-        Result<Person> resultadoConcatenado = resultado1
-                .and(resultado2)
+        Result<Person> combined = result1
+                .and(result2)
                 .combine(Person::new);
 
-        assertThat(resultadoConcatenado.getErrors())
+        assertThat(combined.getErrors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
                 .map(TemplateString::message)
                 .containsExactly("Error 1", "Error 2");
     }
 
-    @Test
-    void sePuedeFusionarTresResultadosExitosos() {
-        Result<Integer> resultado1 = Result.ok(6);
-        Result<Integer> resultado2 = Result.ok(7);
-        Result<Integer> resultado3 = Result.ok(8);
+    // -- ResultCombiner3 --
 
-        Result<Integer> resultadoConcatenado = resultado1
-                .and(resultado2)
-                .and(resultado3)
+    @Test
+    void givenThreeOkResults_whenCombine_thenCombinesValues() {
+        Result<Integer> result1 = Result.ok(1);
+        Result<Integer> result2 = Result.ok(2);
+        Result<Integer> result3 = Result.ok(3);
+
+        Result<Integer> combined = result1
+                .and(result2)
+                .and(result3)
                 .combine((a, b, c) -> a + b + c);
 
-        assertThat(resultadoConcatenado.getOrThrow()).isEqualTo(21);
+        assertThat(combined.getOrThrow()).isEqualTo(6);
     }
 
     @Test
-    void sePuedeFusionarTresResultadosFallidos() {
-        Result<Integer> resultado1 = Result.err(ErrorStrings.ERROR_1);
-        Result<Integer> resultado2 = Result.err(ErrorStrings.ERROR_2);
-        Result<Integer> resultado3 = Result.err(ErrorStrings.ERROR_3);
+    void givenThreeErrResults_whenCombine_thenAccumulatesErrors() {
+        Result<Integer> result1 = Result.err(ErrorStrings.ERROR_1);
+        Result<Integer> result2 = Result.err(ErrorStrings.ERROR_2);
+        Result<Integer> result3 = Result.err(ErrorStrings.ERROR_3);
 
-        Result<Integer> resultadoConcatenado = resultado1
-                .and(resultado2)
-                .and(resultado3)
+        Result<Integer> combined = result1
+                .and(result2)
+                .and(result3)
                 .combine((a, b, c) -> a + b + c);
 
-        assertThat(resultadoConcatenado.getErrors())
+        assertThat(combined.getErrors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
                 .map(TemplateString::message)
                 .containsExactly("Error 1", "Error 2", "Error 3");
     }
 
-    @Test
-    void sePuedeFusionarCuatroResultadosExitosos() {
-        Result<Integer> resultado1 = Result.ok(6);
-        Result<Integer> resultado2 = Result.ok(7);
-        Result<Integer> resultado3 = Result.ok(8);
-        Result<Integer> resultado4 = Result.ok(9);
+    // -- ResultCombiner4 --
 
-        Result<Integer> resultadoConcatenado = resultado1
-                .and(resultado2)
-                .and(resultado3)
-                .and(resultado4)
+    @Test
+    void givenFourOkResults_whenCombine_thenCombinesValues() {
+        Result<Integer> result1 = Result.ok(1);
+        Result<Integer> result2 = Result.ok(2);
+        Result<Integer> result3 = Result.ok(3);
+        Result<Integer> result4 = Result.ok(4);
+
+        Result<Integer> combined = result1
+                .and(result2)
+                .and(result3)
+                .and(result4)
                 .combine((a, b, c, d) -> a + b + c + d);
 
-        assertThat(resultadoConcatenado.getOrThrow()).isEqualTo(30);
+        assertThat(combined.getOrThrow()).isEqualTo(10);
     }
 
     @Test
-    void sePuedeFusionarCuatroResultadosFallidos() {
-        Result<Integer> resultado1 = Result.err(ErrorStrings.ERROR_1);
-        Result<Integer> resultado2 = Result.err(ErrorStrings.ERROR_2);
-        Result<Integer> resultado3 = Result.err(ErrorStrings.ERROR_3);
-        Result<Integer> resultado4 = Result.err(ErrorStrings.ERROR_4);
+    void givenFourErrResults_whenCombine_thenAccumulatesErrors() {
+        Result<Integer> result1 = Result.err(ErrorStrings.ERROR_1);
+        Result<Integer> result2 = Result.err(ErrorStrings.ERROR_2);
+        Result<Integer> result3 = Result.err(ErrorStrings.ERROR_3);
+        Result<Integer> result4 = Result.err(ErrorStrings.ERROR_4);
 
-        Result<Integer> resultadoConcatenado = resultado1
-                .and(resultado2)
-                .and(resultado3)
-                .and(resultado4)
+        Result<Integer> combined = result1
+                .and(result2)
+                .and(result3)
+                .and(result4)
                 .combine((a, b, c, d) -> a + b + c + d);
 
-        assertThat(resultadoConcatenado.getErrors())
+        assertThat(combined.getErrors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
                 .map(TemplateString::message)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4");
     }
 
-    @Test
-    void sePuedeFusionarCincoResultadosExitosos() {
-        Result<Integer> resultado1 = Result.ok(6);
-        Result<Integer> resultado2 = Result.ok(7);
-        Result<Integer> resultado3 = Result.ok(8);
-        Result<Integer> resultado4 = Result.ok(9);
-        Result<Integer> resultado5 = Result.ok(10);
+    // -- ResultCombiner5 --
 
-        Result<Integer> resultadoConcatenado = resultado1
-                .and(resultado2)
-                .and(resultado3)
-                .and(resultado4)
-                .and(resultado5)
+    @Test
+    void givenFiveOkResults_whenCombine_thenCombinesValues() {
+        Result<Integer> result1 = Result.ok(1);
+        Result<Integer> result2 = Result.ok(2);
+        Result<Integer> result3 = Result.ok(3);
+        Result<Integer> result4 = Result.ok(4);
+        Result<Integer> result5 = Result.ok(5);
+
+        Result<Integer> combined = result1
+                .and(result2)
+                .and(result3)
+                .and(result4)
+                .and(result5)
                 .combine((a, b, c, d, e) -> a + b + c + d + e);
 
-        assertThat(resultadoConcatenado.getOrThrow()).isEqualTo(40);
+        assertThat(combined.getOrThrow()).isEqualTo(15);
     }
 
     @Test
-    void sePuedeFusionarCincoResultadosFallidos() {
-        Result<Integer> resultado1 = Result.err(ErrorStrings.ERROR_1);
-        Result<Integer> resultado2 = Result.err(ErrorStrings.ERROR_2);
-        Result<Integer> resultado3 = Result.err(ErrorStrings.ERROR_3);
-        Result<Integer> resultado4 = Result.err(ErrorStrings.ERROR_4);
-        Result<Integer> resultado5 = Result.err(ErrorStrings.ERROR_5);
+    void givenFiveErrResults_whenCombine_thenAccumulatesErrors() {
+        Result<Integer> result1 = Result.err(ErrorStrings.ERROR_1);
+        Result<Integer> result2 = Result.err(ErrorStrings.ERROR_2);
+        Result<Integer> result3 = Result.err(ErrorStrings.ERROR_3);
+        Result<Integer> result4 = Result.err(ErrorStrings.ERROR_4);
+        Result<Integer> result5 = Result.err(ErrorStrings.ERROR_5);
 
-        Result<Integer> resultadoConcatenado = resultado1
-                .and(resultado2)
-                .and(resultado3)
-                .and(resultado4)
-                .and(resultado5)
+        Result<Integer> combined = result1
+                .and(result2)
+                .and(result3)
+                .and(result4)
+                .and(result5)
                 .combine((a, b, c, d, e) -> a + b + c + d + e);
 
-        assertThat(resultadoConcatenado.getErrors())
+        assertThat(combined.getErrors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
                 .map(TemplateString::message)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4", "Error 5");
     }
 
-    @Test
-    void sePuedeFusionarSeisResultadosExitosos() {
-        Result<Integer> resultado1 = Result.ok(6);
-        Result<Integer> resultado2 = Result.ok(7);
-        Result<Integer> resultado3 = Result.ok(8);
-        Result<Integer> resultado4 = Result.ok(9);
-        Result<Integer> resultado5 = Result.ok(10);
-        Result<Integer> resultado6 = Result.ok(11);
+    // -- ResultCombiner6 --
 
-        Result<Integer> resultadoConcatenado = resultado1
-                .and(resultado2)
-                .and(resultado3)
-                .and(resultado4)
-                .and(resultado5)
-                .and(resultado6)
+    @Test
+    void givenSixOkResults_whenCombine_thenCombinesValues() {
+        Result<Integer> result1 = Result.ok(1);
+        Result<Integer> result2 = Result.ok(2);
+        Result<Integer> result3 = Result.ok(3);
+        Result<Integer> result4 = Result.ok(4);
+        Result<Integer> result5 = Result.ok(5);
+        Result<Integer> result6 = Result.ok(6);
+
+        Result<Integer> combined = result1
+                .and(result2)
+                .and(result3)
+                .and(result4)
+                .and(result5)
+                .and(result6)
                 .combine((a, b, c, d, e, f) -> a + b + c + d + e + f);
 
-        assertThat(resultadoConcatenado.getOrThrow()).isEqualTo(51);
+        assertThat(combined.getOrThrow()).isEqualTo(21);
     }
 
     @Test
-    void sePuedeFusionarSeisResultadosFallidos() {
-        Result<Integer> resultado1 = Result.err(ErrorStrings.ERROR_1);
-        Result<Integer> resultado2 = Result.err(ErrorStrings.ERROR_2);
-        Result<Integer> resultado3 = Result.err(ErrorStrings.ERROR_3);
-        Result<Integer> resultado4 = Result.err(ErrorStrings.ERROR_4);
-        Result<Integer> resultado5 = Result.err(ErrorStrings.ERROR_5);
-        Result<Integer> resultado6 = Result.err(ErrorStrings.ERROR_6);
+    void givenSixErrResults_whenCombine_thenAccumulatesErrors() {
+        Result<Integer> result1 = Result.err(ErrorStrings.ERROR_1);
+        Result<Integer> result2 = Result.err(ErrorStrings.ERROR_2);
+        Result<Integer> result3 = Result.err(ErrorStrings.ERROR_3);
+        Result<Integer> result4 = Result.err(ErrorStrings.ERROR_4);
+        Result<Integer> result5 = Result.err(ErrorStrings.ERROR_5);
+        Result<Integer> result6 = Result.err(ErrorStrings.ERROR_6);
 
-        Result<Integer> resultadoConcatenado = resultado1
-                .and(resultado2)
-                .and(resultado3)
-                .and(resultado4)
-                .and(resultado5)
-                .and(resultado6)
+        Result<Integer> combined = result1
+                .and(result2)
+                .and(result3)
+                .and(result4)
+                .and(result5)
+                .and(result6)
                 .combine((a, b, c, d, e, f) -> a + b + c + d + e + f);
 
-        assertThat(resultadoConcatenado.getErrors())
+        assertThat(combined.getErrors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
                 .map(TemplateString::message)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4", "Error 5", "Error 6");
     }
 
-    @Test
-    void sePuedeFusionarSieteResultadosExitosos() {
-        Result<Integer> resultado1 = Result.ok(6);
-        Result<Integer> resultado2 = Result.ok(7);
-        Result<Integer> resultado3 = Result.ok(8);
-        Result<Integer> resultado4 = Result.ok(9);
-        Result<Integer> resultado5 = Result.ok(10);
-        Result<Integer> resultado6 = Result.ok(11);
-        Result<Integer> resultado7 = Result.ok(12);
+    // -- ResultCombiner7 --
 
-        Result<Integer> resultadoConcatenado = resultado1
-                .and(resultado2)
-                .and(resultado3)
-                .and(resultado4)
-                .and(resultado5)
-                .and(resultado6)
-                .and(resultado7)
+    @Test
+    void givenSevenOkResults_whenCombine_thenCombinesValues() {
+        Result<Integer> result1 = Result.ok(1);
+        Result<Integer> result2 = Result.ok(2);
+        Result<Integer> result3 = Result.ok(3);
+        Result<Integer> result4 = Result.ok(4);
+        Result<Integer> result5 = Result.ok(5);
+        Result<Integer> result6 = Result.ok(6);
+        Result<Integer> result7 = Result.ok(7);
+
+        Result<Integer> combined = result1
+                .and(result2)
+                .and(result3)
+                .and(result4)
+                .and(result5)
+                .and(result6)
+                .and(result7)
                 .combine((a, b, c, d, e, f, g) -> a + b + c + d + e + f + g);
 
-        assertThat(resultadoConcatenado.getOrThrow()).isEqualTo(63);
+        assertThat(combined.getOrThrow()).isEqualTo(28);
     }
 
     @Test
-    void sePuedeFusionarSieteResultadosFallidos() {
-        Result<Integer> resultado1 = Result.err(ErrorStrings.ERROR_1);
-        Result<Integer> resultado2 = Result.err(ErrorStrings.ERROR_2);
-        Result<Integer> resultado3 = Result.err(ErrorStrings.ERROR_3);
-        Result<Integer> resultado4 = Result.err(ErrorStrings.ERROR_4);
-        Result<Integer> resultado5 = Result.err(ErrorStrings.ERROR_5);
-        Result<Integer> resultado6 = Result.err(ErrorStrings.ERROR_6);
-        Result<Integer> resultado7 = Result.err(ErrorStrings.ERROR_7);
+    void givenSevenErrResults_whenCombine_thenAccumulatesErrors() {
+        Result<Integer> result1 = Result.err(ErrorStrings.ERROR_1);
+        Result<Integer> result2 = Result.err(ErrorStrings.ERROR_2);
+        Result<Integer> result3 = Result.err(ErrorStrings.ERROR_3);
+        Result<Integer> result4 = Result.err(ErrorStrings.ERROR_4);
+        Result<Integer> result5 = Result.err(ErrorStrings.ERROR_5);
+        Result<Integer> result6 = Result.err(ErrorStrings.ERROR_6);
+        Result<Integer> result7 = Result.err(ErrorStrings.ERROR_7);
 
-        Result<Integer> resultadoConcatenado = resultado1
-                .and(resultado2)
-                .and(resultado3)
-                .and(resultado4)
-                .and(resultado5)
-                .and(resultado6)
-                .and(resultado7)
+        Result<Integer> combined = result1
+                .and(result2)
+                .and(result3)
+                .and(result4)
+                .and(result5)
+                .and(result6)
+                .and(result7)
                 .combine((a, b, c, d, e, f, g) -> a + b + c + d + e + f + g);
 
-        assertThat(resultadoConcatenado.getErrors())
+        assertThat(combined.getErrors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
                 .map(TemplateString::message)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4", "Error 5", "Error 6", "Error 7");
     }
 
-    @Test
-    void sePuedeFusionarOchoResultadosExitosos() {
-        Result<Integer> resultado1 = Result.ok(6);
-        Result<Integer> resultado2 = Result.ok(7);
-        Result<Integer> resultado3 = Result.ok(8);
-        Result<Integer> resultado4 = Result.ok(9);
-        Result<Integer> resultado5 = Result.ok(10);
-        Result<Integer> resultado6 = Result.ok(11);
-        Result<Integer> resultado7 = Result.ok(12);
-        Result<Integer> resultado8 = Result.ok(13);
+    // -- ResultCombiner8 --
 
-        Result<Integer> resultadoConcatenado = resultado1
-                .and(resultado2)
-                .and(resultado3)
-                .and(resultado4)
-                .and(resultado5)
-                .and(resultado6)
-                .and(resultado7)
-                .and(resultado8)
+    @Test
+    void givenEightOkResults_whenCombine_thenCombinesValues() {
+        Result<Integer> result1 = Result.ok(1);
+        Result<Integer> result2 = Result.ok(2);
+        Result<Integer> result3 = Result.ok(3);
+        Result<Integer> result4 = Result.ok(4);
+        Result<Integer> result5 = Result.ok(5);
+        Result<Integer> result6 = Result.ok(6);
+        Result<Integer> result7 = Result.ok(7);
+        Result<Integer> result8 = Result.ok(8);
+
+        Result<Integer> combined = result1
+                .and(result2)
+                .and(result3)
+                .and(result4)
+                .and(result5)
+                .and(result6)
+                .and(result7)
+                .and(result8)
                 .combine((a, b, c, d, e, f, g, h) -> a + b + c + d + e + f + g + h);
 
-        assertThat(resultadoConcatenado.getOrThrow()).isEqualTo(76);
+        assertThat(combined.getOrThrow()).isEqualTo(36);
     }
 
     @Test
-    void sePuedeFusionarOchoResultadosFallidos() {
-        Result<Integer> resultado1 = Result.err(ErrorStrings.ERROR_1);
-        Result<Integer> resultado2 = Result.err(ErrorStrings.ERROR_2);
-        Result<Integer> resultado3 = Result.err(ErrorStrings.ERROR_3);
-        Result<Integer> resultado4 = Result.err(ErrorStrings.ERROR_4);
-        Result<Integer> resultado5 = Result.err(ErrorStrings.ERROR_5);
-        Result<Integer> resultado6 = Result.err(ErrorStrings.ERROR_6);
-        Result<Integer> resultado7 = Result.err(ErrorStrings.ERROR_7);
-        Result<Integer> resultado8 = Result.err(ErrorStrings.ERROR_8);
+    void givenEightErrResults_whenCombine_thenAccumulatesErrors() {
+        Result<Integer> result1 = Result.err(ErrorStrings.ERROR_1);
+        Result<Integer> result2 = Result.err(ErrorStrings.ERROR_2);
+        Result<Integer> result3 = Result.err(ErrorStrings.ERROR_3);
+        Result<Integer> result4 = Result.err(ErrorStrings.ERROR_4);
+        Result<Integer> result5 = Result.err(ErrorStrings.ERROR_5);
+        Result<Integer> result6 = Result.err(ErrorStrings.ERROR_6);
+        Result<Integer> result7 = Result.err(ErrorStrings.ERROR_7);
+        Result<Integer> result8 = Result.err(ErrorStrings.ERROR_8);
 
-        Result<Integer> resultadoConcatenado = resultado1
-                .and(resultado2)
-                .and(resultado3)
-                .and(resultado4)
-                .and(resultado5)
-                .and(resultado6)
-                .and(resultado7)
-                .and(resultado8)
+        Result<Integer> combined = result1
+                .and(result2)
+                .and(result3)
+                .and(result4)
+                .and(result5)
+                .and(result6)
+                .and(result7)
+                .and(result8)
                 .combine((a, b, c, d, e, f, g, h) -> a + b + c + d + e + f + g + h);
 
-        assertThat(resultadoConcatenado.getErrors())
+        assertThat(combined.getErrors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
                 .map(TemplateString::message)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4", "Error 5", "Error 6", "Error 7", "Error 8");
     }
 
-    @Test
-    void sePuedeFusionarNueveResultadosExitosos() {
-        Result<Integer> resultado1 = Result.ok(6);
-        Result<Integer> resultado2 = Result.ok(7);
-        Result<Integer> resultado3 = Result.ok(8);
-        Result<Integer> resultado4 = Result.ok(9);
-        Result<Integer> resultado5 = Result.ok(10);
-        Result<Integer> resultado6 = Result.ok(11);
-        Result<Integer> resultado7 = Result.ok(12);
-        Result<Integer> resultado8 = Result.ok(13);
-        Result<Integer> resultado9 = Result.ok(14);
+    // -- ResultCombiner9 --
 
-        Result<Integer> resultadoConcatenado = resultado1
-                .and(resultado2)
-                .and(resultado3)
-                .and(resultado4)
-                .and(resultado5)
-                .and(resultado6)
-                .and(resultado7)
-                .and(resultado8)
-                .and(resultado9)
+    @Test
+    void givenNineOkResults_whenCombine_thenCombinesValues() {
+        Result<Integer> result1 = Result.ok(1);
+        Result<Integer> result2 = Result.ok(2);
+        Result<Integer> result3 = Result.ok(3);
+        Result<Integer> result4 = Result.ok(4);
+        Result<Integer> result5 = Result.ok(5);
+        Result<Integer> result6 = Result.ok(6);
+        Result<Integer> result7 = Result.ok(7);
+        Result<Integer> result8 = Result.ok(8);
+        Result<Integer> result9 = Result.ok(9);
+
+        Result<Integer> combined = result1
+                .and(result2)
+                .and(result3)
+                .and(result4)
+                .and(result5)
+                .and(result6)
+                .and(result7)
+                .and(result8)
+                .and(result9)
                 .combine((a, b, c, d, e, f, g, h, i) -> a + b + c + d + e + f + g + h + i);
 
-        assertThat(resultadoConcatenado.getOrThrow()).isEqualTo(90);
+        assertThat(combined.getOrThrow()).isEqualTo(45);
     }
 
     @Test
-    void sePuedeFusionarNueveResultadosFallidos() {
-        Result<Integer> resultado1 = Result.err(ErrorStrings.ERROR_1);
-        Result<Integer> resultado2 = Result.err(ErrorStrings.ERROR_2);
-        Result<Integer> resultado3 = Result.err(ErrorStrings.ERROR_3);
-        Result<Integer> resultado4 = Result.err(ErrorStrings.ERROR_4);
-        Result<Integer> resultado5 = Result.err(ErrorStrings.ERROR_5);
-        Result<Integer> resultado6 = Result.err(ErrorStrings.ERROR_6);
-        Result<Integer> resultado7 = Result.err(ErrorStrings.ERROR_7);
-        Result<Integer> resultado8 = Result.err(ErrorStrings.ERROR_8);
-        Result<Integer> resultado9 = Result.err(ErrorStrings.ERROR_9);
+    void givenNineErrResults_whenCombine_thenAccumulatesErrors() {
+        Result<Integer> result1 = Result.err(ErrorStrings.ERROR_1);
+        Result<Integer> result2 = Result.err(ErrorStrings.ERROR_2);
+        Result<Integer> result3 = Result.err(ErrorStrings.ERROR_3);
+        Result<Integer> result4 = Result.err(ErrorStrings.ERROR_4);
+        Result<Integer> result5 = Result.err(ErrorStrings.ERROR_5);
+        Result<Integer> result6 = Result.err(ErrorStrings.ERROR_6);
+        Result<Integer> result7 = Result.err(ErrorStrings.ERROR_7);
+        Result<Integer> result8 = Result.err(ErrorStrings.ERROR_8);
+        Result<Integer> result9 = Result.err(ErrorStrings.ERROR_9);
 
-        Result<Integer> resultadoConcatenado = resultado1
-                .and(resultado2)
-                .and(resultado3)
-                .and(resultado4)
-                .and(resultado5)
-                .and(resultado6)
-                .and(resultado7)
-                .and(resultado8)
-                .and(resultado9)
+        Result<Integer> combined = result1
+                .and(result2)
+                .and(result3)
+                .and(result4)
+                .and(result5)
+                .and(result6)
+                .and(result7)
+                .and(result8)
+                .and(result9)
                 .combine((a, b, c, d, e, f, g, h, i) -> a + b + c + d + e + f + g + h + i);
 
-        assertThat(resultadoConcatenado.getErrors())
+        assertThat(combined.getErrors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
                 .map(TemplateString::message)
                 .containsExactly("Error 1", "Error 2", "Error 3", "Error 4", "Error 5", "Error 6", "Error 7", "Error 8", "Error 9");
     }
 
-    @Test
-    void sePuedeFusionarDiezResultadosExitosos() {
-        Result<Integer> resultado1 = Result.ok(6);
-        Result<Integer> resultado2 = Result.ok(7);
-        Result<Integer> resultado3 = Result.ok(8);
-        Result<Integer> resultado4 = Result.ok(9);
-        Result<Integer> resultado5 = Result.ok(10);
-        Result<Integer> resultado6 = Result.ok(11);
-        Result<Integer> resultado7 = Result.ok(12);
-        Result<Integer> resultado8 = Result.ok(13);
-        Result<Integer> resultado9 = Result.ok(14);
-        Result<Integer> resultado10 = Result.ok(15);
+    // -- ResultCombiner10 --
 
-        Result<Integer> resultadoConcatenado = resultado1
-                .and(resultado2)
-                .and(resultado3)
-                .and(resultado4)
-                .and(resultado5)
-                .and(resultado6)
-                .and(resultado7)
-                .and(resultado8)
-                .and(resultado9)
-                .and(resultado10)
+    @Test
+    void givenTenOkResults_whenCombine_thenCombinesValues() {
+        Result<Integer> result1 = Result.ok(1);
+        Result<Integer> result2 = Result.ok(2);
+        Result<Integer> result3 = Result.ok(3);
+        Result<Integer> result4 = Result.ok(4);
+        Result<Integer> result5 = Result.ok(5);
+        Result<Integer> result6 = Result.ok(6);
+        Result<Integer> result7 = Result.ok(7);
+        Result<Integer> result8 = Result.ok(8);
+        Result<Integer> result9 = Result.ok(9);
+        Result<Integer> result10 = Result.ok(10);
+
+        Result<Integer> combined = result1
+                .and(result2)
+                .and(result3)
+                .and(result4)
+                .and(result5)
+                .and(result6)
+                .and(result7)
+                .and(result8)
+                .and(result9)
+                .and(result10)
                 .combine((a, b, c, d, e, f, g, h, i, j) -> a + b + c + d + e + f + g + h + i + j);
 
-        assertThat(resultadoConcatenado.getOrThrow()).isEqualTo(105);
+        assertThat(combined.getOrThrow()).isEqualTo(55);
     }
 
     @Test
-    void sePuedeFusionarDiezResultadosFallidos() {
-        Result<Integer> resultado1 = Result.err(ErrorStrings.ERROR_1);
-        Result<Integer> resultado2 = Result.err(ErrorStrings.ERROR_2);
-        Result<Integer> resultado3 = Result.err(ErrorStrings.ERROR_3);
-        Result<Integer> resultado4 = Result.err(ErrorStrings.ERROR_4);
-        Result<Integer> resultado5 = Result.err(ErrorStrings.ERROR_5);
-        Result<Integer> resultado6 = Result.err(ErrorStrings.ERROR_6);
-        Result<Integer> resultado7 = Result.err(ErrorStrings.ERROR_7);
-        Result<Integer> resultado8 = Result.err(ErrorStrings.ERROR_8);
-        Result<Integer> resultado9 = Result.err(ErrorStrings.ERROR_9);
-        Result<Integer> resultado10 = Result.err(ErrorStrings.ERROR_10);
+    void givenTenErrResults_whenCombine_thenAccumulatesErrors() {
+        Result<Integer> result1 = Result.err(ErrorStrings.ERROR_1);
+        Result<Integer> result2 = Result.err(ErrorStrings.ERROR_2);
+        Result<Integer> result3 = Result.err(ErrorStrings.ERROR_3);
+        Result<Integer> result4 = Result.err(ErrorStrings.ERROR_4);
+        Result<Integer> result5 = Result.err(ErrorStrings.ERROR_5);
+        Result<Integer> result6 = Result.err(ErrorStrings.ERROR_6);
+        Result<Integer> result7 = Result.err(ErrorStrings.ERROR_7);
+        Result<Integer> result8 = Result.err(ErrorStrings.ERROR_8);
+        Result<Integer> result9 = Result.err(ErrorStrings.ERROR_9);
+        Result<Integer> result10 = Result.err(ErrorStrings.ERROR_10);
 
-        Result<Integer> resultadoConcatenado = resultado1
-                .and(resultado2)
-                .and(resultado3)
-                .and(resultado4)
-                .and(resultado5)
-                .and(resultado6)
-                .and(resultado7)
-                .and(resultado8)
-                .and(resultado9)
-                .and(resultado10)
+        Result<Integer> combined = result1
+                .and(result2)
+                .and(result3)
+                .and(result4)
+                .and(result5)
+                .and(result6)
+                .and(result7)
+                .and(result8)
+                .and(result9)
+                .and(result10)
                 .combine((a, b, c, d, e, f, g, h, i, j) -> a + b + c + d + e + f + g + h + i + j);
 
-
-        assertThat(resultadoConcatenado.getErrors())
+        assertThat(combined.getErrors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
                 .map(TemplateString::message)

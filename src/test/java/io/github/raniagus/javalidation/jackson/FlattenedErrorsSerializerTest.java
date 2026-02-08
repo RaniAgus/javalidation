@@ -23,8 +23,10 @@ class FlattenedErrorsSerializerTest {
                 .build();
     }
 
+    // -- serialize --
+
     @Test
-    void shouldSerializeOnlyRootErrors() {
+    void givenOnlyRootErrors_whenSerialize_thenUsesEmptyKeyForRoot() {
         ValidationErrors errors = new ValidationErrors(
                 List.of(TemplateString.of("root error")),
                 Map.of()
@@ -38,7 +40,7 @@ class FlattenedErrorsSerializerTest {
     }
 
     @Test
-    void shouldSerializeOnlyFieldErrors() {
+    void givenOnlyFieldErrors_whenSerialize_thenSerializesFieldsAsKeys() {
         ValidationErrors errors = new ValidationErrors(
                 List.of(),
                 Map.of(
@@ -55,7 +57,7 @@ class FlattenedErrorsSerializerTest {
     }
 
     @Test
-    void shouldFlattenRootAndFieldErrors() {
+    void givenRootAndFieldErrors_whenSerialize_thenFlattensBoth() {
         ValidationErrors errors = new ValidationErrors(
                 List.of(TemplateString.of("global error")),
                 Map.of(
@@ -71,7 +73,7 @@ class FlattenedErrorsSerializerTest {
     }
 
     @Test
-    void shouldSkipEmptyCollections() {
+    void givenEmpty_whenSerialize_thenReturnsEmptyObject() {
         ValidationErrors errors = new ValidationErrors(
                 List.of(),
                 Map.of()
@@ -85,9 +87,15 @@ class FlattenedErrorsSerializerTest {
     }
 
     @Test
-    void shouldSerializeInComplexObject() {
-        record Container(String id, ValidationErrors errors) {
-        }
+    void givenNull_whenSerialize_thenReturnsJsonNull() {
+        String json = mapper.writeValueAsString(null);
+
+        assertEquals("null", json);
+    }
+
+    @Test
+    void givenComplexObject_whenSerialize_thenSerializesNestedErrors() {
+        record Container(String id, ValidationErrors errors) {}
 
         Container container = new Container(
                 "123",
@@ -104,11 +112,5 @@ class FlattenedErrorsSerializerTest {
         assertThat(json).isEqualTo("""
                 {"id":"123","errors":{"":["root"],"field":["bad value"]}}\
                 """);
-    }
-
-    @Test
-    void shouldSerializeNullAsNull() {
-        String json = mapper.writeValueAsString(null);
-        assertEquals("null", json);
     }
 }

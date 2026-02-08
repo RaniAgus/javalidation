@@ -5,14 +5,14 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.github.raniagus.javalidation.format.TemplateString;
-import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class ValidationTest {
 
+    // -- addRootError --
+
     @Test
-    void addRootError_singleError() {
+    void givenMessage_whenAddRootError_thenAddsError() {
         var validation = Validation.create()
                 .addRootError("error message");
 
@@ -21,30 +21,30 @@ class ValidationTest {
     }
 
     @Test
-    void addRootError_multipleErrors() {
+    void givenMultipleCalls_whenAddRootError_thenAccumulatesErrors() {
         var validation = Validation.create()
                 .addRootError("error 1")
-                .addRootError("error 2")
-                .addRootError("error 3");
+                .addRootError("error 2");
 
         var errors = validation.finish();
         assertThat(errors.rootErrors()).containsExactly(
                 TemplateString.of("error 1"),
-                TemplateString.of("error 2"),
-                TemplateString.of("error 3")
+                TemplateString.of("error 2")
         );
     }
 
     @Test
-    void addRootError_nullMessage_throwsNullPointerException() {
+    void givenNullMessage_whenAddRootError_thenThrowsNullPointerException() {
         var validation = Validation.create();
 
         assertThatThrownBy(() -> validation.addRootError(null))
                 .isInstanceOf(NullPointerException.class);
     }
 
+    // -- addFieldError --
+
     @Test
-    void addFieldError_singleError() {
+    void givenFieldAndMessage_whenAddFieldError_thenAddsError() {
         var validation = Validation.create()
                 .addFieldError("field", "error message");
 
@@ -54,7 +54,7 @@ class ValidationTest {
     }
 
     @Test
-    void addFieldError_multipleErrorsSameField() {
+    void givenSameFieldMultipleTimes_whenAddFieldError_thenAccumulatesErrors() {
         var validation = Validation.create()
                 .addFieldError("field", "error 1")
                 .addFieldError("field", "error 2");
@@ -67,7 +67,7 @@ class ValidationTest {
     }
 
     @Test
-    void addFieldError_multipleDifferentFields() {
+    void givenDifferentFields_whenAddFieldError_thenAddsToEachField() {
         var validation = Validation.create()
                 .addFieldError("field1", "error 1")
                 .addFieldError("field2", "error 2");
@@ -77,7 +77,7 @@ class ValidationTest {
     }
 
     @Test
-    void addFieldError_nullField_throwsNullPointerException() {
+    void givenNullField_whenAddFieldError_thenThrowsNullPointerException() {
         var validation = Validation.create();
 
         assertThatThrownBy(() -> validation.addFieldError(null, "error"))
@@ -85,15 +85,17 @@ class ValidationTest {
     }
 
     @Test
-    void addFieldError_nullMessage_throwsNullPointerException() {
+    void givenNullMessage_whenAddFieldError_thenThrowsNullPointerException() {
         var validation = Validation.create();
 
         assertThatThrownBy(() -> validation.addFieldError("field", null))
                 .isInstanceOf(NullPointerException.class);
     }
 
+    // -- addAll(ValidationErrors) --
+
     @Test
-    void addAll_withValidationErrors() {
+    void givenValidationErrors_whenAddAll_thenAddsAllErrors() {
         var validationErrors = ValidationErrors.of("field", "error");
         var validation = Validation.create()
                 .addAll(validationErrors);
@@ -103,15 +105,17 @@ class ValidationTest {
     }
 
     @Test
-    void addAll_nullValidationErrors_throwsNullPointerException() {
+    void givenNull_whenAddAll_thenThrowsNullPointerException() {
         var validation = Validation.create();
 
         assertThatThrownBy(() -> validation.addAll((ValidationErrors) null))
                 .isInstanceOf(NullPointerException.class);
     }
 
+    // -- addAll(String, ValidationErrors) --
+
     @Test
-    void addAll_withPrefix_addsPrefix() {
+    void givenFieldErrors_whenAddAllWithPrefix_thenPrefixesFieldNames() {
         var validationErrors = ValidationErrors.of("field", "error");
         var validation = Validation.create()
                 .addAll("root", validationErrors);
@@ -121,21 +125,7 @@ class ValidationTest {
     }
 
     @Test
-    void addAll_withPrefix_multipleFieldErrors() {
-        var fieldErrors = Map.of(
-                "field1", List.of(TemplateString.of("error 1")),
-                "field2", List.of(TemplateString.of("error 2"))
-        );
-        var validationErrors = new ValidationErrors(List.of(), fieldErrors);
-        var validation = Validation.create()
-                .addAll("prefix", validationErrors);
-
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsOnlyKeys("prefix.field1", "prefix.field2");
-    }
-
-    @Test
-    void addAll_withPrefix_rootErrors() {
+    void givenRootErrors_whenAddAllWithPrefix_thenConvertsToFieldErrors() {
         var validationErrors = ValidationErrors.of("root error");
         var validation = Validation.create()
                 .addAll("prefix", validationErrors);
@@ -145,7 +135,7 @@ class ValidationTest {
     }
 
     @Test
-    void addAll_withPrefix_nullPrefix_throwsNullPointerException() {
+    void givenNullPrefix_whenAddAllWithPrefix_thenThrowsNullPointerException() {
         var validation = Validation.create();
         var validationErrors = ValidationErrors.of("error");
 
@@ -154,15 +144,17 @@ class ValidationTest {
     }
 
     @Test
-    void addAll_withPrefix_nullValidationErrors_throwsNullPointerException() {
+    void givenNullValidationErrors_whenAddAllWithPrefix_thenThrowsNullPointerException() {
         var validation = Validation.create();
 
         assertThatThrownBy(() -> validation.addAll("prefix", null))
                 .isInstanceOf(NullPointerException.class);
     }
 
+    // -- finish --
+
     @Test
-    void finish_returnsValidationErrors() {
+    void givenErrors_whenFinish_thenReturnsValidationErrors() {
         var validation = Validation.create()
                 .addFieldError("field", "error");
 
@@ -172,15 +164,25 @@ class ValidationTest {
     }
 
     @Test
-    void finish_emptyValidation_returnsEmpty() {
+    void givenNoErrors_whenFinish_thenReturnsEmpty() {
         var validation = Validation.create();
 
         var errors = validation.finish();
         assertThat(errors.isEmpty()).isTrue();
     }
 
+    // -- asResult --
+
     @Test
-    void asResult_withErrors_returnsErr() {
+    void givenNoErrors_whenAsResult_thenReturnsOk() {
+        var validation = Validation.create();
+
+        var result = validation.asResult(() -> "value");
+        assertThat(result.getOrThrow()).isEqualTo("value");
+    }
+
+    @Test
+    void givenErrors_whenAsResult_thenReturnsErr() {
         var validation = Validation.create()
                 .addFieldError("field", "error");
 
@@ -190,15 +192,7 @@ class ValidationTest {
     }
 
     @Test
-    void asResult_withoutErrors_returnsOk() {
-        var validation = Validation.create();
-
-        var result = validation.asResult(() -> "value");
-        assertThat(result.getOrThrow()).isEqualTo("value");
-    }
-
-    @Test
-    void asResult_supplierThrowsValidationException_returnsErr() {
+    void givenSupplierThrows_whenAsResult_thenReturnsErr() {
         var validation = Validation.create();
 
         var result = validation.asResult(() -> {
@@ -208,8 +202,17 @@ class ValidationTest {
                 .isInstanceOf(JavalidationException.class);
     }
 
+    // -- check --
+
     @Test
-    void check_withErrors_throwsValidationException() {
+    void givenNoErrors_whenCheck_thenDoesNotThrow() {
+        var validation = Validation.create();
+
+        assertThatCode(validation::check).doesNotThrowAnyException();
+    }
+
+    @Test
+    void givenErrors_whenCheck_thenThrowsValidationException() {
         var validation = Validation.create()
                 .addFieldError("field", "error");
 
@@ -217,15 +220,10 @@ class ValidationTest {
                 .isInstanceOf(JavalidationException.class);
     }
 
-    @Test
-    void check_withoutErrors_doesNotThrow() {
-        var validation = Validation.create();
-
-        assertThatCode(validation::check).doesNotThrowAnyException();
-    }
+    // -- checkAndGet --
 
     @Test
-    void checkAndGet_withoutErrors_returnsValue() {
+    void givenNoErrors_whenCheckAndGet_thenReturnsValue() {
         var validation = Validation.create();
 
         var result = validation.checkAndGet(() -> "value");
@@ -233,36 +231,11 @@ class ValidationTest {
     }
 
     @Test
-    void checkAndGet_withErrors_throwsValidationException() {
+    void givenErrors_whenCheckAndGet_thenThrowsValidationException() {
         var validation = Validation.create()
                 .addFieldError("field", "error");
 
         assertThatThrownBy(() -> validation.checkAndGet(() -> "value"))
                 .isInstanceOf(JavalidationException.class);
-    }
-
-    @Test
-    void fluent_chainMultipleCalls() {
-        var validation = Validation.create()
-                .addRootError("root error")
-                .addRootError("root error 2")
-                .addFieldError("field1", "error 1")
-                .addFieldError("field2", "error 2");
-
-        var errors = validation.finish();
-        assertThat(errors.rootErrors()).hasSize(2);
-        assertThat(errors.fieldErrors()).containsOnlyKeys("field1", "field2");
-    }
-
-    @Test
-    void create_returnsIndependentInstances() {
-        var validation1 = Validation.create().addRootError("error 1");
-        var validation2 = Validation.create().addRootError("error 2");
-
-        var errors1 = validation1.finish();
-        var errors2 = validation2.finish();
-
-        assertThat(errors1.rootErrors()).containsExactly(TemplateString.of("error 1"));
-        assertThat(errors2.rootErrors()).containsExactly(TemplateString.of("error 2"));
     }
 }

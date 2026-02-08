@@ -27,7 +27,7 @@ class ValidationErrorsSerializerAutoConfigurationTest extends AutoConfigurationT
         private JsonMapper jsonMapper;
 
         @Test
-        void shouldNotFlattenErrors() {
+        void givenFlattenErrorsUnset_whenSerialize_thenUsesStructuredFormat() {
             String json = jsonMapper.writeValueAsString(ERRORS);
             assertThat(json).isEqualTo("""
                     {"rootErrors":["global error"],"fieldErrors":{"email":["invalid format"]}}\
@@ -42,7 +42,7 @@ class ValidationErrorsSerializerAutoConfigurationTest extends AutoConfigurationT
         private JsonMapper jsonMapper;
 
         @Test
-        void shouldFlattenErrors() {
+        void givenFlattenErrorsEnabled_whenSerialize_thenUsesFlattenedFormat() {
             String json = jsonMapper.writeValueAsString(ERRORS);
             AssertionsForClassTypes.assertThat(json).isEqualTo("""
                     {"":["global error"],"email":["invalid format"]}\
@@ -51,6 +51,6 @@ class ValidationErrorsSerializerAutoConfigurationTest extends AutoConfigurationT
     }
 
     @TestPropertySource(properties = "io.github.raniagus.javalidation.flatten-errors=false")
-    static class UseMessageSourceDisabledTest extends FlattenErrorsUnsetTest {
+    static class FlattenErrorsDisabledTest extends FlattenErrorsUnsetTest {
     }
 }

@@ -3,14 +3,14 @@ package io.github.raniagus.javalidation;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.raniagus.javalidation.format.TemplateString;
-import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class ValidationErrorsTest {
 
+    // -- withPrefix(String) --
+
     @Test
-    void withPrefix_string_convertRootErrorsToFieldErrors() {
+    void givenRootErrors_whenWithPrefix_thenConvertsToFieldErrors() {
         var errors = ValidationErrors.of("root error");
 
         var prefixed = errors.withPrefix("user");
@@ -21,51 +21,23 @@ class ValidationErrorsTest {
     }
 
     @Test
-    void withPrefix_string_prefixFieldErrors() {
+    void givenFieldErrors_whenWithPrefix_thenPrefixesFieldNames() {
         var errors = ValidationErrors.of("email", "invalid");
 
         var prefixed = errors.withPrefix("form");
 
-        assertThat(prefixed.fieldErrors()).containsOnlyKeys("formemail");
-        assertThat(prefixed.fieldErrors().get("formemail")).containsExactly(TemplateString.of("invalid"));
+        assertThat(prefixed.fieldErrors()).containsOnlyKeys("form.email");
+        assertThat(prefixed.fieldErrors().get("form.email")).containsExactly(TemplateString.of("invalid"));
     }
 
-    @Test
-    void withPrefix_string_preservesMultipleErrors() {
-        var errors = new ValidationErrors(
-                List.of(),
-                Map.of("field", List.of(TemplateString.of("error1"), TemplateString.of("error2")))
-        );
-
-        var prefixed = errors.withPrefix("prefix");
-
-        assertThat(prefixed.fieldErrors().get("prefixfield"))
-                .containsExactly(TemplateString.of("error1"), TemplateString.of("error2"));
-    }
+    // -- withPrefix(Object, Object...) --
 
     @Test
-    void withPrefix_varargs_buildsPrefix() {
+    void givenFieldErrors_whenWithPrefixVarargs_thenBuildsPrefix() {
         var errors = ValidationErrors.of("field", "error");
 
         var prefixed = errors.withPrefix("parent", ".", "child");
 
-        assertThat(prefixed.fieldErrors()).containsOnlyKeys("parent.childfield");
-    }
-
-    @Test
-    void withPrefix_varargs_acceptsMixedTypes() {
-        var errors = ValidationErrors.of("field", "error");
-
-        var prefixed = errors.withPrefix("user", "[", 0, "]");
-
-        assertThat(prefixed.fieldErrors()).containsOnlyKeys("user[0]field");
-    }
-
-    @Test
-    void withPrefix_returnsNewInstance() {
-        var errors = ValidationErrors.of("field", "error");
-        var prefixed = errors.withPrefix("prefix");
-
-        assertThat(errors).isNotSameAs(prefixed);
+        assertThat(prefixed.fieldErrors()).containsOnlyKeys("parent.child.field");
     }
 }

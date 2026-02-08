@@ -19,28 +19,35 @@ class TemplateStringSerializerTest {
                 .build();
     }
 
+    // -- serialize --
+
     @Test
-    void shouldSerializeSimpleString() {
+    void givenSimpleString_whenSerialize_thenReturnsJsonString() {
         TemplateString ts = TemplateString.of("test");
+
         String json = mapper.writeValueAsString(ts);
+
         assertEquals("\"test\"", json);
     }
 
     @Test
-    void shouldSerializeWithMessageFormat() {
+    void givenTemplateWithArgs_whenSerialize_thenFormatsAndSerializes() {
         TemplateString ts = TemplateString.of("Hello {0}, you have {1} messages", "Alice", 5);
+
         String json = mapper.writeValueAsString(ts);
+
         assertEquals("\"Hello Alice, you have 5 messages\"", json);
     }
 
     @Test
-    void shouldSerializeNull() {
+    void givenNull_whenSerialize_thenReturnsJsonNull() {
         String json = mapper.writeValueAsString(null);
+
         assertEquals("null", json);
     }
 
     @Test
-    void shouldUseCustomFormatter() {
+    void givenCustomFormatter_whenSerialize_thenUsesCustomFormatter() {
         TemplateStringFormatter custom = ts -> "CUSTOM: " + (ts != null ? ts.message() : "null");
         mapper = JsonMapper.builder()
                 .addModule(JavalidationModule.builder()
@@ -50,11 +57,12 @@ class TemplateStringSerializerTest {
 
         TemplateString ts = TemplateString.of("test", "arg");
         String json = mapper.writeValueAsString(ts);
+
         assertEquals("\"CUSTOM: test\"", json);
     }
 
     @Test
-    void shouldSerializeInComplexObject() {
+    void givenComplexObject_whenSerialize_thenSerializesNestedTemplateString() {
         record Container(String name, TemplateString message) {}
 
         Container container = new Container(
@@ -63,6 +71,7 @@ class TemplateStringSerializerTest {
         );
 
         String json = mapper.writeValueAsString(container);
+
         assertThat(json).isEqualTo("""
                 {"name":"test","message":"Count: 42"}\
                 """);

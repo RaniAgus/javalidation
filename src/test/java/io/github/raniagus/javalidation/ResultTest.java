@@ -7,217 +7,17 @@ import org.junit.jupiter.api.Test;
 
 class ResultTest {
 
-    @Test
-    void getOrThrow_withOk_returnsValue() {
-        var result = Result.ok(42);
-
-        assertThat(result.getOrThrow()).isEqualTo(42);
-    }
+    // -- static factory: of(Supplier) --
 
     @Test
-    void getOrThrow_withErr_throwsValidationException() {
-        var result = Result.<Integer>err("Invalid value");
-
-        assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(JavalidationException.class);
-    }
-
-    @Test
-    void getErrors_withOk_returnsEmpty() {
-        var result = Result.ok("value");
-
-        assertThat(result.getErrors().isEmpty()).isTrue();
-    }
-
-    @Test
-    void getErrors_withErr_returnsErrors() {
-        var result = Result.<String>err("field", "error message");
-
-        var errors = result.getErrors();
-        assertThat(errors.isEmpty()).isFalse();
-        assertThat(errors.fieldErrors()).containsKey("field");
-    }
-
-    @Test
-    void withPrefix_onOk_returnsOkWithSameValue() {
-        var result = Result.ok("value").withPrefix("prefix");
-
-        assertThat(result.getOrThrow()).isEqualTo("value");
-    }
-
-    @Test
-    void withPrefix_onErr_prefixesErrorField() {
-        var result = Result.<String>err("field", "error").withPrefix("root.");
-
-        var errors = result.getErrors();
-        assertThat(errors.fieldErrors()).containsKey("root.field");
-    }
-
-    @Test
-    void withPrefix_objectVarargs_buildsPrefix() {
-        var result = Result.<String>err("field", "error").withPrefix("root", ".", "sub");
-
-        var errors = result.getErrors();
-        assertThat(errors.fieldErrors()).containsKey("root.subfield");
-    }
-
-    @Test
-    void map_withOk_transformsValue() {
-        var result = Result.ok(5).map(x -> x * 2);
-
-        assertThat(result.getOrThrow()).isEqualTo(10);
-    }
-
-    @Test
-    void map_withErr_preservesError() {
-        var result = Result.<Integer>err("invalid").map(x -> x * 2);
-
-        assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(JavalidationException.class);
-    }
-
-    @Test
-    void map_changesType() {
-        var result = Result.ok(42).map(String::valueOf);
-
-        assertThat(result.getOrThrow()).isEqualTo("42");
-    }
-
-    @Test
-    void flatMap_withOk_chainsResult() {
-        var result = Result.ok(5).flatMap(x -> Result.ok(x * 2));
-
-        assertThat(result.getOrThrow()).isEqualTo(10);
-    }
-
-    @Test
-    void flatMap_withOkReturningErr_propagatesError() {
-        var result = Result.ok(5).flatMap(x -> Result.err("failed"));
-
-        assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(JavalidationException.class);
-    }
-
-    @Test
-    void flatMap_withErr_skipsFunctionAndPreservesError() {
-        var result = Result.<Integer>err("initial error").flatMap(x -> Result.ok(x * 2));
-
-        assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(JavalidationException.class);
-    }
-
-    @Test
-    void mapErr_withOk_returnsUnchanged() {
-        var result = Result.ok("value").mapErr(errors -> errors);
-
-        assertThat(result.getOrThrow()).isEqualTo("value");
-    }
-
-    @Test
-    void mapErr_withErr_transformsErrors() {
-        var originalError = Result.<String>err("field", "message");
-        var result = originalError.mapErr(errors -> errors.withPrefix("prefix."));
-
-        var errors = result.getErrors();
-        assertThat(errors.fieldErrors()).containsKey("prefix.field");
-    }
-
-    @Test
-    void fold_withOk_appliesSuccessFunction() {
-        var result = Result.ok(10).fold(
-                x -> "success: " + x,
-                errors -> "failure"
-        );
-
-        assertThat(result).isEqualTo("success: 10");
-    }
-
-    @Test
-    void fold_withErr_appliesFailureFunction() {
-        var result = Result.<Integer>err("invalid").fold(
-                x -> "success: " + x,
-                errors -> "failure: " + errors.rootErrors().size()
-        );
-
-        assertThat(result).isEqualTo("failure: 1");
-    }
-
-    @Test
-    void fold_extractsDifferentType() {
-        var result = Result.ok(42).fold(
-                x -> x > 40,
-                errors -> false
-        );
-
-        assertThat(result).isTrue();
-    }
-
-    @Test
-    void getOrElse_withOk_returnsValue() {
-        var result = Result.ok(42);
-
-        assertThat(result.getOrElse(100)).isEqualTo(42);
-    }
-
-    @Test
-    void getOrElse_withErr_returnsDefaultValue() {
-        var result = Result.<Integer>err("invalid");
-
-        assertThat(result.getOrElse(100)).isEqualTo(100);
-    }
-
-    @Test
-    void getOrElse_withSupplier_returnsValue() {
-        var result = Result.ok(42);
-
-        assertThat(result.getOrElse(() -> 100)).isEqualTo(42);
-    }
-
-    @Test
-    void getOrElse_withSupplier_callsSupplierOnErr() {
-        var result = Result.<Integer>err("invalid");
-
-        assertThat(result.getOrElse(() -> 100)).isEqualTo(100);
-    }
-
-    @Test
-    void and_chainsMultipleResults() {
-        var result = Result.ok(5)
-                .and(Result.ok("hello"))
-                .combine((num, str) -> num + str.length());
-
-        assertThat(result.getOrThrow()).isEqualTo(10);
-    }
-
-    @Test
-    void and_propagatesFirstError() {
-        var result = Result.<Integer>err("first error")
-                .and(Result.ok("hello"))
-                .combine((num, str) -> num + str.length());
-
-        assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(JavalidationException.class);
-    }
-
-    @Test
-    void and_propagatesSecondError() {
-        var result = Result.ok(5)
-                .and(Result.<String>err("second error"))
-                .combine((num, str) -> num + str.length());
-
-        assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(JavalidationException.class);
-    }
-
-    @Test
-    void of_withSupplierReturningValue_returnsOk() {
+    void givenSupplierReturningValue_whenOf_thenReturnsOk() {
         var result = Result.of(() -> 42);
 
         assertThat(result.getOrThrow()).isEqualTo(42);
     }
 
     @Test
-    void of_withSupplierThrowingValidationException_returnsErr() {
+    void givenSupplierThrowingValidationException_whenOf_thenReturnsErr() {
         var result = Result.of(() -> {
             throw new JavalidationException(ValidationErrors.of("error"));
         });
@@ -226,23 +26,27 @@ class ResultTest {
                 .isInstanceOf(JavalidationException.class);
     }
 
+    // -- static factory: of(Runnable) --
+
     @Test
-    void of_withRunnableSucceeding_returnsOk() {
+    void givenRunnableSucceeding_whenOf_thenReturnsOk() {
         var result = Result.of(() -> {});
 
         assertThat(result.getOrThrow()).isEqualTo(null);
     }
 
     @Test
-    void of_withRunnableThrowingException_returnsErr() {
+    void givenRunnableThrowingException_whenOf_thenReturnsErr() {
         var result = Result.of(this::raiseJavalidationException);
 
         assertThatThrownBy(result::getOrThrow)
                 .isInstanceOf(JavalidationException.class);
     }
 
+    // -- static factory: combine --
+
     @Test
-    void combine_withAllOk_returnsOk() {
+    void givenAllOkResults_whenCombine_thenReturnsOk() {
         var result = Result.combine(
                 () -> 42,
                 Result.ok(1),
@@ -254,7 +58,7 @@ class ResultTest {
     }
 
     @Test
-    void combine_withOneErr_returnsErr() {
+    void givenOneErrResult_whenCombine_thenReturnsErr() {
         var result = Result.combine(
                 () -> 42,
                 Result.ok(1),
@@ -267,7 +71,7 @@ class ResultTest {
     }
 
     @Test
-    void combine_withMultipleErr_accumulates() {
+    void givenMultipleErrResults_whenCombine_thenAccumulatesErrors() {
         var result = Result.combine(
                 () -> 42,
                 Result.err("error1"),
@@ -279,8 +83,206 @@ class ResultTest {
         assertThat(errors.fieldErrors()).hasSize(1);
     }
 
+    // -- getOrThrow --
+
     @Test
-    void check_withOkAndValidPredicate_returnsOk() {
+    void givenOk_whenGetOrThrow_thenReturnsValue() {
+        var result = Result.ok(42);
+
+        assertThat(result.getOrThrow()).isEqualTo(42);
+    }
+
+    @Test
+    void givenErr_whenGetOrThrow_thenThrowsValidationException() {
+        var result = Result.<Integer>err("Invalid value");
+
+        assertThatThrownBy(result::getOrThrow)
+                .isInstanceOf(JavalidationException.class);
+    }
+
+    // -- getErrors --
+
+    @Test
+    void givenOk_whenGetErrors_thenReturnsEmpty() {
+        var result = Result.ok("value");
+
+        assertThat(result.getErrors().isEmpty()).isTrue();
+    }
+
+    @Test
+    void givenErr_whenGetErrors_thenReturnsErrors() {
+        var result = Result.<String>err("field", "error message");
+
+        var errors = result.getErrors();
+        assertThat(errors.isEmpty()).isFalse();
+        assertThat(errors.fieldErrors()).containsKey("field");
+    }
+
+    // -- getOrElse --
+
+    @Test
+    void givenOk_whenGetOrElse_thenReturnsValue() {
+        var result = Result.ok(42);
+
+        assertThat(result.getOrElse(100)).isEqualTo(42);
+    }
+
+    @Test
+    void givenErr_whenGetOrElse_thenReturnsDefaultValue() {
+        var result = Result.<Integer>err("invalid");
+
+        assertThat(result.getOrElse(100)).isEqualTo(100);
+    }
+
+    @Test
+    void givenErr_whenGetOrElseWithSupplier_thenCallsSupplier() {
+        var result = Result.<Integer>err("invalid");
+
+        assertThat(result.getOrElse(() -> 100)).isEqualTo(100);
+    }
+
+    // -- withPrefix --
+
+    @Test
+    void givenOk_whenWithPrefix_thenReturnsOkWithSameValue() {
+        var result = Result.ok("value").withPrefix("prefix");
+
+        assertThat(result.getOrThrow()).isEqualTo("value");
+    }
+
+    @Test
+    void givenErr_whenWithPrefix_thenPrefixesErrorField() {
+        var result = Result.<String>err("field", "error").withPrefix("root");
+
+        var errors = result.getErrors();
+        assertThat(errors.fieldErrors()).containsKey("root.field");
+    }
+
+    @Test
+    void givenErr_whenWithPrefixVarargs_thenBuildsPrefix() {
+        var result = Result.<String>err("field", "error").withPrefix("root", ".", "sub");
+
+        var errors = result.getErrors();
+        assertThat(errors.fieldErrors()).containsKey("root.sub.field");
+    }
+
+    // -- and --
+
+    @Test
+    void givenTwoOkResults_whenAnd_thenCombinesValues() {
+        var result = Result.ok(5)
+                .and(Result.ok("hello"))
+                .combine((num, str) -> num + str.length());
+
+        assertThat(result.getOrThrow()).isEqualTo(10);
+    }
+
+    @Test
+    void givenFirstErr_whenAnd_thenPropagatesError() {
+        var result = Result.<Integer>err("first error")
+                .and(Result.ok("hello"))
+                .combine((num, str) -> num + str.length());
+
+        assertThatThrownBy(result::getOrThrow)
+                .isInstanceOf(JavalidationException.class);
+    }
+
+    @Test
+    void givenSecondErr_whenAnd_thenPropagatesError() {
+        var result = Result.ok(5)
+                .and(Result.<String>err("second error"))
+                .combine((num, str) -> num + str.length());
+
+        assertThatThrownBy(result::getOrThrow)
+                .isInstanceOf(JavalidationException.class);
+    }
+
+    // -- map --
+
+    @Test
+    void givenOk_whenMap_thenTransformsValue() {
+        var result = Result.ok(5).map(x -> x * 2);
+
+        assertThat(result.getOrThrow()).isEqualTo(10);
+    }
+
+    @Test
+    void givenErr_whenMap_thenPreservesError() {
+        var result = Result.<Integer>err("invalid").map(x -> x * 2);
+
+        assertThatThrownBy(result::getOrThrow)
+                .isInstanceOf(JavalidationException.class);
+    }
+
+    // -- mapErr --
+
+    @Test
+    void givenOk_whenMapErr_thenReturnsUnchanged() {
+        var result = Result.ok("value").mapErr(errors -> errors);
+
+        assertThat(result.getOrThrow()).isEqualTo("value");
+    }
+
+    @Test
+    void givenErr_whenMapErr_thenTransformsErrors() {
+        var originalError = Result.<String>err("field", "message");
+        var result = originalError.mapErr(errors -> errors.withPrefix("prefix"));
+
+        var errors = result.getErrors();
+        assertThat(errors.fieldErrors()).containsKey("prefix.field");
+    }
+
+    // -- flatMap --
+
+    @Test
+    void givenOk_whenFlatMap_thenChainsResult() {
+        var result = Result.ok(5).flatMap(x -> Result.ok(x * 2));
+
+        assertThat(result.getOrThrow()).isEqualTo(10);
+    }
+
+    @Test
+    void givenOk_whenFlatMapReturnsErr_thenPropagatesError() {
+        var result = Result.ok(5).flatMap(x -> Result.err("failed"));
+
+        assertThatThrownBy(result::getOrThrow)
+                .isInstanceOf(JavalidationException.class);
+    }
+
+    @Test
+    void givenErr_whenFlatMap_thenSkipsFunctionAndPreservesError() {
+        var result = Result.<Integer>err("initial error").flatMap(x -> Result.ok(x * 2));
+
+        assertThatThrownBy(result::getOrThrow)
+                .isInstanceOf(JavalidationException.class);
+    }
+
+    // -- fold --
+
+    @Test
+    void givenOk_whenFold_thenAppliesSuccessFunction() {
+        var result = Result.ok(10).fold(
+                x -> "success: " + x,
+                errors -> "failure"
+        );
+
+        assertThat(result).isEqualTo("success: 10");
+    }
+
+    @Test
+    void givenErr_whenFold_thenAppliesFailureFunction() {
+        var result = Result.<Integer>err("invalid").fold(
+                x -> "success: " + x,
+                errors -> "failure: " + errors.rootErrors().size()
+        );
+
+        assertThat(result).isEqualTo("failure: 1");
+    }
+
+    // -- check --
+
+    @Test
+    void givenOkAndValidPredicate_whenCheck_thenReturnsOk() {
         var result = Result.ok(42).check((value, validation) -> {
             if (value < 0) {
                 validation.addRootError("Value must be positive");
@@ -291,7 +293,7 @@ class ResultTest {
     }
 
     @Test
-    void check_withOkAndFailingPredicate_returnsErr() {
+    void givenOkAndFailingPredicate_whenCheck_thenReturnsErr() {
         var result = Result.ok(-5).check((value, validation) -> {
             if (value < 0) {
                 validation.addRootError("Value must be positive");
@@ -304,7 +306,7 @@ class ResultTest {
     }
 
     @Test
-    void check_withOkAndFieldError_addsFieldError() {
+    void givenOkAndFieldError_whenCheck_thenAddsFieldError() {
         var result = Result.ok("test").check((value, validation) -> {
             if (value.length() < 5) {
                 validation.addFieldError("username", "Username must be at least 5 characters");
@@ -316,7 +318,7 @@ class ResultTest {
     }
 
     @Test
-    void check_withErr_preservesError() {
+    void givenErr_whenCheck_thenPreservesError() {
         var result = Result.<Integer>err("field", "initial error")
                 .check((value, validation) -> {
                     validation.addRootError("This should not be executed");
@@ -328,21 +330,7 @@ class ResultTest {
     }
 
     @Test
-    void check_withMultipleValidations_accumulates() {
-        var result = Result.ok(15).check((value, validation) -> {
-            if (value < 10) {
-                validation.addRootError("Value must be at least 10");
-            }
-            if (value > 100) {
-                validation.addRootError("Value must not exceed 100");
-            }
-        });
-
-        assertThat(result.getOrThrow()).isEqualTo(15);
-    }
-
-    @Test
-    void check_withMultipleFailingValidations_accumulatesErrors() {
+    void givenOkAndMultipleFailingValidations_whenCheck_thenAccumulatesErrors() {
         var result = Result.ok(150).check((value, validation) -> {
             if (value > 10) {
                 validation.addRootError("Value must not exceed 10");
@@ -355,15 +343,17 @@ class ResultTest {
         assertThat(result.getErrors().rootErrors()).hasSize(2);
     }
 
+    // -- filter (root error) --
+
     @Test
-    void filter_withOkAndPassingPredicate_returnsOk() {
+    void givenOkAndPassingPredicate_whenFilter_thenReturnsOk() {
         var result = Result.ok(42).filter(x -> x > 0, "Value must be positive");
 
         assertThat(result.getOrThrow()).isEqualTo(42);
     }
 
     @Test
-    void filter_withOkAndFailingPredicate_returnsErr() {
+    void givenOkAndFailingPredicate_whenFilter_thenReturnsErr() {
         var result = Result.ok(-5).filter(x -> x > 0, "Value must be positive");
 
         assertThatThrownBy(result::getOrThrow)
@@ -372,19 +362,18 @@ class ResultTest {
     }
 
     @Test
-    void filter_withOkAndFailingPredicateWithArgs_formatsMessage() {
-        var result = Result.ok(-5).filter(
-                x -> x > 0,
-                "Value must be greater than {}",
-                0
-        );
+    void givenErr_whenFilter_thenPreservesError() {
+        var result = Result.<Integer>err("initial", "error")
+                .filter(x -> x > 0, "Value must be positive");
 
         var errors = result.getErrors();
-        assertThat(errors.rootErrors()).hasSize(1);
+        assertThat(errors.fieldErrors()).containsKey("initial");
     }
 
+    // -- filter (field error) --
+
     @Test
-    void filter_withFieldAndPassingPredicate_returnsOk() {
+    void givenOkAndPassingPredicate_whenFilterWithField_thenReturnsOk() {
         var result = Result.ok("hello").filter(
                 s -> s.length() >= 5,
                 "length",
@@ -395,7 +384,7 @@ class ResultTest {
     }
 
     @Test
-    void filter_withFieldAndFailingPredicate_returnsFieldErr() {
+    void givenOkAndFailingPredicate_whenFilterWithField_thenReturnsFieldErr() {
         var result = Result.ok("hi").filter(
                 s -> s.length() >= 5,
                 "username",
@@ -404,64 +393,6 @@ class ResultTest {
 
         var errors = result.getErrors();
         assertThat(errors.fieldErrors()).containsKey("username");
-    }
-
-    @Test
-    void filter_withFieldAndFailingPredicateWithArgs_formatsMessage() {
-        var result = Result.ok("hi").filter(
-                s -> s.length() >= 5,
-                "username",
-                "Must be at least {} characters",
-                5
-        );
-
-        var errors = result.getErrors();
-        assertThat(errors.fieldErrors()).containsKey("username");
-    }
-
-    @Test
-    void filter_withErr_preservesError() {
-        var result = Result.<Integer>err("initial", "error")
-                .filter(x -> x > 0, "Value must be positive");
-
-        var errors = result.getErrors();
-        assertThat(errors.fieldErrors()).containsKey("initial");
-    }
-
-    @Test
-    void filter_canBeChained() {
-        var result = Result.ok(42)
-                .filter(x -> x > 0, "Value must be positive")
-                .filter(x -> x < 100, "Value must be less than 100");
-
-        assertThat(result.getOrThrow()).isEqualTo(42);
-    }
-
-    @Test
-    void filter_chainedWithFailingFirstFilter_returnsErr() {
-        var result = Result.ok(42)
-                .filter(x -> x > 100, "Value must be greater than 100")
-                .filter(x -> x < 50, "Value must be less than 50");
-
-        assertThat(result.getErrors().rootErrors()).hasSize(1);
-    }
-
-    @Test
-    void filter_chainedWithFailingSecondFilter_returnsErr() {
-        var result = Result.ok(42)
-                .filter(x -> x > 0, "Value must be positive")
-                .filter(x -> x < 30, "Value must be less than 30");
-
-        assertThat(result.getErrors().rootErrors()).hasSize(1);
-    }
-
-    @Test
-    void filter_withFieldCanBeChained() {
-        var result = Result.ok("hello")
-                .filter(s -> s.length() >= 3, "length", "Too short")
-                .filter(s -> s.length() <= 10, "length", "Too long");
-
-        assertThat(result.getOrThrow()).isEqualTo("hello");
     }
 
     private void raiseJavalidationException() {

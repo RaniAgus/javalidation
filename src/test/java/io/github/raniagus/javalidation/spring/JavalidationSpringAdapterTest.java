@@ -13,7 +13,7 @@ class JavalidationSpringAdapterTest {
     }
 
     @Test
-    void shouldConvertComplexSpringErrorsToValidationErrors() {
+    void givenComplexSpringErrors_whenToValidationErrors_thenConvertsAllErrors() {
         // given
         Person target = new Person("", 0);
         Errors errors = new BeanPropertyBindingResult(target, "target");

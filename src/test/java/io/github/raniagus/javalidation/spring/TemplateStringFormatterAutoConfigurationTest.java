@@ -18,7 +18,7 @@ class TemplateStringFormatterAutoConfigurationTest extends AutoConfigurationTest
         private TemplateStringFormatter formatter;
 
         @Test
-        void shouldAutoConfigureModule() {
+        void givenAutoConfiguration_whenStartup_thenConfiguresFormatter() {
             assertNotNull(formatter);
         }
     }
@@ -28,14 +28,14 @@ class TemplateStringFormatterAutoConfigurationTest extends AutoConfigurationTest
         private JsonMapper jsonMapper;
 
         @Test
-        void shouldUseMessageSource() {
+        void givenMessageSourceUnset_whenSerialize_thenUsesMessageSource() {
             TemplateString ts = TemplateString.of("greeting.message", "Alice", 5);
             String json = jsonMapper.writeValueAsString(ts);
             assertThat(json).isEqualTo("\"Hello Alice!\"");
         }
 
         @Test
-        void shouldFallbackToDefaultFormatterIfNotAvailable() {
+        void givenMessageSourceUnset_whenSerializeUnknownKey_thenFallsBackToDefaultFormatter() {
             TemplateString ts = TemplateString.of("Hello {0}! {1}", "World", 42);
             String json = jsonMapper.writeValueAsString(ts);
             assertThat(json).isEqualTo("\"Hello World! 42\"");
@@ -52,14 +52,14 @@ class TemplateStringFormatterAutoConfigurationTest extends AutoConfigurationTest
         private JsonMapper jsonMapper;
 
         @Test
-        void shouldNotUseMessageSourceWhenDisabled() {
+        void givenMessageSourceDisabled_whenSerialize_thenUsesDefaultFormatter() {
             TemplateString ts = TemplateString.of("greeting.message", "Maroon", 5);
             String json = jsonMapper.writeValueAsString(ts);
             assertThat(json).isEqualTo("\"greeting.message\"");
         }
 
         @Test
-        void shouldUseDefaultFormatter() {
+        void givenMessageSourceDisabled_whenSerializeWithPlaceholders_thenFormatsWithMessageFormat() {
             TemplateString ts = TemplateString.of("Hello {0}! {1}", "World", 42);
             String json = jsonMapper.writeValueAsString(ts);
             assertThat(json).isEqualTo("\"Hello World! 42\"");

@@ -9,26 +9,38 @@ import io.github.raniagus.javalidation.format.TemplateString;
 import io.github.raniagus.javalidation.util.ErrorStrings;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 class ResultCollectorTest {
+
+    // -- toList --
+
     @Test
-    void sePuedenColectarErroresDeMultiplesTriesComoListaFallida() {
-        Result<String> resultado1 = Result.err(ErrorStrings.ERROR_1);
-        Result<String> resultado2 = Result.err(
+    void givenAllOkResults_whenToList_thenReturnsListOfValues() {
+        Result<String> result1 = Result.ok("value1");
+        Result<String> result2 = Result.ok("value2");
+        Result<String> result3 = Result.ok("value3");
+
+        var list = Stream.of(result1, result2, result3)
+                .collect(ResultCollector.toList());
+
+        assertThat(list).containsExactly("value1", "value2", "value3");
+    }
+
+    @Test
+    void givenSomeErrResults_whenToList_thenThrowsWithIndexedErrors() {
+        Result<String> result1 = Result.err(ErrorStrings.ERROR_1);
+        Result<String> result2 = Result.err(
                 Validation.create()
                         .addRootError(ErrorStrings.ERROR_2)
                         .addRootError(ErrorStrings.ERROR_3)
                         .finish()
         );
-        Result<String> resultado3 = Result.ok("Resultado exitoso");
+        Result<String> result3 = Result.ok("value");
 
-        Supplier<List<String>> listSupplier = () -> Stream.of(resultado1, resultado2, resultado3)
-                .collect(ResultCollector.toList());
-
-        assertThatThrownBy(listSupplier::get)
+        assertThatThrownBy(() -> Stream.of(result1, result2, result3)
+                .collect(ResultCollector.toList()))
                 .isInstanceOf(JavalidationException.class)
                 .asInstanceOf(throwable(JavalidationException.class))
                 .extracting(JavalidationException::getErrors)
@@ -43,21 +55,35 @@ class ResultCollectorTest {
                 ));
     }
 
+    // -- toResultList --
+
     @Test
-    void sePuedenColectarErroresDeMultiplesTriesComoResultado() {
-        Result<String> resultado1 = Result.err(ErrorStrings.ERROR_1);
-        Result<String> resultado2 = Result.err(
+    void givenAllOkResults_whenToResultList_thenReturnsOkWithList() {
+        Result<String> result1 = Result.ok("value1");
+        Result<String> result2 = Result.ok("value2");
+        Result<String> result3 = Result.ok("value3");
+
+        var result = Stream.of(result1, result2, result3)
+                .collect(ResultCollector.toResultList());
+
+        assertThat(result.getOrThrow()).containsExactly("value1", "value2", "value3");
+    }
+
+    @Test
+    void givenSomeErrResults_whenToResultList_thenReturnsErrWithIndexedErrors() {
+        Result<String> result1 = Result.err(ErrorStrings.ERROR_1);
+        Result<String> result2 = Result.err(
                 Validation.create()
                         .addRootError(ErrorStrings.ERROR_2)
                         .addRootError(ErrorStrings.ERROR_3)
                         .finish()
         );
-        Result<String> resultado3 = Result.ok("Resultado exitoso");
+        Result<String> result3 = Result.ok("value");
 
-        Result<List<String>> resultadoConcatenado = Stream.of(resultado1, resultado2, resultado3)
+        var result = Stream.of(result1, result2, result3)
                 .collect(ResultCollector.toResultList());
 
-        assertThat(resultadoConcatenado.getErrors())
+        assertThat(result.getErrors())
                 .extracting(ValidationErrors::fieldErrors)
                 .asInstanceOf(MAP)
                 .containsAllEntriesOf(Map.of(
@@ -69,24 +95,37 @@ class ResultCollectorTest {
                 ));
     }
 
+    // -- toPartitioned --
+
     @Test
-    void sePuedenColectarErroresDeMultiplesTriesComoResultadoParticionado() {
-        Result<String> resultado1 = Result.err(ErrorStrings.ERROR_1);
-        Result<String> resultado2 = Result.err(
+    void givenAllOkResults_whenToPartitioned_thenReturnsValuesWithNoErrors() {
+        Result<String> result1 = Result.ok("value1");
+        Result<String> result2 = Result.ok("value2");
+        Result<String> result3 = Result.ok("value3");
+
+        var partitioned = Stream.of(result1, result2, result3)
+                .collect(ResultCollector.toPartitioned());
+
+        assertThat(partitioned.value()).containsExactly("value1", "value2", "value3");
+        assertThat(partitioned.errors().isEmpty()).isTrue();
+    }
+
+    @Test
+    void givenSomeErrResults_whenToPartitioned_thenReturnsOkValuesAndIndexedErrors() {
+        Result<String> result1 = Result.err(ErrorStrings.ERROR_1);
+        Result<String> result2 = Result.err(
                 Validation.create()
                         .addRootError(ErrorStrings.ERROR_2)
                         .addRootError(ErrorStrings.ERROR_3)
                         .finish()
         );
-        Result<String> resultado3 = Result.ok("Resultado exitoso");
+        Result<String> result3 = Result.ok("value");
 
-        PartitionedResult<List<String>> resultadoConcatenado = Stream.of(resultado1, resultado2, resultado3)
+        var partitioned = Stream.of(result1, result2, result3)
                 .collect(ResultCollector.toPartitioned());
 
-        assertThat(resultadoConcatenado.value())
-                .containsExactly("Resultado exitoso");
-
-        assertThat(resultadoConcatenado.errors())
+        assertThat(partitioned.value()).containsExactly("value");
+        assertThat(partitioned.errors())
                 .extracting(ValidationErrors::fieldErrors)
                 .asInstanceOf(MAP)
                 .containsAllEntriesOf(Map.of(
