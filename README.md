@@ -110,22 +110,25 @@ repositories {
 
 ### Result<T>
 
-| Method                                 | Description                           |
-|----------------------------------------|---------------------------------------|
-| `ok(T)`                                | Create successful result              |
-| `err(String)`                          | Create failed result with root error  |
-| `err(String, String)`                  | Create failed result with field error |
-| `map(Function)`                        | Transform success value               |
-| `flatMap(Function)`                    | Chain validations                     |
-| `filter(Predicate, String)`            | Conditional validation (root error)   |
-| `filter(Predicate, String, String)`    | Conditional validation (field error)  |
-| `check(BiConsumer)`                    | Add imperative validation logic       |
-| `and(Result)`                          | Start applicative combiner chain      |
-| `or(Result)` / `or(Supplier)`          | Provide fallback                      |
-| `fold(Function, Function)`             | Handle both cases                     |
-| `getOrThrow()`                         | Extract value or throw                |
-| `getOrElse(T)` / `getOrElse(Supplier)` | Extract value or default              |
-| `withPrefix(String)`                   | Namespace errors for nested objects   |
+| Method                                 | Description                               |
+|----------------------------------------|-------------------------------------------|
+| `of(Supplier<T>)`/ `of(Runnable)`      | Wrap supplier or runnable in try-catch    |
+| `ok(T)`                                | Create successful result                  |
+| `err(String)`                          | Create failed result with root error      |
+| `err(String, String)`                  | Create failed result with field error     |
+| `err(ValidationErrors)`                | Create failed result from existing errors |
+| `map(Function)`                        | Transform success value                   |
+| `flatMap(Function)`                    | Chain validations                         |
+| `filter(Predicate, String)`            | Conditional validation (root error)       |
+| `filter(Predicate, String, String)`    | Conditional validation (field error)      |
+| `check(BiConsumer)`                    | Add imperative validation logic           |
+| `and(Result)`                          | Start applicative combiner chain          |
+| `or(Result)` / `or(Supplier)`          | Provide fallback                          |
+| `fold(Function, Function)`             | Handle both cases                         |
+| `getOrThrow()`                         | Extract value or throw                    |
+| `getOrElse(T)` / `getOrElse(Supplier)` | Extract value or default                  |
+| `getErrors()`                          | Get errors (empty if Ok)                  |
+| `withPrefix(String)`                   | Namespace errors for nested objects       |
 
 ### ResultCollector
 
@@ -160,6 +163,7 @@ repositories {
 | `mergeWith(ValidationErrors)`   | Merge two error sets           |
 | `withPrefix(String)`            | Add prefix to all fields       |
 | `isEmpty()` / `isNotEmpty()`    | Check if errors exist          |
+| `count()`                       | Total number of errors         |
 
 ### Basic Example
 
