@@ -669,16 +669,10 @@ public class UserController {
 
 ```json
 {
-  "rootErrors": [
-    {"message": "User validation failed", "args": []}
-  ],
+  "rootErrors": ["User validation failed"],
   "fieldErrors": {
-    "name": [
-      {"message": "Name is required", "args": []}
-    ],
-    "age": [
-      {"message": "Must be at least {0}", "args": [18]}
-    ]
+    "name": ["Name is required"],
+    "age": ["Must be at least 18"]
   }
 }
 ```
