@@ -16,7 +16,11 @@ import org.jspecify.annotations.Nullable;
  *     (a, b, c, d, e) -> String.format("Combined result", a, b, c, d, e);
  * }</pre>
  *
- * @param <A> <B> <C> <D> <E>> the types of the input arguments
+ * @param <A> the type of the first argument
+ * @param <B> the type of the second argument
+ * @param <C> the type of the third argument
+ * @param <D> the type of the fourth argument
+ * @param <E> the type of the fifth argument
  * @param <R> the type of the result
  * @see Function
  * @see java.util.function.BiFunction
@@ -26,7 +30,11 @@ public interface PentaFunction<A extends @Nullable Object, B extends @Nullable O
     /**
      * Applies this function to the given arguments.
      *
-     * @param a, b, c, d, e the function arguments
+     * @param a the first function argument
+     * @param b the second function argument
+     * @param c the third function argument
+     * @param d the fourth function argument
+     * @param e the fifth function argument
      * @return the function result
      */
     R apply(A a, B b, C c, D d, E e);

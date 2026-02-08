@@ -16,7 +16,15 @@ import org.jspecify.annotations.Nullable;
  *     (a, b, c, d, e, f, g, h, i) -> String.format("Combined result", a, b, c, d, e, f, g, h, i);
  * }</pre>
  *
- * @param <A> <B> <C> <D> <E> <F> <G> <H> <I>> the types of the input arguments
+ * @param <A> the type of the first argument
+ * @param <B> the type of the second argument
+ * @param <C> the type of the third argument
+ * @param <D> the type of the fourth argument
+ * @param <E> the type of the fifth argument
+ * @param <F> the type of the sixth argument
+ * @param <G> the type of the seventh argument
+ * @param <H> the type of the eighth argument
+ * @param <I> the type of the ninth argument
  * @param <R> the type of the result
  * @see Function
  * @see java.util.function.BiFunction
@@ -26,7 +34,15 @@ public interface NonaFunction<A extends @Nullable Object, B extends @Nullable Ob
     /**
      * Applies this function to the given arguments.
      *
-     * @param a, b, c, d, e, f, g, h, i the function arguments
+     * @param a the first function argument
+     * @param b the second function argument
+     * @param c the third function argument
+     * @param d the fourth function argument
+     * @param e the fifth function argument
+     * @param f the sixth function argument
+     * @param g the seventh function argument
+     * @param h the eighth function argument
+     * @param i the ninth function argument
      * @return the function result
      */
     R apply(A a, B b, C c, D d, E e, F f, G g, H h, I i);

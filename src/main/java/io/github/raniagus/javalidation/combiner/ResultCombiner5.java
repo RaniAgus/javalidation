@@ -26,6 +26,16 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * If any validation fails, all errors are accumulated in the final {@code Err} result.
  *
+ * @param <T1> the type of the first result's success value
+ * @param <T2> the type of the second result's success value
+ * @param <T3> the type of the third result's success value
+ * @param <T4> the type of the fourth result's success value
+ * @param <T5> the type of the fifth result's success value
+ * @param result1 the first result to combine
+ * @param result2 the second result to combine
+ * @param result3 the third result to combine
+ * @param result4 the fourth result to combine
+ * @param result5 the fifth result to combine
  * @see Result#and(Result)
  */
 public record ResultCombiner5<T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object>(

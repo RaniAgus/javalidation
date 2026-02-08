@@ -16,7 +16,10 @@ import org.jspecify.annotations.Nullable;
  *     (a, b, c, d) -> String.format("Combined result", a, b, c, d);
  * }</pre>
  *
- * @param <A> <B> <C> <D>> the types of the input arguments
+ * @param <A> the type of the first argument
+ * @param <B> the type of the second argument
+ * @param <C> the type of the third argument
+ * @param <D> the type of the fourth argument
  * @param <R> the type of the result
  * @see Function
  * @see java.util.function.BiFunction
@@ -26,7 +29,10 @@ public interface QuadFunction<A extends @Nullable Object, B extends @Nullable Ob
     /**
      * Applies this function to the given arguments.
      *
-     * @param a, b, c, d the function arguments
+     * @param a the first function argument
+     * @param b the second function argument
+     * @param c the third function argument
+     * @param d the fourth function argument
      * @return the function result
      */
     R apply(A a, B b, C c, D d);
