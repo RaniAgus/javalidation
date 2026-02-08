@@ -29,7 +29,7 @@ The core validation library with zero dependencies:
 <dependency>
   <groupId>io.github.raniagus</groupId>
   <artifactId>javalidation</artifactId>
-  <version>0.11.0</version>
+  <version>0.11.1</version>
 </dependency>
 ```
 
@@ -41,7 +41,7 @@ For Jackson 3.x serialization support:
 <dependency>
   <groupId>io.github.raniagus</groupId>
   <artifactId>javalidation-jackson</artifactId>
-  <version>0.11.0</version>
+  <version>0.11.1</version>
 </dependency>
 ```
 
@@ -53,7 +53,7 @@ For Spring Boot 4.x auto-configuration with Jackson and MessageSource integratio
 <dependency>
   <groupId>io.github.raniagus</groupId>
   <artifactId>javalidation-spring-boot-starter</artifactId>
-  <version>0.11.0</version>
+  <version>0.11.1</version>
 </dependency>
 ```
 
