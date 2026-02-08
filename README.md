@@ -26,7 +26,7 @@ dependency into your `pom.xml` file:
     <dependency>
       <groupId>io.github.raniagus</groupId>
       <artifactId>javalidation</artifactId>
-      <version>0.9.0</version>
+      <version>0.10.0</version>
     </dependency>
 ```
 
