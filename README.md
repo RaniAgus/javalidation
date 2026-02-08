@@ -2,8 +2,8 @@
 
 [![MvnRepository](https://badges.mvnrepository.com/badge/io.github.raniagus/javalidation/badge.svg?label=MvnRepository)](https://mvnrepository.com/artifact/io.github.raniagus/javalidation)
 
-A functional validation library for Java 21+ based on Railway-Oriented Programming, featuring a type-safe
-`Result<T>` whose accumulated `ValidationErrors` are serializable and fully i18n-compatible.
+A lightweight, dependency-free functional validation library for Java 21+, featuring a type-safe, serializable, and
+fully i18n-compatible `Result<T>` with accumulated `ValidationErrors`.
 
 ## Features
 
