@@ -1,6 +1,6 @@
 package io.github.raniagus.javalidation;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.raniagus.javalidation.format.TemplateString;
 import java.util.List;
@@ -17,7 +17,7 @@ class ValidationErrorsTest {
 
         assertThat(prefixed.rootErrors()).isEmpty();
         assertThat(prefixed.fieldErrors()).containsOnlyKeys("user");
-        assertThat(prefixed.fieldErrors().get("user")).containsExactly(new TemplateString("root error"));
+        assertThat(prefixed.fieldErrors().get("user")).containsExactly(TemplateString.of("root error"));
     }
 
     @Test
@@ -27,20 +27,20 @@ class ValidationErrorsTest {
         var prefixed = errors.withPrefix("form");
 
         assertThat(prefixed.fieldErrors()).containsOnlyKeys("formemail");
-        assertThat(prefixed.fieldErrors().get("formemail")).containsExactly(new TemplateString("invalid"));
+        assertThat(prefixed.fieldErrors().get("formemail")).containsExactly(TemplateString.of("invalid"));
     }
 
     @Test
     void withPrefix_string_preservesMultipleErrors() {
         var errors = new ValidationErrors(
                 List.of(),
-                Map.of("field", List.of(new TemplateString("error1"), new TemplateString("error2")))
+                Map.of("field", List.of(TemplateString.of("error1"), TemplateString.of("error2")))
         );
 
         var prefixed = errors.withPrefix("prefix");
 
         assertThat(prefixed.fieldErrors().get("prefixfield"))
-                .containsExactly(new TemplateString("error1"), new TemplateString("error2"));
+                .containsExactly(TemplateString.of("error1"), TemplateString.of("error2"));
     }
 
     @Test

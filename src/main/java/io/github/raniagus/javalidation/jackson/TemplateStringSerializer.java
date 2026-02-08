@@ -14,6 +14,10 @@ public class TemplateStringSerializer extends ValueSerializer<TemplateString> {
         this.formatter = formatter;
     }
 
+    public TemplateStringSerializer() {
+        this(TemplateStringFormatter.getDefault());
+    }
+
     @Override
     public void serialize(@NonNull TemplateString value, @NonNull JsonGenerator gen, SerializationContext context) {
         String formatted = formatter.format(value);

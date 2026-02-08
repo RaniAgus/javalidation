@@ -1,15 +1,15 @@
 package io.github.raniagus.javalidation.format;
 
-import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
 
 class MessageFormatTemplateStringFormatterTest {
     private final MessageFormatTemplateStringFormatter formatter = new MessageFormatTemplateStringFormatter();
 
     @Test
     void shouldFormatSimpleMessage() {
-        TemplateString template = new TemplateString("Hello {0}", "World");
+        TemplateString template = TemplateString.of("Hello {0}", "World");
 
         String result = formatter.format(template);
 
@@ -18,7 +18,7 @@ class MessageFormatTemplateStringFormatterTest {
 
     @Test
     void shouldFormatMultipleArguments() {
-        TemplateString template = new TemplateString("Hello {0}, you have {1} messages", "Alice", 5);
+        TemplateString template = TemplateString.of("Hello {0}, you have {1} messages", "Alice", 5);
 
         String result = formatter.format(template);
 
@@ -27,7 +27,7 @@ class MessageFormatTemplateStringFormatterTest {
 
     @Test
     void shouldFormatWithNoArguments() {
-        TemplateString template = new TemplateString("Simple message");
+        TemplateString template = TemplateString.of("Simple message");
 
         String result = formatter.format(template);
 
@@ -36,7 +36,7 @@ class MessageFormatTemplateStringFormatterTest {
 
     @Test
     void shouldFormatWithNumberFormatting() {
-        TemplateString template = new TemplateString("Price: {0,number,currency}", 42.50);
+        TemplateString template = TemplateString.of("Price: {0,number,currency}", 42.50);
 
         String result = formatter.format(template);
 
@@ -46,7 +46,7 @@ class MessageFormatTemplateStringFormatterTest {
 
     @Test
     void shouldFormatWithDateFormatting() {
-        TemplateString template = new TemplateString("Date: {0,date,short}", new java.util.Date(0));
+        TemplateString template = TemplateString.of("Date: {0,date,short}", new java.util.Date(0));
 
         String result = formatter.format(template);
 
@@ -55,7 +55,7 @@ class MessageFormatTemplateStringFormatterTest {
 
     @Test
     void shouldFormatWithMixedTypes() {
-        TemplateString template = new TemplateString(
+        TemplateString template = TemplateString.of(
                 "User {0} has {1} points and balance {2,number,currency}",
                 "Bob",
                 150,
@@ -72,7 +72,7 @@ class MessageFormatTemplateStringFormatterTest {
 
     @Test
     void shouldHandleSpecialCharacters() {
-        TemplateString template = new TemplateString("Message: {0}", "It's a test!");
+        TemplateString template = TemplateString.of("Message: {0}", "It's a test!");
 
         String result = formatter.format(template);
 
@@ -81,7 +81,7 @@ class MessageFormatTemplateStringFormatterTest {
 
     @Test
     void shouldFormatEmptyString() {
-        TemplateString template = new TemplateString("{0}", "");
+        TemplateString template = TemplateString.of("{0}", "");
 
         String result = formatter.format(template);
 

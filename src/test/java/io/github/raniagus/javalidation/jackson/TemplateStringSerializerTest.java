@@ -1,11 +1,12 @@
 package io.github.raniagus.javalidation.jackson;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.github.raniagus.javalidation.format.TemplateString;
 import io.github.raniagus.javalidation.format.TemplateStringFormatter;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 
 class TemplateStringSerializerTest {
@@ -14,20 +15,20 @@ class TemplateStringSerializerTest {
     @BeforeEach
     void setUp() {
         mapper = JsonMapper.builder()
-                .addModule(new JavalidationModule())
+                .addModule(JavalidationModule.getDefault())
                 .build();
     }
 
     @Test
     void shouldSerializeSimpleString() {
-        TemplateString ts = new TemplateString("test");
+        TemplateString ts = TemplateString.of("test");
         String json = mapper.writeValueAsString(ts);
         assertEquals("\"test\"", json);
     }
 
     @Test
     void shouldSerializeWithMessageFormat() {
-        TemplateString ts = new TemplateString("Hello {0}, you have {1} messages", "Alice", 5);
+        TemplateString ts = TemplateString.of("Hello {0}, you have {1} messages", "Alice", 5);
         String json = mapper.writeValueAsString(ts);
         assertEquals("\"Hello Alice, you have 5 messages\"", json);
     }
@@ -42,10 +43,12 @@ class TemplateStringSerializerTest {
     void shouldUseCustomFormatter() {
         TemplateStringFormatter custom = ts -> "CUSTOM: " + (ts != null ? ts.message() : "null");
         mapper = JsonMapper.builder()
-                .addModule(new JavalidationModule(custom))
+                .addModule(JavalidationModule.builder()
+                        .withTemplateStringFormatter(custom)
+                        .build())
                 .build();
 
-        TemplateString ts = new TemplateString("test", "arg");
+        TemplateString ts = TemplateString.of("test", "arg");
         String json = mapper.writeValueAsString(ts);
         assertEquals("\"CUSTOM: test\"", json);
     }
@@ -56,7 +59,7 @@ class TemplateStringSerializerTest {
 
         Container container = new Container(
                 "test",
-                new TemplateString("Count: {0}", 42)
+                TemplateString.of("Count: {0}", 42)
         );
 
         String json = mapper.writeValueAsString(container);

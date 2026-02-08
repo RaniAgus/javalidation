@@ -1,6 +1,8 @@
 package io.github.raniagus.javalidation;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.github.raniagus.javalidation.format.TemplateString;
 import java.util.List;
@@ -15,7 +17,7 @@ class ValidationTest {
                 .addRootError("error message");
 
         var errors = validation.finish();
-        assertThat(errors.rootErrors()).containsExactly(new TemplateString("error message"));
+        assertThat(errors.rootErrors()).containsExactly(TemplateString.of("error message"));
     }
 
     @Test
@@ -27,9 +29,9 @@ class ValidationTest {
 
         var errors = validation.finish();
         assertThat(errors.rootErrors()).containsExactly(
-                new TemplateString("error 1"),
-                new TemplateString("error 2"),
-                new TemplateString("error 3")
+                TemplateString.of("error 1"),
+                TemplateString.of("error 2"),
+                TemplateString.of("error 3")
         );
     }
 
@@ -48,7 +50,7 @@ class ValidationTest {
 
         var errors = validation.finish();
         assertThat(errors.fieldErrors()).containsKey("field");
-        assertThat(errors.fieldErrors().get("field")).containsExactly(new TemplateString("error message"));
+        assertThat(errors.fieldErrors().get("field")).containsExactly(TemplateString.of("error message"));
     }
 
     @Test
@@ -59,8 +61,8 @@ class ValidationTest {
 
         var errors = validation.finish();
         assertThat(errors.fieldErrors().get("field")).containsExactly(
-                new TemplateString("error 1"),
-                new TemplateString("error 2")
+                TemplateString.of("error 1"),
+                TemplateString.of("error 2")
         );
     }
 
@@ -121,8 +123,8 @@ class ValidationTest {
     @Test
     void addAll_withPrefix_multipleFieldErrors() {
         var fieldErrors = Map.of(
-                "field1", List.of(new TemplateString("error 1")),
-                "field2", List.of(new TemplateString("error 2"))
+                "field1", List.of(TemplateString.of("error 1")),
+                "field2", List.of(TemplateString.of("error 2"))
         );
         var validationErrors = new ValidationErrors(List.of(), fieldErrors);
         var validation = Validation.create()
@@ -260,7 +262,7 @@ class ValidationTest {
         var errors1 = validation1.finish();
         var errors2 = validation2.finish();
 
-        assertThat(errors1.rootErrors()).containsExactly(new TemplateString("error 1"));
-        assertThat(errors2.rootErrors()).containsExactly(new TemplateString("error 2"));
+        assertThat(errors1.rootErrors()).containsExactly(TemplateString.of("error 1"));
+        assertThat(errors2.rootErrors()).containsExactly(TemplateString.of("error 2"));
     }
 }

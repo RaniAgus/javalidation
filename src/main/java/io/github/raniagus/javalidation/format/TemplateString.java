@@ -4,9 +4,13 @@ import java.util.Arrays;
 import java.util.Objects;
 import org.jspecify.annotations.NonNull;
 
-public record TemplateString(String message, Object... args) {
+public record TemplateString(String message, Object[] args) {
     public TemplateString {
-        args = args == null ? null : Arrays.copyOf(args, args.length);
+        args = Arrays.copyOf(args, args.length);
+    }
+
+    public static TemplateString of(String message, Object... args) {
+        return new TemplateString(message, args);
     }
 
     @Override

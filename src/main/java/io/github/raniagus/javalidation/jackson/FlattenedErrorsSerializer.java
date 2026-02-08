@@ -9,7 +9,7 @@ import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.ValueSerializer;
 
-public class ValidationErrorsSerializer extends ValueSerializer<ValidationErrors> {
+public class FlattenedErrorsSerializer extends ValueSerializer<ValidationErrors> {
     @Override
     public void serialize(@NonNull ValidationErrors value, @NonNull JsonGenerator gen, SerializationContext context) {
         gen.writeStartObject();

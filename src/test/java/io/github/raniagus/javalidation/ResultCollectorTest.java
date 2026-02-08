@@ -35,10 +35,10 @@ class ResultCollectorTest {
                 .extracting(ValidationErrors::fieldErrors)
                 .asInstanceOf(MAP)
                 .containsAllEntriesOf(Map.of(
-                        "[0]", List.of(new TemplateString("Error 1")),
+                        "[0]", List.of(TemplateString.of("Error 1")),
                         "[1]", List.of(
-                                new TemplateString("Error 2"),
-                                new TemplateString("Error 3")
+                                TemplateString.of("Error 2"),
+                                TemplateString.of("Error 3")
                         )
                 ));
     }
@@ -61,10 +61,10 @@ class ResultCollectorTest {
                 .extracting(ValidationErrors::fieldErrors)
                 .asInstanceOf(MAP)
                 .containsAllEntriesOf(Map.of(
-                        "[0]", List.of(new TemplateString("Error 1")),
+                        "[0]", List.of(TemplateString.of("Error 1")),
                         "[1]", List.of(
-                                new TemplateString("Error 2"),
-                                new TemplateString("Error 3")
+                                TemplateString.of("Error 2"),
+                                TemplateString.of("Error 3")
                         )
                 ));
     }
@@ -90,10 +90,10 @@ class ResultCollectorTest {
                 .extracting(ValidationErrors::fieldErrors)
                 .asInstanceOf(MAP)
                 .containsAllEntriesOf(Map.of(
-                        "[0]", List.of(new TemplateString("Error 1")),
+                        "[0]", List.of(TemplateString.of("Error 1")),
                         "[1]", List.of(
-                                new TemplateString("Error 2"),
-                                new TemplateString("Error 3")
+                                TemplateString.of("Error 2"),
+                                TemplateString.of("Error 3")
                         )
                 ));
     }

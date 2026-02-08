@@ -7,25 +7,26 @@ import io.github.raniagus.javalidation.ValidationErrors;
 import io.github.raniagus.javalidation.format.TemplateString;
 import java.util.List;
 import java.util.Map;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 
-class ValidationErrorsSerializerTest {
+class FlattenedErrorsSerializerTest {
     private JsonMapper mapper;
 
     @BeforeEach
     void setUp() {
         mapper = JsonMapper.builder()
                 .enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
-                .addModule(new JavalidationModule())
+                .addModule(JavalidationModule.builder().withFlattenedErrors().build())
                 .build();
     }
 
     @Test
     void shouldSerializeOnlyRootErrors() {
         ValidationErrors errors = new ValidationErrors(
-                List.of(new TemplateString("root error")),
+                List.of(TemplateString.of("root error")),
                 Map.of()
         );
 
@@ -41,8 +42,8 @@ class ValidationErrorsSerializerTest {
         ValidationErrors errors = new ValidationErrors(
                 List.of(),
                 Map.of(
-                        "age", List.of(new TemplateString("invalid")),
-                        "name", List.of(new TemplateString("required"))
+                        "name", List.of(TemplateString.of("required")),
+                        "age", List.of(TemplateString.of("invalid"))
                 )
         );
 
@@ -56,9 +57,9 @@ class ValidationErrorsSerializerTest {
     @Test
     void shouldFlattenRootAndFieldErrors() {
         ValidationErrors errors = new ValidationErrors(
-                List.of(new TemplateString("global error")),
+                List.of(TemplateString.of("global error")),
                 Map.of(
-                        "email", List.of(new TemplateString("invalid format"))
+                        "email", List.of(TemplateString.of("invalid format"))
                 )
         );
 
@@ -91,9 +92,9 @@ class ValidationErrorsSerializerTest {
         Container container = new Container(
                 "123",
                 new ValidationErrors(
-                        List.of(new TemplateString("root")),
+                        List.of(TemplateString.of("root")),
                         Map.of(
-                                "field", List.of(new TemplateString("bad value"))
+                                "field", List.of(TemplateString.of("bad value"))
                         )
                 )
         );
