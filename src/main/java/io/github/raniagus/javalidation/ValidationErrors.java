@@ -42,7 +42,7 @@ public record ValidationErrors(
             prefixedFieldErrors.put(prefix, rootErrors);
         }
         for (Map.Entry<String, List<TemplateString>> entry : fieldErrors.entrySet()) {
-            prefixedFieldErrors.put(prefix + entry.getKey(), entry.getValue());
+            prefixedFieldErrors.put(prefix + "." + entry.getKey(), entry.getValue());
         }
         return new ValidationErrors(new ArrayList<>(), prefixedFieldErrors);
     }
