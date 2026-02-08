@@ -118,7 +118,12 @@ repositories {
 | `err(String, String)`                  | Create failed result with field error     |
 | `err(ValidationErrors)`                | Create failed result from existing errors |
 | `map(Function)`                        | Transform success value                   |
+| `mapErr(Function)`                     | Transform validation errors               |
+| `bimap(Function, Function)`            | Transform both success and error paths    |
 | `flatMap(Function)`                    | Chain validations                         |
+| `flatMapErr(Function)`                 | Chain error transformations (recovery)    |
+| `peek(Consumer)`                       | Side effect on success (debugging)        |
+| `peekErr(Consumer)`                    | Side effect on error (debugging)          |
 | `filter(Predicate, String)`            | Conditional validation (root error)       |
 | `filter(Predicate, String, String)`    | Conditional validation (field error)      |
 | `check(BiConsumer)`                    | Add imperative validation logic           |

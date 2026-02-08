@@ -253,6 +253,78 @@ class ResultTest {
         assertThat(errors.fieldErrors()).containsKey("prefix.field");
     }
 
+    // -- bimap --
+
+    @Test
+    void givenOk_whenBimap_thenAppliesSuccessFunction() {
+        var result = Result.ok(10).bimap(
+                x -> x * 2,
+                errors -> errors.withPrefix("should-not-be-called")
+        );
+
+        assertThat(result.getOrThrow()).isEqualTo(20);
+    }
+
+    @Test
+    void givenErr_whenBimap_thenAppliesErrorFunction() {
+        var result = Result.<Integer>err("age", "invalid")
+                .bimap(
+                        x -> x * 2,
+                        errors -> errors.withPrefix("user")
+                );
+
+        var errors = result.getErrors();
+        assertThat(errors.fieldErrors()).containsKey("user.age");
+        assertThat(errors.fieldErrors()).doesNotContainKey("age");
+    }
+
+    // -- peek --
+
+    @Test
+    void givenOk_whenPeek_thenExecutesActionAndReturnsSameInstance() {
+        var box = new int[1];
+        var ok = Result.ok(42);
+
+        var result = ok.peek(value -> box[0] = value);
+
+        assertThat(result).isSameAs(ok);
+        assertThat(box[0]).isEqualTo(42);
+    }
+
+    @Test
+    void givenErr_whenPeek_thenSkipsAction() {
+        var box = new int[1];
+        var result = Result.<Integer>err("error")
+                .peek(value -> box[0] = value);
+
+        assertThat(box[0]).isEqualTo(0);
+        assertThatThrownBy(result::getOrThrow)
+                .isInstanceOf(JavalidationException.class);
+    }
+
+    // -- peekErr --
+
+    @Test
+    void givenErr_whenPeekErr_thenExecutesActionAndReturnsSameInstance() {
+        var box = new int[1];
+        var err = Result.<Integer>err("field", "error");
+
+        var result = err.peekErr(errors -> box[0] = errors.count());
+
+        assertThat(result).isSameAs(err);
+        assertThat(box[0]).isEqualTo(1);
+    }
+
+    @Test
+    void givenOk_whenPeekErr_thenSkipsAction() {
+        var box = new int[1];
+        var result = Result.ok(42)
+                .peekErr(errors -> box[0] = errors.count());
+
+        assertThat(box[0]).isEqualTo(0);
+        assertThat(result.getOrThrow()).isEqualTo(42);
+    }
+
     // -- flatMap --
 
     @Test
@@ -297,6 +369,45 @@ class ResultTest {
         }))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessageContaining("unexpected error");
+    }
+
+    // -- flatMapErr --
+
+    @Test
+    void givenOk_whenFlatMapErr_thenSkipsFunctionAndReturnsOk() {
+        var ok = Result.ok(42);
+
+        var result = ok.flatMapErr(errors -> Result.ok(100));
+
+        assertThat(result).isSameAs(ok);
+        assertThat(result.getOrThrow()).isEqualTo(42);
+    }
+
+    @Test
+    void givenErr_whenFlatMapErrRecoversWithOk_thenReturnsOk() {
+        var result = Result.<Integer>err("cache-miss")
+                .flatMapErr(errors -> Result.ok(100));
+
+        assertThat(result.getOrThrow()).isEqualTo(100);
+    }
+
+    @Test
+    void givenErr_whenFlatMapErrReturnsAnotherErr_thenReturnsNewErr() {
+        var result = Result.<Integer>err("first", "error1")
+                .flatMapErr(errors -> Result.err("second", "error2"));
+
+        var resultErrors = result.getErrors();
+        assertThat(resultErrors.fieldErrors()).containsKey("second");
+        assertThat(resultErrors.fieldErrors()).doesNotContainKey("first");
+    }
+
+    @Test
+    void givenErr_whenFlatMapErrChained_thenAppliesFallbackChain() {
+        var result = Result.<String>err("Cache miss")
+                .flatMapErr(e1 -> Result.err("Database miss"))
+                .flatMapErr(e2 -> Result.ok("Default value"));
+
+        assertThat(result.getOrThrow()).isEqualTo("Default value");
     }
 
     // -- fold --

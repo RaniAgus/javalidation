@@ -179,14 +179,11 @@ public record ValidationErrors(
         if (!rootErrors.isEmpty()) {
             prefixedFieldErrors.put(prefix, rootErrors);
         }
-        StringBuilder prefixBuilder = new StringBuilder(prefix).append(".");
-        int prefixLength = prefixBuilder.length();
+        String dotPrefix = prefix + ".";
         for (Map.Entry<String, List<TemplateString>> entry : fieldErrors.entrySet()) {
-            prefixBuilder.append(entry.getKey());
-            prefixedFieldErrors.put(prefixBuilder.toString(), entry.getValue());
-            prefixBuilder.setLength(prefixLength);
+            prefixedFieldErrors.put(dotPrefix + entry.getKey(), entry.getValue());
         }
-        return new ValidationErrors(new ArrayList<>(), prefixedFieldErrors);
+        return new ValidationErrors(List.of(), prefixedFieldErrors);
     }
 
     /**
@@ -210,7 +207,9 @@ public record ValidationErrors(
      * @see #withPrefix(String)
      */
     public ValidationErrors withPrefix(Object first, Object... rest) {
-        var sb = new StringBuilder().append(first);
+        // Pre-calculate prefix once
+        StringBuilder sb = new StringBuilder();
+        sb.append(first);
         for (Object o : rest) {
             sb.append(o);
         }

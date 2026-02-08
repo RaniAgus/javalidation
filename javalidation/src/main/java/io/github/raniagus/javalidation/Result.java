@@ -2,6 +2,7 @@ package io.github.raniagus.javalidation;
 
 import io.github.raniagus.javalidation.combiner.ResultCombiner2;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -196,7 +197,7 @@ public sealed interface Result<T extends @Nullable Object> {
      */
     default Result<T> withPrefix(String prefix) {
         return switch (this) {
-            case Ok<T>(T value) -> new Ok<>(value);
+            case Ok<T> self -> self;
             case Err<T>(ValidationErrors errors) -> new Err<>(errors.withPrefix(prefix));
         };
     }
@@ -221,7 +222,11 @@ public sealed interface Result<T extends @Nullable Object> {
      * @see #withPrefix(String)
      */
     default Result<T> withPrefix(Object first, Object... remaining) {
-        StringBuilder sb = new StringBuilder().append(first);
+        if (this instanceof Ok) {
+            return this;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(first);
         for (Object o : remaining) {
             sb.append(o);
         }
@@ -363,6 +368,110 @@ public sealed interface Result<T extends @Nullable Object> {
             case Ok<T> self -> self;
             case Err<T>(ValidationErrors errors) -> new Err<>(mapper.apply(errors));
         };
+    }
+
+    /**
+     * Chains error transformations, allowing recovery from errors.
+     * <p>
+     * If this result is {@link Ok}, returns it unchanged. If this result is {@link Err}, applies
+     * the mapper function which can either recover (return {@link Ok}) or transform the errors
+     * (return a different {@link Err}).
+     * <p>
+     * This enables error recovery and fallback logic in the error track.
+     * <p>
+     * Example:
+     * <pre>{@code
+     * Result<User> result = findUserInCache(id)
+     *     .flatMapErr(errors -> findUserInDatabase(id))  // Try database on cache miss
+     *     .flatMapErr(errors -> Result.ok(defaultUser));  // Use default user as fallback
+     * }</pre>
+     *
+     * @param mapper function that receives errors and produces a new result
+     * @return this result if {@link Ok}, otherwise the result produced by the mapper
+     */
+    default Result<T> flatMapErr(Function<ValidationErrors, Result<T>> mapper) {
+        return switch (this) {
+            case Ok<T> ok -> ok;
+            case Err<T>(ValidationErrors errors) -> mapper.apply(errors);
+        };
+    }
+
+    /**
+     * Transforms both the success value and the validation errors using the provided functions.
+     * <p>
+     * This is a bifunctor map operation. If this result is {@link Ok}, applies the success function
+     * to the value. If this result is {@link Err}, applies the error function to the errors.
+     * <p>
+     * This is useful when you need to transform both success and failure paths simultaneously.
+     * <p>
+     * Example:
+     * <pre>{@code
+     * Result<String> result = validateAge(age)
+     *     .bimap(
+     *         age -> "Valid age: " + age,
+     *         errors -> errors.withPrefix("user")
+     *     );
+     * }</pre>
+     *
+     * @param onSuccess function to transform the success value
+     * @param onError function to transform the validation errors
+     * @param <U> the type of the transformed success value
+     * @return a new result with transformed value or errors
+     */
+    default <U extends @Nullable Object> Result<U> bimap(
+            Function<T, U> onSuccess,
+            Function<ValidationErrors, ValidationErrors> onError
+    ) {
+        return switch (this) {
+            case Ok<T>(T value) -> new Ok<>(onSuccess.apply(value));
+            case Err<T>(ValidationErrors errors) -> new Err<>(onError.apply(errors));
+        };
+    }
+
+    /**
+     * Performs a side effect with the success value without transforming it.
+     * <p>
+     * This is useful for logging, debugging, or other side effects in the success path.
+     * The value is not modified, and this result is returned unchanged.
+     * <p>
+     * Example:
+     * <pre>{@code
+     * Result<User> result = validateUser(user)
+     *     .peek(u -> logger.info("Validated user: {}", u.name()))
+     *     .flatMap(u -> saveUser(u));
+     * }</pre>
+     *
+     * @param action action to perform with the success value (must not be null)
+     * @return this result unchanged
+     */
+    default Result<T> peek(Consumer<T> action) {
+        if (this instanceof Ok<T>(T value)) {
+            action.accept(value);
+        }
+        return this;
+    }
+
+    /**
+     * Performs a side effect with the validation errors without transforming them.
+     * <p>
+     * This is useful for logging, debugging, or other side effects in the error path.
+     * The errors are not modified, and this result is returned unchanged.
+     * <p>
+     * Example:
+     * <pre>{@code
+     * Result<User> result = validateUser(user)
+     *     .peekErr(errors -> logger.warn("Validation failed: {} errors", errors.count()))
+     *     .mapErr(errors -> errors.withPrefix("user"));
+     * }</pre>
+     *
+     * @param action action to perform with the validation errors (must not be null)
+     * @return this result unchanged
+     */
+    default Result<T> peekErr(Consumer<ValidationErrors> action) {
+        if (this instanceof Err<T>(ValidationErrors errors)) {
+            action.accept(errors);
+        }
+        return this;
     }
 
     /**
