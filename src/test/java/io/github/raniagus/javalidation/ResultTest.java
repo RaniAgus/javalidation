@@ -1,6 +1,7 @@
 package io.github.raniagus.javalidation;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
 
@@ -276,6 +277,191 @@ class ResultTest {
         var errors = result.getErrors();
         assertThat(errors.rootErrors()).hasSize(1);
         assertThat(errors.fieldErrors()).hasSize(1);
+    }
+
+    @Test
+    void check_withOkAndValidPredicate_returnsOk() {
+        var result = Result.ok(42).check((value, validation) -> {
+            if (value < 0) {
+                validation.addRootError("Value must be positive");
+            }
+        });
+
+        assertThat(result.getOrThrow()).isEqualTo(42);
+    }
+
+    @Test
+    void check_withOkAndFailingPredicate_returnsErr() {
+        var result = Result.ok(-5).check((value, validation) -> {
+            if (value < 0) {
+                validation.addRootError("Value must be positive");
+            }
+        });
+
+        assertThatThrownBy(result::getOrThrow)
+                .isInstanceOf(JavalidationException.class);
+        assertThat(result.getErrors().rootErrors()).hasSize(1);
+    }
+
+    @Test
+    void check_withOkAndFieldError_addsFieldError() {
+        var result = Result.ok("test").check((value, validation) -> {
+            if (value.length() < 5) {
+                validation.addFieldError("username", "Username must be at least 5 characters");
+            }
+        });
+
+        var errors = result.getErrors();
+        assertThat(errors.fieldErrors()).containsKey("username");
+    }
+
+    @Test
+    void check_withErr_preservesError() {
+        var result = Result.<Integer>err("field", "initial error")
+                .check((value, validation) -> {
+                    validation.addRootError("This should not be executed");
+                });
+
+        var errors = result.getErrors();
+        assertThat(errors.fieldErrors()).containsKey("field");
+        assertThat(errors.rootErrors()).isEmpty();
+    }
+
+    @Test
+    void check_withMultipleValidations_accumulates() {
+        var result = Result.ok(15).check((value, validation) -> {
+            if (value < 10) {
+                validation.addRootError("Value must be at least 10");
+            }
+            if (value > 100) {
+                validation.addRootError("Value must not exceed 100");
+            }
+        });
+
+        assertThat(result.getOrThrow()).isEqualTo(15);
+    }
+
+    @Test
+    void check_withMultipleFailingValidations_accumulatesErrors() {
+        var result = Result.ok(150).check((value, validation) -> {
+            if (value > 10) {
+                validation.addRootError("Value must not exceed 10");
+            }
+            if (value > 100) {
+                validation.addRootError("Value must not exceed 100");
+            }
+        });
+
+        assertThat(result.getErrors().rootErrors()).hasSize(2);
+    }
+
+    @Test
+    void filter_withOkAndPassingPredicate_returnsOk() {
+        var result = Result.ok(42).filter(x -> x > 0, "Value must be positive");
+
+        assertThat(result.getOrThrow()).isEqualTo(42);
+    }
+
+    @Test
+    void filter_withOkAndFailingPredicate_returnsErr() {
+        var result = Result.ok(-5).filter(x -> x > 0, "Value must be positive");
+
+        assertThatThrownBy(result::getOrThrow)
+                .isInstanceOf(JavalidationException.class);
+        assertThat(result.getErrors().rootErrors()).hasSize(1);
+    }
+
+    @Test
+    void filter_withOkAndFailingPredicateWithArgs_formatsMessage() {
+        var result = Result.ok(-5).filter(
+                x -> x > 0,
+                "Value must be greater than {}",
+                0
+        );
+
+        var errors = result.getErrors();
+        assertThat(errors.rootErrors()).hasSize(1);
+    }
+
+    @Test
+    void filter_withFieldAndPassingPredicate_returnsOk() {
+        var result = Result.ok("hello").filter(
+                s -> s.length() >= 5,
+                "length",
+                "Must be at least 5 characters"
+        );
+
+        assertThat(result.getOrThrow()).isEqualTo("hello");
+    }
+
+    @Test
+    void filter_withFieldAndFailingPredicate_returnsFieldErr() {
+        var result = Result.ok("hi").filter(
+                s -> s.length() >= 5,
+                "username",
+                "Must be at least 5 characters"
+        );
+
+        var errors = result.getErrors();
+        assertThat(errors.fieldErrors()).containsKey("username");
+    }
+
+    @Test
+    void filter_withFieldAndFailingPredicateWithArgs_formatsMessage() {
+        var result = Result.ok("hi").filter(
+                s -> s.length() >= 5,
+                "username",
+                "Must be at least {} characters",
+                5
+        );
+
+        var errors = result.getErrors();
+        assertThat(errors.fieldErrors()).containsKey("username");
+    }
+
+    @Test
+    void filter_withErr_preservesError() {
+        var result = Result.<Integer>err("initial", "error")
+                .filter(x -> x > 0, "Value must be positive");
+
+        var errors = result.getErrors();
+        assertThat(errors.fieldErrors()).containsKey("initial");
+    }
+
+    @Test
+    void filter_canBeChained() {
+        var result = Result.ok(42)
+                .filter(x -> x > 0, "Value must be positive")
+                .filter(x -> x < 100, "Value must be less than 100");
+
+        assertThat(result.getOrThrow()).isEqualTo(42);
+    }
+
+    @Test
+    void filter_chainedWithFailingFirstFilter_returnsErr() {
+        var result = Result.ok(42)
+                .filter(x -> x > 100, "Value must be greater than 100")
+                .filter(x -> x < 50, "Value must be less than 50");
+
+        assertThat(result.getErrors().rootErrors()).hasSize(1);
+    }
+
+    @Test
+    void filter_chainedWithFailingSecondFilter_returnsErr() {
+        var result = Result.ok(42)
+                .filter(x -> x > 0, "Value must be positive")
+                .filter(x -> x < 30, "Value must be less than 30");
+
+        assertThat(result.getErrors().rootErrors()).hasSize(1);
+    }
+
+    @Test
+    void filter_withFieldCanBeChained() {
+        var result = Result.ok("hello")
+                .filter(s -> s.length() >= 3, "length", "Too short")
+                .filter(s -> s.length() <= 10, "length", "Too long");
+
+        assertThat(result.getOrThrow()).isEqualTo("hello");
     }
 
     private void raiseJavalidationException() {

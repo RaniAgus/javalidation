@@ -1,7 +1,9 @@
 package io.github.raniagus.javalidation;
 
 import io.github.raniagus.javalidation.combiner.ResultCombiner2;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
@@ -41,53 +43,80 @@ public sealed interface Result<T extends @Nullable Object> {
         return withPrefix(sb.toString());
     }
 
-     default <U> ResultCombiner2<T, U> and(Result<U> result) {
-         return new ResultCombiner2<>(this, result);
-     }
+    default <U> ResultCombiner2<T, U> and(Result<U> result) {
+        return new ResultCombiner2<>(this, result);
+    }
 
-     default <U> Result<U> map(Function<T, U> mapper) {
-         return switch (this) {
-             case Ok<T>(T value) -> new Ok<>(mapper.apply(value));
-             case Err<T>(ValidationErrors errors) -> new Err<>(errors);
-         };
-     }
+    default <U> Result<U> map(Function<T, U> mapper) {
+        return switch (this) {
+            case Ok<T>(T value) -> new Ok<>(mapper.apply(value));
+            case Err<T>(ValidationErrors errors) -> new Err<>(errors);
+        };
+    }
 
-     default <U> Result<U> flatMap(Function<T, Result<U>> mapper) {
-         return switch (this) {
-             case Ok<T>(T value) -> mapper.apply(value);
-             case Err<T>(ValidationErrors errors) -> new Err<>(errors);
-         };
-     }
+    default Result<T> mapErr(Function<ValidationErrors, ValidationErrors> mapper) {
+        return switch (this) {
+            case Ok<T>(T ignored) -> this;
+            case Err<T>(ValidationErrors errors) -> new Err<>(mapper.apply(errors));
+        };
+    }
 
-     default Result<T> mapErr(Function<ValidationErrors, ValidationErrors> mapper) {
-         return switch (this) {
-             case Ok<T>(T ignored) -> this;
-             case Err<T>(ValidationErrors errors) -> new Err<>(mapper.apply(errors));
-         };
-     }
+    default <U> Result<U> flatMap(Function<T, Result<U>> mapper) {
+        return switch (this) {
+            case Ok<T>(T value) -> mapper.apply(value);
+            case Err<T>(ValidationErrors errors) -> new Err<>(errors);
+        };
+    }
 
-     default <U> U fold(Function<T, U> onSuccess, Function<ValidationErrors, U> onFailure) {
-         return switch (this) {
-             case Ok<T>(T value) -> onSuccess.apply(value);
-             case Err<T>(ValidationErrors errors) -> onFailure.apply(errors);
-         };
-     }
+    default Result<T> check(BiConsumer<T, Validation> predicate) {
+        return switch (this) {
+            case Ok<T>(T value) -> {
+                Validation validation = Validation.create();
+                predicate.accept(value, validation);
+                yield validation.asResult(value);
+            }
+            case Err<T> err -> err;
+        };
+    }
 
-     default T getOrElse(T defaultValue) {
-         return switch (this) {
-             case Ok<T>(T value) -> value;
-             case Err<T>(ValidationErrors ignored) -> defaultValue;
-         };
-     }
+    default Result<T> filter(Predicate<T> predicate, String message, Object... args) {
+        return check((value, validation) -> {
+            if (!predicate.test(value)) {
+                validation.addRootError(message, args);
+            }
+        });
+    }
 
-     default T getOrElse(Supplier<T> supplier) {
-         return switch (this) {
-             case Ok<T>(T value) -> value;
-             case Err<T>(ValidationErrors ignored) -> supplier.get();
-         };
-     }
+    default Result<T> filter(Predicate<T> predicate, String field, String message, Object... args) {
+        return check((value, validation) -> {
+            if (!predicate.test(value)) {
+                validation.addFieldError(field, message, args);
+            }
+        });
+    }
 
-     static <T extends @Nullable Object> Result<T> of(Supplier<T> supplier) {
+    default <U> U fold(Function<T, U> onSuccess, Function<ValidationErrors, U> onFailure) {
+        return switch (this) {
+            case Ok<T>(T value) -> onSuccess.apply(value);
+            case Err<T>(ValidationErrors errors) -> onFailure.apply(errors);
+        };
+    }
+
+    default T getOrElse(T defaultValue) {
+        return switch (this) {
+            case Ok<T>(T value) -> value;
+            case Err<T>(ValidationErrors ignored) -> defaultValue;
+        };
+    }
+
+    default T getOrElse(Supplier<T> supplier) {
+        return switch (this) {
+            case Ok<T>(T value) -> value;
+            case Err<T>(ValidationErrors ignored) -> supplier.get();
+        };
+    }
+
+    static <T extends @Nullable Object> Result<T> of(Supplier<T> supplier) {
         try {
             return new Ok<>(supplier.get());
         } catch (JavalidationException e) {

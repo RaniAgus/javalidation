@@ -1,5 +1,6 @@
 package io.github.raniagus.javalidation;
 
+import io.github.raniagus.javalidation.format.TemplateString;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -7,7 +8,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
-import io.github.raniagus.javalidation.format.TemplateString;
 
 public class Validation {
     private final List<TemplateString> rootErrors = new ArrayList<>();
@@ -73,6 +73,10 @@ public class Validation {
 
     public ValidationErrors finish() {
         return new ValidationErrors(rootErrors, fieldErrors);
+    }
+
+    public <T extends @Nullable Object> Result<T> asResult(T value) {
+        return asResult(() -> value);
     }
 
     public <T extends @Nullable Object> Result<T> asResult(Supplier<T> supplier) {
