@@ -214,6 +214,27 @@ class ResultTest {
                 .isInstanceOf(JavalidationException.class);
     }
 
+    @Test
+    void givenOk_whenMapThrowsJavalidationException_thenCatchesAndReturnsErr() {
+        var result = Result.ok(5).map(x -> {
+            throw new JavalidationException("error in mapper");
+        });
+
+        assertThat(result).isInstanceOf(Result.Err.class);
+        var errors = result.getErrors();
+        assertThat(errors.rootErrors()).hasSize(1);
+        assertThat(errors.rootErrors().get(0).message()).isEqualTo("error in mapper");
+    }
+
+    @Test
+    void givenOk_whenMapThrowsOtherException_thenPropagatesException() {
+        assertThatThrownBy(() -> Result.ok(5).map(x -> {
+            throw new IllegalStateException("unexpected error");
+        }))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("unexpected error");
+    }
+
     // -- mapErr --
 
     @Test
@@ -255,6 +276,27 @@ class ResultTest {
 
         assertThatThrownBy(result::getOrThrow)
                 .isInstanceOf(JavalidationException.class);
+    }
+
+    @Test
+    void givenOk_whenFlatMapThrowsJavalidationException_thenCatchesAndReturnsErr() {
+        var result = Result.ok(5).flatMap(x -> {
+            throw new JavalidationException("error in flatMap");
+        });
+
+        assertThat(result).isInstanceOf(Result.Err.class);
+        var errors = result.getErrors();
+        assertThat(errors.rootErrors()).hasSize(1);
+        assertThat(errors.rootErrors().get(0).message()).isEqualTo("error in flatMap");
+    }
+
+    @Test
+    void givenOk_whenFlatMapThrowsOtherException_thenPropagatesException() {
+        assertThatThrownBy(() -> Result.ok(5).flatMap(x -> {
+            throw new NullPointerException("unexpected error");
+        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("unexpected error");
     }
 
     // -- fold --
