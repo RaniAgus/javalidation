@@ -412,4 +412,44 @@ class ResultCollectorTest {
                 .asInstanceOf(MAP)
                 .containsEntry("order.items[0].field", List.of(TemplateString.of("Field error")));
     }
+
+    // -- PartitionedResult methods --
+
+    @Test
+    void givenPartitionedResultWithNoErrors_whenHasErrors_thenReturnsFalse() {
+        var partitioned = new PartitionedResult<>(List.of("value1", "value2"), ValidationErrors.empty());
+
+        assertThat(partitioned.hasErrors()).isFalse();
+    }
+
+    @Test
+    void givenPartitionedResultWithErrors_whenHasErrors_thenReturnsTrue() {
+        var partitioned = new PartitionedResult<>(
+                List.of("value1"),
+                ValidationErrors.of(ErrorStrings.ERROR_1)
+        );
+
+        assertThat(partitioned.hasErrors()).isTrue();
+    }
+
+    @Test
+    void givenPartitionedResultWithNoErrors_whenToResult_thenReturnsOk() {
+        var partitioned = new PartitionedResult<>(List.of("value1", "value2"), ValidationErrors.empty());
+
+        Result<List<String>> result = partitioned.toResult();
+
+        assertThat(result).isInstanceOf(Result.Ok.class);
+        assertThat(result.getOrThrow()).containsExactly("value1", "value2");
+    }
+
+    @Test
+    void givenPartitionedResultWithErrors_whenToResult_thenReturnsErr() {
+        ValidationErrors errors = ValidationErrors.of("field", ErrorStrings.ERROR_1);
+        var partitioned = new PartitionedResult<>(List.of("value1"), errors);
+
+        Result<List<String>> result = partitioned.toResult();
+
+        assertThat(result).isInstanceOf(Result.Err.class);
+        assertThat(result.getErrors()).isEqualTo(errors);
+    }
 }
