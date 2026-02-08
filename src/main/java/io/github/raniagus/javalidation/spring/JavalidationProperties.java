@@ -15,11 +15,12 @@ public class JavalidationProperties {
     private boolean useMessageSource = true;
 
     /**
-     * Whether to flatten ValidationErrors into a single object. When false, the nested structure is preserved,
-     * separating {@link ValidationErrors#rootErrors()} and {@link ValidationErrors#fieldErrors()}.
-     * This feature is enabled by default.
+     * Whether to flatten ValidationErrors into a single object, with empty string as key for root errors. When false,
+     * the nested structure is preserved, separating {@link ValidationErrors#rootErrors()} and
+     * {@link ValidationErrors#fieldErrors()}.
+     * This feature is disabled by default.
      */
-    private boolean flattenErrors = true;
+    private boolean flattenErrors = false;
 
     public boolean isUseMessageSource() {
         return useMessageSource;

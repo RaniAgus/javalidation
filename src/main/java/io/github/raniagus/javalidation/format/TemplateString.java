@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import org.jspecify.annotations.NonNull;
 
-public record TemplateString(String message, Object[] args) {
+public record TemplateString(String message, @NonNull Object[] args) {
     public TemplateString {
         args = Arrays.copyOf(args, args.length);
     }

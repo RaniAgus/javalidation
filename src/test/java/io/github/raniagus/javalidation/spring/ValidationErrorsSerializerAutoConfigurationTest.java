@@ -27,6 +27,21 @@ class ValidationErrorsSerializerAutoConfigurationTest extends AutoConfigurationT
         private JsonMapper jsonMapper;
 
         @Test
+        void shouldNotFlattenErrors() {
+            String json = jsonMapper.writeValueAsString(ERRORS);
+            assertThat(json).isEqualTo("""
+                    {"rootErrors":["global error"],"fieldErrors":{"email":["invalid format"]}}\
+                    """);
+        }
+    }
+
+    @SpringBootTest(classes = TestApplication.class)
+    @TestPropertySource(properties = "io.github.raniagus.javalidation.flatten-errors=true")
+    static class FlattenErrorsEnabledTest {
+        @Autowired
+        private JsonMapper jsonMapper;
+
+        @Test
         void shouldFlattenErrors() {
             String json = jsonMapper.writeValueAsString(ERRORS);
             AssertionsForClassTypes.assertThat(json).isEqualTo("""
@@ -35,22 +50,7 @@ class ValidationErrorsSerializerAutoConfigurationTest extends AutoConfigurationT
         }
     }
 
-    @TestPropertySource(properties = "io.github.raniagus.javalidation.flatten-errors=true")
-    static class FlattenErrorsEnabledTest extends FlattenErrorsUnsetTest {
-    }
-
-    @SpringBootTest(classes = TestApplication.class)
     @TestPropertySource(properties = "io.github.raniagus.javalidation.flatten-errors=false")
-    static class UseMessageSourceDisabledTest {
-        @Autowired
-        private JsonMapper jsonMapper;
-
-        @Test
-        void shouldNotFlattenErrors() {
-            String json = jsonMapper.writeValueAsString(ERRORS);
-            assertThat(json).isEqualTo("""
-                    {"rootErrors":["global error"],"fieldErrors":{"email":["invalid format"]}}\
-                    """);
-        }
+    static class UseMessageSourceDisabledTest extends FlattenErrorsUnsetTest {
     }
 }

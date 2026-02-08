@@ -40,7 +40,7 @@ public class JavalidationAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = PREFIX, name = "flatten-errors", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(prefix = PREFIX, name = "flatten-errors", havingValue = "true")
     public ValueSerializer<ValidationErrors> flattenedErrorsSerializer() {
         return new FlattenedErrorsSerializer();
     }
