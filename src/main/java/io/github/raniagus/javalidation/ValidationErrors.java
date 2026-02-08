@@ -244,4 +244,19 @@ public record ValidationErrors(
     public boolean isNotEmpty() {
         return !isEmpty();
     }
+
+    /**
+     * Returns the total number of errors (root and field).
+     * <p>
+     * Example:
+     * <pre>{@code
+     * logger.warn("Validation failed with {} errors", errors.errorCount());
+     * }
+     * </p>
+     *
+     * @return the total number of errors
+     */
+    public int count() {
+        return rootErrors.size() + fieldErrors.values().stream().mapToInt(List::size).sum();
+    }
 }

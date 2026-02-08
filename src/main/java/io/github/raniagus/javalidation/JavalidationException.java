@@ -51,6 +51,7 @@ public class JavalidationException extends RuntimeException {
      * @param errors the accumulated validation errors
      */
     public JavalidationException(ValidationErrors errors) {
+        super(buildMessage(errors));
         this.errors = errors;
     }
 
@@ -86,5 +87,18 @@ public class JavalidationException extends RuntimeException {
      */
     public ValidationErrors getErrors() {
         return this.errors;
+    }
+
+    /**
+     * Builds a concise exception message summarizing the validation errors.
+     * <p>
+     * The message format is: "Validation failed with N error(s)" where N is the total
+     * count of root errors plus field errors.
+     *
+     * @param errors the validation errors
+     * @return a summary message string
+     */
+    private static String buildMessage(ValidationErrors errors) {
+        return "Validation failed with " + errors.count() + " error(s)";
     }
 }
