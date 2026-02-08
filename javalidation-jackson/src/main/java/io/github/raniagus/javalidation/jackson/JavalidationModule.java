@@ -1,5 +1,6 @@
 package io.github.raniagus.javalidation.jackson;
 
+import io.github.raniagus.javalidation.Result;
 import io.github.raniagus.javalidation.ValidationErrors;
 import io.github.raniagus.javalidation.format.TemplateString;
 import io.github.raniagus.javalidation.format.TemplateStringFormatter;
@@ -8,11 +9,12 @@ import tools.jackson.databind.ValueSerializer;
 import tools.jackson.databind.module.SimpleModule;
 
 /**
- * Jackson module for serializing javalidation types ({@link TemplateString} and {@link ValidationErrors}).
+ * Jackson module for serializing javalidation types ({@link Result}, {@link TemplateString}, and {@link ValidationErrors}).
  * <p>
- * This module registers custom serializers to control how validation errors are serialized to JSON.
+ * This module registers custom serializers to control how validation types are serialized to JSON.
  * By default, it uses:
  * <ul>
+ *   <li>{@link ResultSerializer} for {@link Result} - discriminated union with {@code ok} boolean field</li>
  *   <li>{@link TemplateStringSerializer} for {@link TemplateString} - formats templates using {@link TemplateStringFormatter}</li>
  *   <li>{@link ValidationErrorsMixIn} for {@link ValidationErrors} - structures errors as {@code {root: [...], fields: {...}}}</li>
  * </ul>
@@ -38,6 +40,7 @@ import tools.jackson.databind.module.SimpleModule;
  *     .build();
  * }</pre>
  *
+ * @see ResultSerializer
  * @see TemplateStringSerializer
  * @see FlattenedErrorsSerializer
  * @see ValidationErrorsMixIn
@@ -51,6 +54,7 @@ public class JavalidationModule extends SimpleModule {
     ) {
         super(JavalidationModule.class.getSimpleName());
 
+        addSerializer(new ResultSerializer());
         addSerializer(TemplateString.class, templateStringSerializer);
 
         if (validationErrorsSerializer != null) {

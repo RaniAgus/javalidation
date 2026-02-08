@@ -665,7 +665,7 @@ public class UserController {
 
 ### JSON Serialization
 
-#### Default Structure
+#### `ValidationErrors` (Default Structure)
 
 ```json
 {
@@ -677,7 +677,7 @@ public class UserController {
 }
 ```
 
-#### Flattened Structure
+#### `ValidationErrors` (Flattened Structure)
 
 Set `io.github.raniagus.javalidation.flatten-errors: true`:
 
@@ -687,6 +687,28 @@ Set `io.github.raniagus.javalidation.flatten-errors: true`:
   "name": ["Name is required"],
   "age": ["Must be at least 18"]
 }
+```
+
+#### `Result<T>`
+
+**Ok variant:**
+```java
+Result<String> result = Result.ok("success");
+// Serializes to: {"ok": true, "value": "success"}
+```
+
+**Err variant:**
+```java
+Result<String> result = Result.err("email", "Invalid format");
+// Serializes to: {"ok": false, "errors": {"rootErrors": [], "fieldErrors": {"email": ["Invalid format"]}}}
+```
+
+**Nested in API responses:**
+```java
+record ApiResponse(String id, Result<User> result) {}
+
+ApiResponse response = new ApiResponse("123", Result.ok(new User("Alice", 30)));
+// Serializes to: {"id": "123", "result": {"ok": true, "value": {"name": "Alice", "age": 30}}}
 ```
 
 ### Internationalization

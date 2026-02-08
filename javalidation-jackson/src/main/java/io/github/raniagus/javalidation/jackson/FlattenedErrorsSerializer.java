@@ -18,7 +18,7 @@ public class FlattenedErrorsSerializer extends ValueSerializer<ValidationErrors>
         }
 
         var entries = context.hasSerializationFeatures(ORDER_MAP_ENTRIES_BY_KEYS.getMask()) ?
-                value.fieldErrors().entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()
+                  value.fieldErrors().entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()
                 : value.fieldErrors().entrySet();
 
         for (var entry : entries) {
