@@ -8,7 +8,7 @@ import org.jspecify.annotations.Nullable;
 public interface NonaFunction<A extends @Nullable Object, B extends @Nullable Object, C extends @Nullable Object, D extends @Nullable Object, E extends @Nullable Object, F extends @Nullable Object, G extends @Nullable Object, H extends @Nullable Object, I extends @Nullable Object, R extends @Nullable Object> {
     R apply(A a, B b, C c, D d, E e, F f, G g, H h, I i);
 
-    default <V extends @Nullable Object> NonaFunction<A, B, C, D, E, F, G, H, I, V> andThen(Function<? super R, ? extends V> after) {
+    default <V extends @Nullable Object> NonaFunction<A, B, C, D, E, F, G, H, I, V> andThen(Function<? super @Nullable R, ? extends @Nullable V> after) {
         Objects.requireNonNull(after);
         return (A a, B b, C c, D d, E e, F f, G g, H h, I i) -> after.apply(apply(a, b, c, d, e, f, g, h, i));
     }
