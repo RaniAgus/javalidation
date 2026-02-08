@@ -49,12 +49,13 @@ public class JavalidationModule extends SimpleModule {
     private final boolean useDefaultSerializer;
 
     private JavalidationModule(
+            ValueSerializer<Result<?>> resultSerializer,
             ValueSerializer<TemplateString> templateStringSerializer,
             @Nullable ValueSerializer<ValidationErrors> validationErrorsSerializer
     ) {
         super(JavalidationModule.class.getSimpleName());
 
-        addSerializer(new ResultSerializer());
+        addSerializer(resultSerializer);
         addSerializer(TemplateString.class, templateStringSerializer);
 
         if (validationErrorsSerializer != null) {
@@ -103,6 +104,7 @@ public class JavalidationModule extends SimpleModule {
      * @see #withFlattenedErrors()
      */
     public static class Builder {
+        private ValueSerializer<Result<?>> resultSerializer = new ResultSerializer();
         private ValueSerializer<TemplateString> templateStringSerializer = new TemplateStringSerializer();
         private @Nullable ValueSerializer<ValidationErrors> validationErrorsSerializer;
 
@@ -150,6 +152,19 @@ public class JavalidationModule extends SimpleModule {
         }
 
         /**
+         * Configures a custom serializer for {@link Result}.
+         * <p>
+         * Use this for full control over error structure serialization.
+         *
+         * @param resultSerializer the custom serializer (must not be null)
+         * @return this builder for method chaining
+         */
+        public Builder withResultSerializer(ValueSerializer<Result<?>> resultSerializer) {
+            this.resultSerializer = resultSerializer;
+            return this;
+        }
+
+        /**
          * Configures a custom serializer for {@link TemplateString}.
          * <p>
          * Use this for full control over template serialization. For most use cases,
@@ -183,7 +198,7 @@ public class JavalidationModule extends SimpleModule {
          * @return a new module instance with the configured serializers
          */
         public JavalidationModule build() {
-            return new JavalidationModule(templateStringSerializer, validationErrorsSerializer);
+            return new JavalidationModule(resultSerializer, templateStringSerializer, validationErrorsSerializer);
         }
     }
 }
