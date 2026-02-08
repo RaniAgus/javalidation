@@ -2,8 +2,9 @@ package io.github.raniagus.javalidation.combiner;
 
 import io.github.raniagus.javalidation.Result;
 import io.github.raniagus.javalidation.function.OctaFunction;
+import org.jspecify.annotations.Nullable;
 
-public record ResultCombiner8<T1, T2, T3, T4, T5, T6, T7, T8>(
+public record ResultCombiner8<T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object>(
         Result<T1> result1,
         Result<T2> result2,
         Result<T3> result3,
@@ -13,7 +14,7 @@ public record ResultCombiner8<T1, T2, T3, T4, T5, T6, T7, T8>(
         Result<T7> result7,
         Result<T8> result8
 ) {
-    public <T9> ResultCombiner9<T1, T2, T3, T4, T5, T6, T7, T8, T9> and(Result<T9> result9) {
+    public <T9 extends @Nullable Object> ResultCombiner9<T1, T2, T3, T4, T5, T6, T7, T8, T9> and(Result<T9> result9) {
         return new ResultCombiner9<>(
                 result1,
                 result2,
@@ -27,7 +28,7 @@ public record ResultCombiner8<T1, T2, T3, T4, T5, T6, T7, T8>(
         );
     }
 
-    public <R> Result<R> combine(OctaFunction<T1, T2, T3, T4, T5, T6, T7, T8, R> onSuccess) {
+    public <R extends @Nullable Object> Result<R> combine(OctaFunction<T1, T2, T3, T4, T5, T6, T7, T8, R> onSuccess) {
         return Result.combine(
                 () -> onSuccess.apply(
                         result1.getOrThrow(),

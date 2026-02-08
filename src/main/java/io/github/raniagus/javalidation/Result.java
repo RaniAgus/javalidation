@@ -43,7 +43,7 @@ public sealed interface Result<T extends @Nullable Object> {
         return withPrefix(sb.toString());
     }
 
-    default <U> ResultCombiner2<T, U> and(Result<U> result) {
+    default <U extends @Nullable Object> ResultCombiner2<T, U> and(Result<U> result) {
         return new ResultCombiner2<>(this, result);
     }
 
@@ -61,7 +61,7 @@ public sealed interface Result<T extends @Nullable Object> {
         };
     }
 
-    default <U> Result<U> map(Function<T, U> mapper) {
+    default <U extends @Nullable Object> Result<U> map(Function<T, U> mapper) {
         return switch (this) {
             case Ok<T>(T value) -> new Ok<>(mapper.apply(value));
             case Err<T>(ValidationErrors errors) -> new Err<>(errors);
@@ -75,7 +75,7 @@ public sealed interface Result<T extends @Nullable Object> {
         };
     }
 
-    default <U> Result<U> flatMap(Function<T, Result<U>> mapper) {
+    default <U extends @Nullable Object> Result<U> flatMap(Function<T, Result<U>> mapper) {
         return switch (this) {
             case Ok<T>(T value) -> mapper.apply(value);
             case Err<T>(ValidationErrors errors) -> new Err<>(errors);
@@ -109,7 +109,7 @@ public sealed interface Result<T extends @Nullable Object> {
         });
     }
 
-    default <U> U fold(Function<T, U> onSuccess, Function<ValidationErrors, U> onFailure) {
+    default <U extends @Nullable Object> U fold(Function<T, U> onSuccess, Function<ValidationErrors, U> onFailure) {
         return switch (this) {
             case Ok<T>(T value) -> onSuccess.apply(value);
             case Err<T>(ValidationErrors errors) -> onFailure.apply(errors);
@@ -163,7 +163,7 @@ public sealed interface Result<T extends @Nullable Object> {
         return new Err<>(errors);
     }
 
-    static <R> Result<R> combine(Supplier<R> onSuccess, Result<?>... results) {
+    static <R extends @Nullable Object> Result<R> combine(Supplier<R> onSuccess, Result<?>... results) {
         Validation validation = Validation.create();
         for (Result<?> result : results) {
             if (result instanceof Err(ValidationErrors errors)) {
