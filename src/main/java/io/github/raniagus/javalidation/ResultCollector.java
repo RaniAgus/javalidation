@@ -43,6 +43,7 @@ public sealed abstract class ResultCollector<T extends @Nullable Object, R, SELF
     public static final class ToList<T extends @Nullable Object> extends ResultCollector<T, List<T>, ToList<T>> {
         @Override
         protected List<T> finish(List<T> values, Validation validation) {
+            //noinspection DataFlowIssue
             return validation.checkAndGet(() -> List.copyOf(values));
         }
     }

@@ -258,7 +258,7 @@ public class Validation {
      * The supplier is only called if no errors have been accumulated. This allows expensive object
      * construction to be deferred until validation passes.
      * <p>
-     * If the supplier throws {@link JavavalidationException}, it is caught and converted to {@link Result.Err}.
+     * If the supplier throws {@link JavalidationException}, it is caught and converted to {@link Result.Err}.
      * <p>
      * Example:
      * <pre>{@code
@@ -305,7 +305,7 @@ public class Validation {
     }
 
     /**
-     * Throws {@link JavavalidationException} if any errors exist, otherwise returns the supplied value.
+     * Throws {@link JavalidationException} if any errors exist, otherwise returns the supplied value.
      * <p>
      * This combines {@link #check()} with value retrieval in a single operation.
      * The supplier is only called if validation passes.
