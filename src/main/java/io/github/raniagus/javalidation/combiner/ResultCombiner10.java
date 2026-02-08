@@ -11,11 +11,6 @@ import org.jspecify.annotations.Nullable;
  * combining multiple validation results while accumulating all errors. This combiner specifically
  * handles 10 results.
  * <p>
- * You typically create this via {@link Result#and(Result)} and:
- * <ul>
- *   <li>Terminate with {@link #combine(DecaFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R>)} to produce the final result</li>
- * </ul>
- * <p>
  * <b>All errors from all results are accumulated.</b> The success function is only called if
  * all results are {@link Result.Ok}.
  * <p>
@@ -24,12 +19,18 @@ import org.jspecify.annotations.Nullable;
  * Result<Person> person = validateName(name)
  *     .and(validateAge(age))
  *     .and(validateEmail(email))
+ *     .and(validateAddress(address))
+ *     .and(validatePhone(phone))
+ *     .and(validatePassword(password))
+ *     .and(validateRole(role))
+ *     .and(validateIsAdmin(isAdmin))
+ *     .and(validateIsPremium(isPremium))
+ *     .and(validateIsBanned(isBanned))
  *     .combine((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) -> new Person(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10));
  * }</pre>
  * <p>
  * If any validation fails, all errors are accumulated in the final {@code Err} result.
  *
- * @param <T1> <T2> <T3> <T4> <T5> <T6> <T7> <T8> <T9> <T10>> the types of the results' success values
  * @see Result#and(Result)
  */
 public record ResultCombiner10<T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object, T9 extends @Nullable Object, T10 extends @Nullable Object>(

@@ -11,12 +11,6 @@ import org.jspecify.annotations.Nullable;
  * combining multiple validation results while accumulating all errors. This combiner specifically
  * handles 3 results.
  * <p>
- * You typically create this via {@link Result#and(Result)} and either:
- * <ul>
- *   <li>Chain more results with {@link #and(Result)} (returns ResultCombiner4)</li>
- *   <li>Terminate with {@link #combine(TriFunction<T1, T2, T3, R>)} to produce the final result</li>
- * </ul>
- * <p>
  * <b>All errors from all results are accumulated.</b> The success function is only called if
  * all results are {@link Result.Ok}.
  * <p>
@@ -30,7 +24,6 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * If any validation fails, all errors are accumulated in the final {@code Err} result.
  *
- * @param <T1> <T2> <T3>> the types of the results' success values
  * @see Result#and(Result)
  */
 public record ResultCombiner3<T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object>(

@@ -11,12 +11,6 @@ import org.jspecify.annotations.Nullable;
  * combining multiple validation results while accumulating all errors. This combiner specifically
  * handles 5 results.
  * <p>
- * You typically create this via {@link Result#and(Result)} and either:
- * <ul>
- *   <li>Chain more results with {@link #and(Result)} (returns ResultCombiner6)</li>
- *   <li>Terminate with {@link #combine(PentaFunction<T1, T2, T3, T4, T5, R>)} to produce the final result</li>
- * </ul>
- * <p>
  * <b>All errors from all results are accumulated.</b> The success function is only called if
  * all results are {@link Result.Ok}.
  * <p>
@@ -25,12 +19,13 @@ import org.jspecify.annotations.Nullable;
  * Result<Person> person = validateName(name)
  *     .and(validateAge(age))
  *     .and(validateEmail(email))
+ *     .and(validateAddress(address))
+ *     .and(validatePhone(phone))
  *     .combine((v1, v2, v3, v4, v5) -> new Person(v1, v2, v3, v4, v5));
  * }</pre>
  * <p>
  * If any validation fails, all errors are accumulated in the final {@code Err} result.
  *
- * @param <T1> <T2> <T3> <T4> <T5>> the types of the results' success values
  * @see Result#and(Result)
  */
 public record ResultCombiner5<T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object>(
