@@ -21,8 +21,8 @@ package io.github.raniagus.javalidation.format;
  * String formatted = formatter.format(template); // "Age must be at least 18"
  * }</pre>
  * <p>
- * Custom formatters can be registered with Jackson via {@link io.github.raniagus.javalidation.jackson.JavalidationModule}
- * or Spring Boot auto-configuration properties.
+ * Custom formatters can be registered with Jackson (via the javalidation-jackson module)
+ * or Spring Boot auto-configuration properties (via the javalidation-spring-boot-starter module).
  *
  * @see TemplateString
  * @see MessageFormatTemplateStringFormatter

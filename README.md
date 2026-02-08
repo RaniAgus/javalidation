@@ -19,16 +19,45 @@ A functional Java 21+ validation library implementing the Railway-Oriented Progr
 
 ## Installation
 
-Javalidation is hosted in the Maven Central Repository. Simply add the following
-dependency into your `pom.xml` file:
+Javalidation is hosted in the Maven Central Repository as three separate modules:
+
+### Core Module (Required)
+
+The core validation library with zero dependencies:
 
 ```xml
-    <dependency>
-      <groupId>io.github.raniagus</groupId>
-      <artifactId>javalidation</artifactId>
-      <version>0.10.0</version>
-    </dependency>
+<dependency>
+  <groupId>io.github.raniagus</groupId>
+  <artifactId>javalidation</artifactId>
+  <version>0.10.0</version>
+</dependency>
 ```
+
+### Jackson Module (Optional)
+
+For Jackson 3.x serialization support:
+
+```xml
+<dependency>
+  <groupId>io.github.raniagus</groupId>
+  <artifactId>javalidation-jackson</artifactId>
+  <version>0.10.0</version>
+</dependency>
+```
+
+### Spring Boot Starter (Optional)
+
+For Spring Boot 4.x auto-configuration with Jackson and MessageSource integration:
+
+```xml
+<dependency>
+  <groupId>io.github.raniagus</groupId>
+  <artifactId>javalidation-spring-boot-starter</artifactId>
+  <version>0.10.0</version>
+</dependency>
+```
+
+The Spring Boot starter includes both the core and Jackson modules automatically.
 
 ### Snapshots
 
@@ -66,9 +95,11 @@ repositories {
     name = 'Central Portal Snapshots'
     url = 'https://central.sonatype.com/repository/maven-snapshots/'
 
-    // Only search this repository for the specific dependency
+    // Only search this repository for the specific dependencies
     content {
       includeModule("io.github.raniagus", "javalidation")
+      includeModule("io.github.raniagus", "javalidation-jackson")
+      includeModule("io.github.raniagus", "javalidation-spring-boot-starter")
     }
   }
   mavenCentral()
