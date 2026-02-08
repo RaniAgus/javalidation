@@ -2,8 +2,8 @@
 
 [![MvnRepository](https://badges.mvnrepository.com/badge/io.github.raniagus/javalidation/badge.svg?label=MvnRepository)](https://mvnrepository.com/artifact/io.github.raniagus/javalidation)
 
-A functional Java 21+ validation library implementing the Railway-Oriented Programming pattern with a type-safe
-`Result<T>` type for accumulating validation errors.
+A functional validation library for Java 21+ based on Railway-Oriented Programming, featuring a type-safe
+`Result<T>` whose accumulated `ValidationErrors` are serializable and fully i18n-compatible.
 
 ## Features
 
