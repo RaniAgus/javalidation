@@ -34,7 +34,7 @@ public final class JavalidationSpringAdapter {
 
     public static TemplateString toTemplateString(DefaultMessageSourceResolvable resolvable) {
         return new TemplateString(
-                resolvable.getDefaultMessage(),
+                Objects.requireNonNull(resolvable.getDefaultMessage()),
                 Objects.requireNonNullElseGet(resolvable.getArguments(), () -> new Object[0])
         );
     }

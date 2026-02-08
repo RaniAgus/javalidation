@@ -2,9 +2,8 @@ package io.github.raniagus.javalidation.format;
 
 import java.util.Arrays;
 import java.util.Objects;
-import org.jspecify.annotations.NonNull;
 
-public record TemplateString(String message, @NonNull Object[] args) {
+public record TemplateString(String message, Object[] args) {
     public TemplateString {
         args = Arrays.copyOf(args, args.length);
     }
@@ -14,7 +13,7 @@ public record TemplateString(String message, @NonNull Object[] args) {
     }
 
     @Override
-    public @NonNull String toString() {
+    public String toString() {
         return "TemplateString{" +
                 "message='" + message + '\'' +
                 ", args=" + Arrays.toString(args) +

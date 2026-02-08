@@ -4,28 +4,25 @@ import static tools.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_K
 
 import io.github.raniagus.javalidation.ValidationErrors;
 import java.util.Map;
-import org.jspecify.annotations.NonNull;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.ValueSerializer;
 
 public class FlattenedErrorsSerializer extends ValueSerializer<ValidationErrors> {
     @Override
-    public void serialize(@NonNull ValidationErrors value, @NonNull JsonGenerator gen, SerializationContext context) {
+    public void serialize(ValidationErrors value, JsonGenerator gen, SerializationContext context) {
         gen.writeStartObject();
 
-        if (value.rootErrors() != null && !value.rootErrors().isEmpty()) {
+        if (!value.rootErrors().isEmpty()) {
             context.defaultSerializeProperty("", value.rootErrors(), gen);
         }
 
-        if (value.fieldErrors() != null) {
-            var entries = context.hasSerializationFeatures(ORDER_MAP_ENTRIES_BY_KEYS.getMask()) ?
-                      value.fieldErrors().entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()
-                    : value.fieldErrors().entrySet();
+        var entries = context.hasSerializationFeatures(ORDER_MAP_ENTRIES_BY_KEYS.getMask()) ?
+                value.fieldErrors().entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()
+                : value.fieldErrors().entrySet();
 
-            for (var entry : entries) {
-                context.defaultSerializeProperty(entry.getKey(), entry.getValue(), gen);
-            }
+        for (var entry : entries) {
+            context.defaultSerializeProperty(entry.getKey(), entry.getValue(), gen);
         }
 
         gen.writeEndObject();

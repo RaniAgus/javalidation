@@ -29,6 +29,13 @@ public record ValidationErrors(
         return new ValidationErrors(List.of(), Map.of(field, List.of(new TemplateString(message, args))));
     }
 
+    public ValidationErrors mergeWith(ValidationErrors other) {
+        return Validation.create()
+                .addAll(this)
+                .addAll(other)
+                .finish();
+    }
+
     public ValidationErrors withPrefix(String prefix) {
         Map<String, List<TemplateString>> prefixedFieldErrors = new HashMap<>(fieldErrors.size() + 1);
         if (!rootErrors.isEmpty()) {

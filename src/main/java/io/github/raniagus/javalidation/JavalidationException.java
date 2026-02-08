@@ -1,5 +1,8 @@
 package io.github.raniagus.javalidation;
 
+import org.jspecify.annotations.NullMarked;
+
+@NullMarked
 public class JavalidationException extends RuntimeException {
     private final ValidationErrors errors;
 

@@ -2,7 +2,6 @@ package io.github.raniagus.javalidation.jackson;
 
 import io.github.raniagus.javalidation.format.TemplateString;
 import io.github.raniagus.javalidation.format.TemplateStringFormatter;
-import org.jspecify.annotations.NonNull;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.ValueSerializer;
@@ -19,7 +18,7 @@ public class TemplateStringSerializer extends ValueSerializer<TemplateString> {
     }
 
     @Override
-    public void serialize(@NonNull TemplateString value, @NonNull JsonGenerator gen, SerializationContext context) {
+    public void serialize(TemplateString value, JsonGenerator gen, SerializationContext context) {
         String formatted = formatter.format(value);
         gen.writeString(formatted);
     }

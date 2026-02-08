@@ -47,6 +47,20 @@ public sealed interface Result<T extends @Nullable Object> {
         return new ResultCombiner2<>(this, result);
     }
 
+    default Result<T> or(Supplier<Result<T>> supplier) {
+        return switch (this) {
+            case Ok<T> self -> self;
+            case Err<T>(ValidationErrors errors) -> supplier.get().mapErr(errors::mergeWith);
+        };
+    }
+
+    default Result<T> or(Result<T> other) {
+        return switch (this) {
+            case Ok<T> self -> self;
+            case Err<T>(ValidationErrors errors) -> other.mapErr(errors::mergeWith);
+        };
+    }
+
     default <U> Result<U> map(Function<T, U> mapper) {
         return switch (this) {
             case Ok<T>(T value) -> new Ok<>(mapper.apply(value));
@@ -56,7 +70,7 @@ public sealed interface Result<T extends @Nullable Object> {
 
     default Result<T> mapErr(Function<ValidationErrors, ValidationErrors> mapper) {
         return switch (this) {
-            case Ok<T>(T ignored) -> this;
+            case Ok<T> self -> self;
             case Err<T>(ValidationErrors errors) -> new Err<>(mapper.apply(errors));
         };
     }
@@ -124,11 +138,13 @@ public sealed interface Result<T extends @Nullable Object> {
         }
     }
 
-    static Result<Void> of(Runnable runnable) {
-        return of(() -> {
+    static Result<@Nullable Void> of(Runnable runnable) {
+        try {
             runnable.run();
-            return null;
-        });
+            return new Ok<>(null);
+        } catch (JavalidationException e) {
+            return new Err<>(e.getErrors());
+        }
     }
 
     static <T extends @Nullable Object> Result<T> ok(T value) {

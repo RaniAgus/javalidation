@@ -44,7 +44,7 @@ public class JavalidationModule extends SimpleModule {
 
     public static class Builder {
         private ValueSerializer<TemplateString> templateStringSerializer = new TemplateStringSerializer();
-        private ValueSerializer<ValidationErrors> validationErrorsSerializer;
+        private @Nullable ValueSerializer<ValidationErrors> validationErrorsSerializer;
 
         public Builder() {
         }
