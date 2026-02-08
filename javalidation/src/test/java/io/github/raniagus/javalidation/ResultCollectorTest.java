@@ -23,7 +23,7 @@ class ResultCollectorTest {
         Result<String> result3 = Result.ok("value3");
 
         var list = Stream.of(result1, result2, result3)
-                .collect(ResultCollector.toList());
+                .collect(ResultCollector.toList("items", 3));
 
         assertThat(list).containsExactly("value1", "value2", "value3");
     }
@@ -40,15 +40,15 @@ class ResultCollectorTest {
         Result<String> result3 = Result.ok("value");
 
         assertThatThrownBy(() -> Stream.of(result1, result2, result3)
-                .collect(ResultCollector.toList()))
+                .collect(ResultCollector.toList("items")))
                 .isInstanceOf(JavalidationException.class)
                 .asInstanceOf(throwable(JavalidationException.class))
                 .extracting(JavalidationException::getErrors)
                 .extracting(ValidationErrors::fieldErrors)
                 .asInstanceOf(MAP)
                 .containsAllEntriesOf(Map.of(
-                        "[0]", List.of(TemplateString.of("Error 1")),
-                        "[1]", List.of(
+                        "items[0]", List.of(TemplateString.of("Error 1")),
+                        "items[1]", List.of(
                                 TemplateString.of("Error 2"),
                                 TemplateString.of("Error 3")
                         )
@@ -64,7 +64,7 @@ class ResultCollectorTest {
         Result<String> result3 = Result.ok("value3");
 
         var result = Stream.of(result1, result2, result3)
-                .collect(ResultCollector.toResultList());
+                .collect(ResultCollector.toResultList("users", 3));
 
         assertThat(result.getOrThrow()).containsExactly("value1", "value2", "value3");
     }
@@ -81,14 +81,14 @@ class ResultCollectorTest {
         Result<String> result3 = Result.ok("value");
 
         var result = Stream.of(result1, result2, result3)
-                .collect(ResultCollector.toResultList());
+                .collect(ResultCollector.toResultList("users"));
 
         assertThat(result.getErrors())
                 .extracting(ValidationErrors::fieldErrors)
                 .asInstanceOf(MAP)
                 .containsAllEntriesOf(Map.of(
-                        "[0]", List.of(TemplateString.of("Error 1")),
-                        "[1]", List.of(
+                        "users[0]", List.of(TemplateString.of("Error 1")),
+                        "users[1]", List.of(
                                 TemplateString.of("Error 2"),
                                 TemplateString.of("Error 3")
                         )
@@ -104,7 +104,7 @@ class ResultCollectorTest {
         Result<String> result3 = Result.ok("value3");
 
         var partitioned = Stream.of(result1, result2, result3)
-                .collect(ResultCollector.toPartitioned());
+                .collect(ResultCollector.toPartitioned("products", 3));
 
         assertThat(partitioned.value()).containsExactly("value1", "value2", "value3");
         assertThat(partitioned.errors().isEmpty()).isTrue();
@@ -122,15 +122,15 @@ class ResultCollectorTest {
         Result<String> result3 = Result.ok("value");
 
         var partitioned = Stream.of(result1, result2, result3)
-                .collect(ResultCollector.toPartitioned());
+                .collect(ResultCollector.toPartitioned("products"));
 
         assertThat(partitioned.value()).containsExactly("value");
         assertThat(partitioned.errors())
                 .extracting(ValidationErrors::fieldErrors)
                 .asInstanceOf(MAP)
                 .containsAllEntriesOf(Map.of(
-                        "[0]", List.of(TemplateString.of("Error 1")),
-                        "[1]", List.of(
+                        "products[0]", List.of(TemplateString.of("Error 1")),
+                        "products[1]", List.of(
                                 TemplateString.of("Error 2"),
                                 TemplateString.of("Error 3")
                         )
@@ -142,7 +142,7 @@ class ResultCollectorTest {
     @Test
     void givenEmptyStream_whenToList_thenReturnsEmptyList() {
         var list = Stream.<Result<String>>empty()
-                .collect(ResultCollector.toList());
+                .collect(ResultCollector.toList("items"));
 
         assertThat(list).isEmpty();
     }
@@ -150,7 +150,7 @@ class ResultCollectorTest {
     @Test
     void givenEmptyStream_whenToResultList_thenReturnsOkWithEmptyList() {
         var result = Stream.<Result<String>>empty()
-                .collect(ResultCollector.toResultList());
+                .collect(ResultCollector.toResultList("users"));
 
         assertThat(result).isInstanceOf(Result.Ok.class);
         assertThat(result.getOrThrow()).isEmpty();
@@ -159,7 +159,7 @@ class ResultCollectorTest {
     @Test
     void givenEmptyStream_whenToPartitioned_thenReturnsEmptyValuesAndNoErrors() {
         var partitioned = Stream.<Result<String>>empty()
-                .collect(ResultCollector.toPartitioned());
+                .collect(ResultCollector.toPartitioned("orders"));
 
         assertThat(partitioned.value()).isEmpty();
         assertThat(partitioned.errors().isEmpty()).isTrue();
@@ -172,13 +172,13 @@ class ResultCollectorTest {
         Result<String> result3 = Result.ok("value3");
 
         assertThatThrownBy(() -> Stream.of(result1, result2, result3)
-                .collect(ResultCollector.toList()))
+                .collect(ResultCollector.toList("records")))
                 .isInstanceOf(JavalidationException.class)
                 .asInstanceOf(throwable(JavalidationException.class))
                 .extracting(JavalidationException::getErrors)
                 .extracting(ValidationErrors::fieldErrors)
                 .asInstanceOf(MAP)
-                .containsEntry("[0].field", List.of(TemplateString.of("Field error")));
+                .containsEntry("records[0].field", List.of(TemplateString.of("Field error")));
     }
 
     @Test
@@ -188,13 +188,13 @@ class ResultCollectorTest {
         Result<String> result3 = Result.ok("value3");
 
         var result = Stream.of(result1, result2, result3)
-                .collect(ResultCollector.toResultList());
+                .collect(ResultCollector.toResultList("records"));
 
         assertThat(result).isInstanceOf(Result.Err.class);
         assertThat(result.getErrors())
                 .extracting(ValidationErrors::fieldErrors)
                 .asInstanceOf(MAP)
-                .containsEntry("[0].field", List.of(TemplateString.of("Field error")));
+                .containsEntry("records[0].field", List.of(TemplateString.of("Field error")));
     }
 
     @Test
@@ -204,13 +204,13 @@ class ResultCollectorTest {
         Result<String> result3 = Result.ok("value3");
 
         var partitioned = Stream.of(result1, result2, result3)
-                .collect(ResultCollector.toPartitioned());
+                .collect(ResultCollector.toPartitioned("records"));
 
         assertThat(partitioned.value()).containsExactly("value1", "value3");
         assertThat(partitioned.errors())
                 .extracting(ValidationErrors::fieldErrors)
                 .asInstanceOf(MAP)
-                .containsEntry("[0].field", List.of(TemplateString.of("Field error")));
+                .containsEntry("records[0].field", List.of(TemplateString.of("Field error")));
     }
 
     @Test
@@ -219,13 +219,13 @@ class ResultCollectorTest {
                 .map(i -> i % 3 == 0
                         ? Result.<Integer>err("error", "Error at " + i)
                         : Result.ok(i))
-                .collect(ResultCollector.toResultList());
+                .collect(ResultCollector.toResultList("batch", 20));
 
         assertThat(results).isInstanceOf(Result.Err.class);
         assertThat(results.getErrors().fieldErrors()).hasSize(7);
         assertThat(results.getErrors().fieldErrors())
-                .containsKeys("[0].error", "[1].error", "[2].error", "[3].error",
-                        "[4].error", "[5].error", "[6].error");
+                .containsKeys("batch[0].error", "batch[1].error", "batch[2].error", "batch[3].error",
+                        "batch[4].error", "batch[5].error", "batch[6].error");
     }
 
     @Test
@@ -235,7 +235,7 @@ class ResultCollectorTest {
         Result<String> result3 = Result.err(ErrorStrings.ERROR_3);
 
         var partitioned = Stream.of(result1, result2, result3)
-                .collect(ResultCollector.toPartitioned());
+                .collect(ResultCollector.toPartitioned("tasks"));
 
         assertThat(partitioned.value()).isEmpty();
         assertThat(partitioned.errors().isNotEmpty()).isTrue();

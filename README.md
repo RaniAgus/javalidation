@@ -137,11 +137,14 @@ repositories {
 
 ### ResultCollector
 
-| Method                                      | Description                                                          |
-|---------------------------------------------|----------------------------------------------------------------------|
-| `toResultList()` / `toResultList(String)`   | Returns `Result<List<T>>` (`Ok` if all valid, `Err` with all errors) |
-| `toList()` / `toList(String)`               | Returns `List<T>` or throws with all accumulated errors              |
-| `toPartitioned()` / `toPartitioned(String)` | Returns valid items + errors (partial success)                       |
+| Method                                                    | Description                                                          |
+|-----------------------------------------------------------|----------------------------------------------------------------------|
+| `toResultList(String)` / `toResultList(String, int)`      | Returns `Result<List<T>>` (`Ok` if all valid, `Err` with all errors) |
+| `toList(String)` / `toList(String, int)`                  | Returns `List<T>` or throws with all accumulated errors              |
+| `toPartitioned(String)` / `toPartitioned(String, int)`    | Returns valid items + errors (partial success)                       |
+
+> **Note:** The optional `int` parameter provides an `initialCapacity` hint to avoid ArrayList resizing when the
+> collection size is known upfront, improving performance for large streams.
 
 ### Validation
 
@@ -481,6 +484,27 @@ try {
 } catch (JavalidationException e) {
     // Errors: "addresses[0].street", "addresses[1].zipCode", etc.
 }
+```
+
+**Performance Optimization with Size Hints:**
+
+Each collector also accepts an optional `initialCapacity` parameter to avoid ArrayList resizing when the collection size is known upfront:
+
+```java
+// When you know the collection size, provide a capacity hint
+List<User> users = items.stream()
+        .map(this::validateUser)
+        .collect(ResultCollector.toList("users", items.size()));
+
+// For large streams, this avoids multiple ArrayList resizing operations
+Result<List<Product>> products = productStream
+        .map(this::validateProduct)
+        .collect(ResultCollector.toResultList("products", expectedSize));
+
+// Works with all three collectors
+var partitioned = orders.stream()
+        .map(this::validateOrder)
+        .collect(ResultCollector.toPartitioned("orders", orders.size()));
 ```
 
 **Choosing the Right Collector:**
