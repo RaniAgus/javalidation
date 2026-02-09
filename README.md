@@ -135,13 +135,15 @@ repositories {
 | `getErrors()`                          | Get errors (empty if Ok)                  |
 | `withPrefix(String)`                   | Namespace errors for nested objects       |
 
-### ResultCollector
+### ResultCollectors
 
-| Method                                                    | Description                                                          |
-|-----------------------------------------------------------|----------------------------------------------------------------------|
-| `toResultList(String)` / `toResultList(String, int)`      | Returns `Result<List<T>>` (`Ok` if all valid, `Err` with all errors) |
-| `toList(String)` / `toList(String, int)`                  | Returns `List<T>` or throws with all accumulated errors              |
-| `toPartitioned(String)` / `toPartitioned(String, int)`    | Returns valid items + errors (partial success)                       |
+| Method                                      | Description                                                          |
+|---------------------------------------------|----------------------------------------------------------------------|
+| `toResultList()` / `toResultList(int)`      | Returns `Result<List<T>>` (`Ok` if all valid, `Err` with all errors) |
+| `toList()` / `toList(int)`                  | Returns `List<T>` or throws with all accumulated errors              |
+| `toPartitioned()` / `toPartitioned(int)`    | Returns valid items + errors (partial success)                       |
+| `indexed(Collector<...>)`                   | Wraps a collector to add `[0]`, `[1]`, etc. prefixes to errors       |
+| `indexed(Collector<...>, String)`           | Wraps a collector to add `prefix[0]`, `prefix[1]`, etc. to errors    |
 
 > **Note:** The optional `int` parameter provides an `initialCapacity` hint to avoid ArrayList resizing when the
 > collection size is known upfront, improving performance for large streams.
@@ -370,9 +372,9 @@ for (int i = 0; i < items.size(); i++) {
 Result<List<Item>> result = validation.asResult(items);
 ```
 
-#### Stream-Based Approach with ResultCollector
+#### Stream-Based Approach with ResultCollectors
 
-The `ResultCollector` class provides three specialized collectors for validating streams. **All three collectors
+The `ResultCollectors` class provides three specialized collectors for validating streams. **All three collectors
 accumulate all validation errors** before returning/throwing - they do not fail fast, so you can get comprehensive
 feedback on all items in the collection.
 
@@ -381,21 +383,20 @@ feedback on all items in the collection.
 Returns `Result<List<T>>` with all validation errors accumulated:
 
 ```java
-import io.github.raniagus.javalidation.ResultCollector;
+import io.github.raniagus.javalidation.ResultCollectors;
 
 // Validate all items, collect ALL errors
 Result<List<User>> result = items.stream()
-        .map(this::validateUser)
-    .collect(ResultCollector.toResultList());
+    .map(this::validateUser)
+    .collect(ResultCollectors.toResultList());
 
 // Handle result
 switch (result) {
     case Result.Ok(List<User> users) ->
         processUsers(users);
     case Result.Err(ValidationErrors errors) -> {
-        // errors contain all validation failures with indexes:
-        // "[0].email": ["Invalid format"]
-        // "[2].age": ["Must be 18 or older"]
+        // Errors contain all validation failures (without indexes by default)
+        // Use indexed() wrapper to add automatic indexing
         logErrors(errors);
     }
 }
@@ -408,13 +409,14 @@ Returns `List<T>` directly, throwing `JavalidationException` with all accumulate
 ```java
 try {
     List<User> users = items.stream()
-            .map(this::validateUser)
-            .collect(ResultCollector.toList());
+        .map(this::validateUser)
+        .collect(ResultCollectors.toList());
     
     // All items valid
     processUsers(users);
 } catch (JavalidationException e) {
-    // Contains ALL indexed errors: "[0].email", "[2].age", etc.
+    // Contains ALL errors (without indexes by default)
+    // Use indexed() wrapper to add automatic indexing
     logErrors(e.getErrors());
 }
 ```
@@ -425,8 +427,8 @@ Returns `PartitionedResult<List<T>>` with both valid items and all errors:
 
 ```java
 var partitioned = items.stream()
-        .map(this::validateUser)
-        .collect(ResultCollector.toPartitioned());
+    .map(this::validateUser)
+    .collect(ResultCollectors.toPartitioned());
 
 // Process valid items even if some failed
 List<User> validUsers = partitioned.value();
@@ -441,46 +443,58 @@ if (errors.isNotEmpty()) {
 processUsers(validUsers);
 ```
 
-**Error Indexing:**
+**Automatic Error Indexing with indexed():**
 
-All three collectors automatically index errors by their position in the stream:
+By default, the collectors do not add index prefixes to errors. Use the `indexed()` wrapper to automatically prefix
+errors with `[0]`, `[1]`, etc. based on the item's position in the stream:
 
 ```java
-// Input stream with 3 items (indices 0, 1, 2)
-// Items at index 0 and 2 have validation errors
+// Without indexing (default)
+Result<List<Item>> result = stream.collect(ResultCollectors.toResultList());
+// Errors: "field": ["Error message"]
 
-Result<List<Item>> result = stream.collect(ResultCollector.toResultList());
-
+// With automatic indexing
+Result<List<Item>> result = stream.collect(
+    ResultCollectors.indexed(ResultCollectors.toResultList())
+);
 // Errors are prefixed with "[index]":
-// "[0].field1": ["Error message"]
-// "[0].field2": ["Another error"]  
+// "[0].field": ["Error message"]
 // "[2].price": ["Must be positive"]
 ```
 
 **Custom Prefix for Nested Collections:**
 
-Each collector has an overloaded variant accepting a `prefix` parameter to namespace errors for nested structures:
+The `indexed()` wrapper accepts an optional `prefix` parameter to namespace errors for nested structures:
 
 ```java
-// Validate items in an order
+// Validate items in an order with custom prefix
 Result<List<Item>> items = order.getItems().stream()
-        .map(this::validateItem)
-        .collect(ResultCollector.toResultList("order.items"));
+    .map(this::validateItem)
+    .collect(ResultCollectors.indexed(
+        ResultCollectors.toResultList(),
+        "order.items"
+    ));
 
 // Errors appear as: "order.items[0].price", "order.items[1].name", etc.
 
 // Process valid items with prefix
 var partitioned = order.getLineItems().stream()
-        .map(this::validateLineItem)
-        .collect(ResultCollector.toPartitioned("lineItems"));
+    .map(this::validateLineItem)
+    .collect(ResultCollectors.indexed(
+        ResultCollectors.toPartitioned(),
+        "lineItems"
+    ));
 
 // Errors: "lineItems[0].quantity", "lineItems[2].discount", etc.
 
 // Throw on error with custom prefix
 try {
     List<Address> addresses = user.getAddresses().stream()
-            .map(this::validateAddress)
-            .collect(ResultCollector.toList("addresses"));
+        .map(this::validateAddress)
+        .collect(ResultCollectors.indexed(
+            ResultCollectors.toList(),
+            "addresses"
+        ));
 } catch (JavalidationException e) {
     // Errors: "addresses[0].street", "addresses[1].zipCode", etc.
 }
@@ -488,23 +502,33 @@ try {
 
 **Performance Optimization with Size Hints:**
 
-Each collector also accepts an optional `initialCapacity` parameter to avoid ArrayList resizing when the collection size is known upfront:
+All three collectors accept an optional `initialCapacity` parameter to avoid ArrayList resizing when the collection
+size is known upfront:
 
 ```java
 // When you know the collection size, provide a capacity hint
 List<User> users = items.stream()
-        .map(this::validateUser)
-        .collect(ResultCollector.toList("users", items.size()));
+    .map(this::validateUser)
+    .collect(ResultCollectors.indexed(
+        ResultCollectors.toList(items.size()),
+        "users"
+    ));
 
 // For large streams, this avoids multiple ArrayList resizing operations
 Result<List<Product>> products = productStream
-        .map(this::validateProduct)
-        .collect(ResultCollector.toResultList("products", expectedSize));
+    .map(this::validateProduct)
+    .collect(ResultCollectors.indexed(
+        ResultCollectors.toResultList(expectedSize),
+        "products"
+    ));
 
 // Works with all three collectors
 var partitioned = orders.stream()
-        .map(this::validateOrder)
-        .collect(ResultCollector.toPartitioned("orders", orders.size()));
+    .map(this::validateOrder)
+    .collect(ResultCollectors.indexed(
+        ResultCollectors.toPartitioned(orders.size()),
+        "orders"
+    ));
 ```
 
 **Choosing the Right Collector:**
