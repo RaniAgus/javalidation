@@ -779,7 +779,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * @return an {@link Err} result containing the error
      */
     static <T extends @Nullable Object> Result<T> err(String message) {
-        return new Err<>(ValidationErrors.of(message));
+        return new Err<>(ValidationErrors.ofRoot(message));
     }
 
     /**
@@ -797,7 +797,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * @return an {@link Err} result containing the field error
      */
     static <T extends @Nullable Object> Result<T> err(String field, String message) {
-        return new Err<>(ValidationErrors.of(field, message));
+        return new Err<>(ValidationErrors.ofField(field, message));
     }
 
     /**

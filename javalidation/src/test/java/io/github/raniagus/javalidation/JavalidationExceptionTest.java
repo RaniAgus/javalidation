@@ -8,14 +8,14 @@ class JavalidationExceptionTest {
 
     @Test
     void givenSingleFieldError_whenGetMessage_thenReturnsErrorCount() {
-        var exception = new JavalidationException("email", "Invalid email format");
+        var exception = JavalidationException.ofField("email", "Invalid email format");
 
         assertThat(exception.getMessage()).isEqualTo("Validation failed with 1 error(s)");
     }
 
     @Test
     void givenSingleRootError_whenGetMessage_thenReturnsErrorCount() {
-        var exception = new JavalidationException("Something went wrong");
+        var exception = JavalidationException.ofRoot("Something went wrong");
 
         assertThat(exception.getMessage()).isEqualTo("Validation failed with 1 error(s)");
     }
@@ -35,7 +35,7 @@ class JavalidationExceptionTest {
 
     @Test
     void givenException_whenGetErrors_thenReturnsValidationErrors() {
-        var errors = ValidationErrors.of("email", "Invalid format");
+        var errors = ValidationErrors.ofField("email", "Invalid format");
         var exception = new JavalidationException(errors);
 
         assertThat(exception.getErrors()).isEqualTo(errors);
@@ -50,7 +50,7 @@ class JavalidationExceptionTest {
 
     @Test
     void givenFieldErrorWithArgs_whenGetMessage_thenReturnsErrorCount() {
-        var exception = new JavalidationException("age", "Must be at least {0}", 18);
+        var exception = JavalidationException.ofField("age", "Must be at least {0}", 18);
 
         assertThat(exception.getMessage()).isEqualTo("Validation failed with 1 error(s)");
     }

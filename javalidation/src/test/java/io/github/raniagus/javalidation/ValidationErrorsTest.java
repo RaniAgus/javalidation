@@ -11,7 +11,7 @@ class ValidationErrorsTest {
 
     @Test
     void givenRootErrors_whenWithPrefix_thenConvertsToFieldErrors() {
-        var errors = ValidationErrors.of("root error");
+        var errors = ValidationErrors.ofRoot("root error");
 
         var prefixed = errors.withPrefix("user");
 
@@ -22,7 +22,7 @@ class ValidationErrorsTest {
 
     @Test
     void givenFieldErrors_whenWithPrefix_thenPrefixesFieldNames() {
-        var errors = ValidationErrors.of("email", "invalid");
+        var errors = ValidationErrors.ofField("email", "invalid");
 
         var prefixed = errors.withPrefix("form");
 
@@ -34,7 +34,7 @@ class ValidationErrorsTest {
 
     @Test
     void givenFieldErrors_whenWithPrefixVarargs_thenBuildsPrefix() {
-        var errors = ValidationErrors.of("field", "error");
+        var errors = ValidationErrors.ofField("field", "error");
 
         var prefixed = errors.withPrefix("parent", ".", "child");
 

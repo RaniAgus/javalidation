@@ -19,7 +19,7 @@ class ResultTest {
     @Test
     void givenSupplierThrowingValidationException_whenOf_thenReturnsErr() {
         var result = Result.of(() -> {
-            throw new JavalidationException(ValidationErrors.of("error"));
+            throw new JavalidationException(ValidationErrors.ofRoot("error"));
         });
 
         assertThatThrownBy(result::getOrThrow)
@@ -217,7 +217,7 @@ class ResultTest {
     @Test
     void givenOk_whenMapThrowsJavalidationException_thenCatchesAndReturnsErr() {
         var result = Result.ok(5).map(x -> {
-            throw new JavalidationException("error in mapper");
+            throw JavalidationException.ofRoot("error in mapper");
         });
 
         assertThat(result).isInstanceOf(Result.Err.class);
@@ -353,7 +353,7 @@ class ResultTest {
     @Test
     void givenOk_whenFlatMapThrowsJavalidationException_thenCatchesAndReturnsErr() {
         var result = Result.ok(5).flatMap(x -> {
-            throw new JavalidationException("error in flatMap");
+            throw JavalidationException.ofRoot("error in flatMap");
         });
 
         assertThat(result).isInstanceOf(Result.Err.class);
@@ -549,6 +549,6 @@ class ResultTest {
     }
 
     private void raiseJavalidationException() {
-        throw new JavalidationException("error");
+        throw JavalidationException.ofRoot("error");
     }
 }

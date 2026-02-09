@@ -96,7 +96,7 @@ class ValidationTest {
 
     @Test
     void givenValidationErrors_whenAddAll_thenAddsAllErrors() {
-        var validationErrors = ValidationErrors.of("field", "error");
+        var validationErrors = ValidationErrors.ofField("field", "error");
         var validation = Validation.create()
                 .addAll(validationErrors);
 
@@ -116,7 +116,7 @@ class ValidationTest {
 
     @Test
     void givenFieldErrors_whenAddAllWithPrefix_thenPrefixesFieldNames() {
-        var validationErrors = ValidationErrors.of("field", "error");
+        var validationErrors = ValidationErrors.ofField("field", "error");
         var validation = Validation.create()
                 .addAll("root", validationErrors);
 
@@ -126,7 +126,7 @@ class ValidationTest {
 
     @Test
     void givenRootErrors_whenAddAllWithPrefix_thenConvertsToFieldErrors() {
-        var validationErrors = ValidationErrors.of("root error");
+        var validationErrors = ValidationErrors.ofRoot("root error");
         var validation = Validation.create()
                 .addAll("prefix", validationErrors);
 
@@ -137,7 +137,7 @@ class ValidationTest {
     @Test
     void givenNullPrefix_whenAddAllWithPrefix_thenThrowsNullPointerException() {
         var validation = Validation.create();
-        var validationErrors = ValidationErrors.of("error");
+        var validationErrors = ValidationErrors.ofRoot("error");
 
         assertThatThrownBy(() -> validation.addAll(null, validationErrors))
                 .isInstanceOf(NullPointerException.class);
@@ -196,7 +196,7 @@ class ValidationTest {
         var validation = Validation.create();
 
         var result = validation.asResult(() -> {
-            throw new JavalidationException(ValidationErrors.of("error"));
+            throw new JavalidationException(ValidationErrors.ofRoot("error"));
         });
         assertThatThrownBy(result::getOrThrow)
                 .isInstanceOf(JavalidationException.class);

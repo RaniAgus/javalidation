@@ -671,7 +671,7 @@ public ResponseEntity<?> createOrder(@RequestBody OrderRequest request) {
 // In repository layer
 public User findByIdOrThrow(Long id) {
     return userRepository.findById(id)
-        .orElseThrow(() -> new JavalidationException("User not found"));
+        .orElseThrow(() -> JavalidationException.ofRoot("User not found"));
 }
 
 // In business logic

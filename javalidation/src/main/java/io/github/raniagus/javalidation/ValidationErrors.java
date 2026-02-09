@@ -1,7 +1,6 @@
 package io.github.raniagus.javalidation;
 
 import io.github.raniagus.javalidation.format.TemplateString;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -101,7 +100,7 @@ public record ValidationErrors(
      * @param args optional arguments for the message template
      * @return validation errors containing the single root error
      */
-    public static ValidationErrors of(String message, Object... args) {
+    public static ValidationErrors ofRoot(String message, Object... args) {
         return new ValidationErrors(List.of(new TemplateString(message, args)), Map.of());
     }
 
@@ -118,7 +117,7 @@ public record ValidationErrors(
      * @param args optional arguments for the message template
      * @return validation errors containing the single field error
      */
-    public static ValidationErrors of(String field, String message, Object... args) {
+    public static ValidationErrors ofField(String field, String message, Object... args) {
         return new ValidationErrors(List.of(), Map.of(field, List.of(new TemplateString(message, args))));
     }
 
