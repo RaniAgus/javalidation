@@ -57,8 +57,8 @@ public final class ResultCollectors {
      * are prefixed with {@code [index]}, for example: {@code [0].field}, {@code [1].field}, etc.
      * <p>
      * This wrapper is essential for identifying which items in a collection failed validation.
-     *
-     * <h2>Example</h2>
+     * <p>
+     * <strong>Example without indexing:</strong>
      * <pre>{@code
      * // Without indexing
      * Result<List<Item>> result = stream.collect(ResultCollectors.toResultList());
@@ -90,8 +90,8 @@ public final class ResultCollectors {
      * <p>
      * This is particularly useful for nested structures where you want to namespace errors
      * within a parent context.
-     *
-     * <h2>Example</h2>
+     * <p>
+     * <strong>Example with custom prefix:</strong>
      * <pre>{@code
      * Result<List<Item>> items = order.getItems().stream()
      *     .map(this::validateItem)
@@ -128,8 +128,8 @@ public final class ResultCollectors {
      * <p>
      * <b>Note:</b> By default, errors are not indexed. Use {@link #indexed(Collector)} to add
      * automatic index prefixes like {@code [0]}, {@code [1]}, etc.
-     *
-     * <h2>Basic Usage</h2>
+     * <p>
+     * <strong>Basic usage without indexing:</strong>
      * <pre>{@code
      * try {
      *     List<User> users = items.stream()
@@ -141,8 +141,8 @@ public final class ResultCollectors {
      *     logErrors(e.getErrors());
      * }
      * }</pre>
-     *
-     * <h2>With Automatic Indexing</h2>
+     * <p>
+     * <strong>With automatic indexing:</strong>
      * <pre>{@code
      * try {
      *     List<User> users = items.stream()
@@ -181,9 +181,9 @@ public final class ResultCollectors {
      * when the collection size is known upfront. This is particularly useful for large streams.
      * <p>
      * <b>Note:</b> By default, errors are not indexed. Use {@link #indexed(Collector)} to add
-     * automatic index prefixes.
-     *
-     * <h2>Example with Size Hint</h2>
+     * automatic index prefixes like {@code [0]}, {@code [1]}, etc.
+     * <p>
+     * <strong>Example with size hint and automatic indexing:</strong>
      * <pre>{@code
      * List<Item> items = getItems(); // size = 1000
      * try {
@@ -224,8 +224,8 @@ public final class ResultCollectors {
      * <p>
      * <b>Note:</b> By default, errors are not indexed. Use {@link #indexed(Collector)} to add
      * automatic index prefixes like {@code [0]}, {@code [1]}, etc.
-     *
-     * <h2>Basic Usage</h2>
+     * <p>
+     * <strong>Basic usage without indexing:</strong>
      * <pre>{@code
      * Result<List<User>> result = items.stream()
      *     .map(this::validateUser)
@@ -236,8 +236,8 @@ public final class ResultCollectors {
      *     case Result.Err(ValidationErrors errors) -> logErrors(errors);
      * }
      * }</pre>
-     *
-     * <h2>With Automatic Indexing</h2>
+     * <p>
+     * <strong>With automatic indexing:</strong>
      * <pre>{@code
      * Result<List<User>> result = items.stream()
      *     .map(this::validateUser)
@@ -272,8 +272,8 @@ public final class ResultCollectors {
      * <p>
      * <b>Note:</b> By default, errors are not indexed. Use {@link #indexed(Collector, String)} to add
      * automatic index prefixes with a custom namespace.
-     *
-     * <h2>Example with Size Hint and Prefix</h2>
+     * <p>
+     * <strong>Example with size hint and custom prefix:</strong>
      * <pre>{@code
      * List<Item> items = order.getItems(); // size = 50
      * Result<List<Item>> result = items.stream()
@@ -316,8 +316,8 @@ public final class ResultCollectors {
      * <p>
      * <b>Note:</b> By default, errors are not indexed. Use {@link #indexed(Collector)} to add
      * automatic index prefixes like {@code [0]}, {@code [1]}, etc.
-     *
-     * <h2>Basic Usage</h2>
+     * <p>
+     * <strong>Basic usage without indexing:</strong>
      * <pre>{@code
      * var partitioned = items.stream()
      *     .map(this::validateUser)
@@ -332,8 +332,8 @@ public final class ResultCollectors {
      * }
      * processUsers(validUsers);
      * }</pre>
-     *
-     * <h2>With Automatic Indexing</h2>
+     * <p>
+     * <strong>With automatic indexing:</strong>
      * <pre>{@code
      * var partitioned = items.stream()
      *     .map(this::validateUser)
@@ -371,8 +371,8 @@ public final class ResultCollectors {
      * <p>
      * <b>Note:</b> By default, errors are not indexed. Use {@link #indexed(Collector, String)} to add
      * automatic index prefixes with a custom namespace.
-     *
-     * <h2>Example with Size Hint and Prefix</h2>
+     * <p>
+     * <strong>Example with size hint and custom prefix:</strong>
      * <pre>{@code
      * List<Order> orders = getOrders(); // size = 200
      * var partitioned = orders.stream()
