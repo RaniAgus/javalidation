@@ -178,7 +178,7 @@ public record ValidationErrors(
         if (!rootErrors.isEmpty()) {
             prefixedFieldErrors.put(prefix, rootErrors);
         }
-        String dotPrefix = prefix + ".";
+        String dotPrefix = prefix + '.';
         for (Map.Entry<String, List<TemplateString>> entry : fieldErrors.entrySet()) {
             prefixedFieldErrors.put(dotPrefix + entry.getKey(), entry.getValue());
         }

@@ -187,24 +187,21 @@ public class Validation {
      * //     }
      * }</pre>
      *
-     * @param prefix the prefix to add to all field paths (must not be null)
      * @param errors the validation errors to merge (must not be null)
+     * @param prefix the prefix to add to all field paths (must not be null)
      * @return this validation for method chaining
      * @throws NullPointerException if prefix or errors is null
      * @see ValidationErrors#withPrefix(String)
      */
-    public Validation addAll(String prefix, ValidationErrors errors) {
+    public Validation addAll(ValidationErrors errors, StringBuilder prefix) {
         Objects.requireNonNull(prefix);
         Objects.requireNonNull(errors);
         if (!errors.rootErrors().isEmpty()) {
-            addFieldErrors(prefix, errors.rootErrors());
+            addFieldErrors(prefix.toString(), errors.rootErrors());
         }
-        StringBuilder prefixBuilder = new StringBuilder(prefix).append(".");
-        int prefixLength = prefixBuilder.length();
+        StringBuilder prefixResult = prefix.append('.');
         for (Map.Entry<String, List<TemplateString>> entry : errors.fieldErrors().entrySet()) {
-            prefixBuilder.append(entry.getKey());
-            addFieldErrors(prefixBuilder.toString(), entry.getValue());
-            prefixBuilder.setLength(prefixLength);
+            addFieldErrors(prefixResult + entry.getKey(), entry.getValue());
         }
         return this;
     }

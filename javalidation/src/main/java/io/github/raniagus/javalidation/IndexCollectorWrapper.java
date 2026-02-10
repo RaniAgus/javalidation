@@ -29,7 +29,13 @@ public class IndexCollectorWrapper<T extends @Nullable Object, R, C extends Resu
 
     @Override
     public BiConsumer<C, Result<T>> accumulator() {
-        return (c, result) -> c.add(result.withPrefix(prefix, "[", index++, "]"));
+        return (c, result) -> c.add(
+                result,
+                new StringBuilder(prefix)
+                        .append('[')
+                        .append(index++)
+                        .append(']')
+        );
     }
 
     @Override

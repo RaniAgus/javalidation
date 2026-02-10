@@ -24,6 +24,14 @@ public sealed abstract class ResultCollector<T extends @Nullable Object, R> {
         }
     }
 
+    void add(Result<T> result, StringBuilder prefix) {
+        switch (result) {
+            case Result.Ok<T>(T value) -> values.add(value);
+            case Result.Err<T>(ValidationErrors validationErrors) ->
+                    validation.addAll(validationErrors, prefix);
+        }
+    }
+
     R finish() {
         return finish(values, validation);
     }

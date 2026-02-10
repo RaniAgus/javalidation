@@ -118,7 +118,7 @@ class ValidationTest {
     void givenFieldErrors_whenAddAllWithPrefix_thenPrefixesFieldNames() {
         var validationErrors = ValidationErrors.ofField("field", "error");
         var validation = Validation.create()
-                .addAll("root", validationErrors);
+                .addAll(validationErrors, new StringBuilder("root"));
 
         var errors = validation.finish();
         assertThat(errors.fieldErrors()).containsKey("root.field");
@@ -128,27 +128,10 @@ class ValidationTest {
     void givenRootErrors_whenAddAllWithPrefix_thenConvertsToFieldErrors() {
         var validationErrors = ValidationErrors.ofRoot("root error");
         var validation = Validation.create()
-                .addAll("prefix", validationErrors);
+                .addAll(validationErrors, new StringBuilder("prefix"));
 
         var errors = validation.finish();
         assertThat(errors.fieldErrors()).containsKey("prefix");
-    }
-
-    @Test
-    void givenNullPrefix_whenAddAllWithPrefix_thenThrowsNullPointerException() {
-        var validation = Validation.create();
-        var validationErrors = ValidationErrors.ofRoot("error");
-
-        assertThatThrownBy(() -> validation.addAll(null, validationErrors))
-                .isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    void givenNullValidationErrors_whenAddAllWithPrefix_thenThrowsNullPointerException() {
-        var validation = Validation.create();
-
-        assertThatThrownBy(() -> validation.addAll("prefix", null))
-                .isInstanceOf(NullPointerException.class);
     }
 
     // -- finish --
