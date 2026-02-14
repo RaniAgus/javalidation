@@ -58,7 +58,7 @@ For Jackson 3.x serialization support:
 
 ### Spring Boot Starter (Optional)
 
-For Spring Boot 4.x auto-configuration with Jackson and MessageSource integration:
+For Spring Boot 4.x autoconfiguration with Jackson and MessageSource integration:
 
 ```xml
 <dependency>
@@ -112,7 +112,7 @@ static Result<String> validateEmail(String email) {
 ```
 
 **Key benefits:**
-- All three validations run independently - **all errors are accumulated**
+- All three validations run independently – **all errors are accumulated**
 - Message templates support parameters: `"Must be {0} or older", 18`
 - Type-safe with sealed types - compiler ensures you handle both Ok and Err cases
 
@@ -169,7 +169,7 @@ ValidationErrors errors = ValidationErrors.ofField("email", "Invalid format")
 Unlike traditional fail-fast validation, javalidation accumulates multiple errors:
 
 ```java
-// Fail-fast approach (traditional) - only gets first error
+// Fail-fast approach (traditional) - only gets the first error
 if (name.isEmpty()) throw new Exception("Name required");
 if (age < 18) throw new Exception("Must be 18+");  // Never reached if name is empty
 
@@ -367,27 +367,27 @@ Use `toListOrThrow()` to validate collections imperatively:
 ```java
 import static io.github.raniagus.javalidation.ResultCollector.*;
 
-public List<User> validateAndProcessUsers(List<UserRequest> requests) {
+public List<User> validateAndProcessUsers(List<User> users) {
     // Validates all items, accumulates errors, then throws if any failed
-    return requests.stream()
+    return users.stream()
         .map(this::validateAndCreateUser)
         .collect(withPrefix("users", withIndex(toListOrThrow())));
 }
 
-private User validateAndCreateUser(UserRequest request) {
-    if (database.usernameExists(request.username())) {
-        throw JavalidationException.ofField("username", "Username {0} already taken", request.username());
-    }
-
-    if (database.emailExists(request.email())) {
+private User validateAndCreateUser(User user) {
+    if (userRepository.existsByEmail(user.email())) {
         throw JavalidationException.ofField("email", "Email already registered");
     }
 
-    return database.create(new User(request.email(), request.name()));
+    if (!emailVerificationService.verify(user.email())) {
+        throw JavalidationException.ofField("email", "Email could not be verified");
+    }
+
+    return database.create(user);
 }
 
 // If any validation fails, throws JavalidationException with all errors:
-// "users[0].username": ["Username RaniAgus already taken"],
+// "users[0].email": ["Email could not be verified"],
 // "users[2].email": ["Email already registered"]
 ```
 
@@ -412,19 +412,15 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody UserRegistrationRequest request) {
         try {
-            // Business rules validation (pure, no side effects)
-            validator.validateRegistrationRequest(request);
+            return switch (validator.validateRegistrationRequest(request)) {
+                // Internal checks (side effects: database queries, etc.)
+                case Result.Ok(User user) -> ResponseEntity.ok(userService.createUser(user));
+
+                // 422 Unprocessable Content: Request is well-formed but violates business rules
+                case Result.Err(ValidationErrors errors) -> ResponseEntity.status(422).body(errors);
+            };
         } catch (JavalidationException e) {
-            // 422 Unprocessable Content: Request is well-formed but violates business rules
-            return ResponseEntity.status(422).body(e.getErrors());
-        }
-        
-        try {
-            // Internal checks (side effects: database queries, etc.)
-            User user = userService.createUser(request);
-            return ResponseEntity.ok(user);
-        } catch (JavalidationException e) {
-            // 409 Conflict: Request is valid but conflicts with current state
+            // 409 Conflict: Request is valid but conflicts with the current state
             return ResponseEntity.status(409).body(e.getErrors());
         } catch (Exception e) {
             // 500: Unexpected error - log and alert
@@ -434,36 +430,35 @@ public class UserController {
     }
 }
 
-// Business rules validator (from earlier example)
+// Business rules validator
 @Component
 public class UserValidator {
-    public void validateRegistrationRequest(UserRegistrationRequest request) {
+    public Result<User> validateRegistrationRequest(UserRegistrationRequest request) {
         validateName(request.name())
             .and(validateAge(request.age()))
             .and(validateEmail(request.email()))
             .and(validatePassword(request.password()))
-            .combine((n, a, e, p) -> request)
-            .getOrThrow();  // Throws JavalidationException if invalid
+            .combine(User::new);
     }
     
     // validateName(), validateAge(), etc. from Business Rules section
 }
 
-// Service with internal checks (from earlier example)
+// Service with internal checks
 @Service
 public class UserService {
-    public User createUser(UserRegistrationRequest request) {
+    public User createUser(User user) {
         // Check if email already exists (database query)
-        if (userRepository.existsByEmail(request.email())) {
+        if (userRepository.existsByEmail(user.getEmail())) {
             throw JavalidationException.ofField("email", "Email already registered");
         }
-        
+
         // Check external validation service
-        if (!emailVerificationService.verify(request.email())) {
+        if (!emailVerificationService.verify(user.getEmail())) {
             throw JavalidationException.ofField("email", "Email could not be verified");
         }
-        
-        return userRepository.save(new User(request));
+
+        return userRepository.save(user);
     }
 }
 ```
@@ -694,7 +689,5 @@ The `into()` collector accumulates errors into an existing `Validation` instance
 ## License
 
 This project is licensed under the MIT License.
-
----
 
 [^1]: [How to consume snapshot releases](https://central.sonatype.org/publish/publish-portal-snapshots/#consuming-snapshot-releases-for-your-project)
