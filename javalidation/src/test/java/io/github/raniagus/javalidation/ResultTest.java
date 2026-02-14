@@ -128,6 +128,18 @@ class ResultTest {
     }
 
     @Test
+    void givenOk_whenGetOrElseWithSupplier_thenReturnsValueWithoutCallingSupplier() {
+        var callCount = new int[1];
+        var result = Result.ok(42).getOrElse(() -> {
+            callCount[0]++;
+            return 100;
+        });
+
+        assertThat(result).isEqualTo(42);
+        assertThat(callCount[0]).isEqualTo(0);
+    }
+
+    @Test
     void givenErr_whenGetOrElse_thenReturnsDefaultValue() {
         var result = Result.<Integer>err("invalid");
 
@@ -156,6 +168,13 @@ class ResultTest {
 
         var errors = result.getErrors();
         assertThat(errors.fieldErrors()).containsKey("root.field");
+    }
+
+    @Test
+    void givenOk_whenWithPrefixVarargs_thenReturnsOkWithSameValue() {
+        var result = Result.ok("value").withPrefix("prefix", ".", "sub");
+
+        assertThat(result.getOrThrow()).isEqualTo("value");
     }
 
     @Test
@@ -195,6 +214,75 @@ class ResultTest {
 
         assertThatThrownBy(result::getOrThrow)
                 .isInstanceOf(JavalidationException.class);
+    }
+
+    // -- or(Supplier) --
+
+    @Test
+    void givenOkResult_whenOrWithSupplier_thenReturnsOkWithoutCallingSupplier() {
+        var callCount = new int[1];
+        var result = Result.ok(42).or(() -> {
+            callCount[0]++;
+            return Result.ok(100);
+        });
+
+        assertThat(result.getOrThrow()).isEqualTo(42);
+        assertThat(callCount[0]).isEqualTo(0);
+    }
+
+    @Test
+    void givenErrResult_whenOrWithSupplier_thenCallsSupplierAndReturnsOk() {
+        var result = Result.<Integer>err("initial error")
+                .or(() -> Result.ok(100));
+
+        assertThat(result.getOrThrow()).isEqualTo(100);
+    }
+
+    @Test
+    void givenErrResult_whenOrWithSupplierReturningErr_thenMergesErrors() {
+        var result = Result.<Integer>err("first", "error1")
+                .or(() -> Result.err("second", "error2"));
+
+        var errors = result.getErrors();
+        assertThat(errors.fieldErrors()).hasSize(2);
+        assertThat(errors.fieldErrors()).containsKeys("first", "second");
+    }
+
+    @Test
+    void givenMultipleErrResults_whenOrChained_thenAppliesFallbackChain() {
+        var result = Result.<String>err("cache-miss")
+                .or(() -> Result.err("db-miss"))
+                .or(() -> Result.ok("default-value"));
+
+        assertThat(result.getOrThrow()).isEqualTo("default-value");
+    }
+
+    // -- or(Result) --
+
+    @Test
+    void givenOkResult_whenOrWithEagerResult_thenReturnsOk() {
+        var result = Result.ok(42)
+                .or(Result.ok(100));
+
+        assertThat(result.getOrThrow()).isEqualTo(42);
+    }
+
+    @Test
+    void givenErrResult_whenOrWithEagerResult_thenReturnsEagerOk() {
+        var result = Result.<Integer>err("initial error")
+                .or(Result.ok(100));
+
+        assertThat(result.getOrThrow()).isEqualTo(100);
+    }
+
+    @Test
+    void givenErrResult_whenOrWithEagerErr_thenMergesErrors() {
+        var result = Result.<Integer>err("field1", "error1")
+                .or(Result.err("field2", "error2"));
+
+        var errors = result.getErrors();
+        assertThat(errors.fieldErrors()).hasSize(2);
+        assertThat(errors.fieldErrors()).containsKeys("field1", "field2");
     }
 
     // -- map --
