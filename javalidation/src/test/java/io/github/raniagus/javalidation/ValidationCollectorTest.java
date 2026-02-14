@@ -66,7 +66,7 @@ class ValidationCollectorTest {
         void givenFailingResults_whenIntoWithPrefix_thenValidationContainsAllErrors() {
             Validation validation = Validation.create();
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("items.field", "error");
+            Result<String> result2 = Result.err("field", "error");
             Result<String> result3 = Result.err("root");
 
             validation = Stream.of(result1, result2, result3)
