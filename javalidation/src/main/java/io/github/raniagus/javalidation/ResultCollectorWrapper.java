@@ -67,12 +67,12 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
 
         @Override
         public void add(Result<T> result) {
-            add(result, new StringBuilder());
+            super.add(result, new StringBuilder(prefix));
         }
 
         @Override
-        public void add(Result<T> result, StringBuilder prefix) {
-            super.add(result, prefix.append(this.prefix));
+        public void add(Result<T> result, StringBuilder prefixSb) {
+            super.add(result, prefixSb.append(prefix));
         }
 
         @Override
