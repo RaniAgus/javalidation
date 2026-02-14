@@ -1,5 +1,9 @@
 package io.github.raniagus.javalidation;
 
+import static io.github.raniagus.javalidation.ResultCollector.toListOrThrow;
+import static io.github.raniagus.javalidation.ResultCollector.toResultList;
+import static io.github.raniagus.javalidation.ResultCollector.withIndex;
+import static io.github.raniagus.javalidation.ResultCollector.withPrefix;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.throwable;
@@ -16,38 +20,38 @@ class ResultCollectorsTest {
     // -- toList --
 
     @Test
-    void givenAllOkResults_whenToList_thenReturnsListOfValues() {
+    void givenAllOkResults_whenToList_thenReturnsListOrThrowOfValues() {
         Result<String> result1 = Result.ok("value1");
         Result<String> result2 = Result.ok("value2");
         Result<String> result3 = Result.ok("value3");
 
         var list = Stream.of(result1, result2, result3)
-                .collect(ResultCollectors.toList());
+                .collect(toListOrThrow());
 
         assertThat(list).containsExactly("value1", "value2", "value3");
     }
 
     @Test
-    void givenAllOkResults_whenToListWithCapacity_thenReturnsListOfValues() {
+    void givenAllOkResults_whenToListWithCapacity_thenReturnsListOrThrowOfValues() {
         Result<String> result1 = Result.ok("value1");
         Result<String> result2 = Result.ok("value2");
         Result<String> result3 = Result.ok("value3");
 
         var list = Stream.of(result1, result2, result3)
-                .collect(ResultCollectors.toList(3));
+                .collect(toListOrThrow(3));
 
         assertThat(list).containsExactly("value1", "value2", "value3");
     }
 
     @Test
-    void givenFailingResult_whenToList_thenThrowsException() {
+    void givenFailingResult_whenToList_OrThrow_thenThrowsException() {
         Result<String> result1 = Result.ok("value1");
         Result<String> result2 = Result.err("field", "error");
         Result<String> result3 = Result.err("root");
 
         Stream<Result<String>> stream = Stream.of(result1, result2, result3);
 
-        assertThatThrownBy(() -> stream.collect(ResultCollectors.toList()))
+        assertThatThrownBy(() -> stream.collect(toListOrThrow()))
                 .asInstanceOf(throwable(JavalidationException.class))
                 .extracting(JavalidationException::getErrors)
                 .isEqualTo(new ValidationErrors(
@@ -61,26 +65,26 @@ class ResultCollectorsTest {
     }
 
     @Test
-    void givenAllOkResult_whenIndexedToList_thenReturnsListOfValues() {
+    void givenAllOkResult_whenWithIndexToList_thenReturnsListOrThrowOfValues() {
         Result<String> result1 = Result.ok("value1");
         Result<String> result2 = Result.ok("value2");
         Result<String> result3 = Result.ok("value3");
 
         var list = Stream.of(result1, result2, result3)
-                .collect(ResultCollectors.indexed(ResultCollectors.toList(3)));
+                .collect(withIndex(toListOrThrow(3)));
 
         assertThat(list).containsExactly("value1", "value2", "value3");
     }
 
     @Test
-    void givenFailingResult_whenToListIndexed_thenThrowsException() {
+    void givenFailingResult_whenToListOrThrowWithIndex_thenThrowsException() {
         Result<String> result1 = Result.ok("value1");
         Result<String> result2 = Result.err("field", "error");
         Result<String> result3 = Result.err("root");
 
         Stream<Result<String>> stream = Stream.of(result1, result2, result3);
 
-        assertThatThrownBy(() -> stream.collect(ResultCollectors.indexed(ResultCollectors.toList(3))))
+        assertThatThrownBy(() -> stream.collect(withIndex(toListOrThrow(3))))
                 .asInstanceOf(throwable(JavalidationException.class))
                 .extracting(JavalidationException::getErrors)
                 .isEqualTo(new ValidationErrors(
@@ -93,14 +97,14 @@ class ResultCollectorsTest {
     }
 
     @Test
-    void givenFailingResult_whenToListIndexedWithPrefix_thenThrowsException() {
+    void givenFailingResult_whenToListOrThrowWithIndexWithPrefix_thenThrowsExceptionAndPrefix() {
         Result<String> result1 = Result.ok("value1");
         Result<String> result2 = Result.err("field", "error");
         Result<String> result3 = Result.err("root");
 
         Stream<Result<String>> stream = Stream.of(result1, result2, result3);
 
-        assertThatThrownBy(() -> stream.collect(ResultCollectors.indexed(ResultCollectors.toList(3), "prefix")))
+        assertThatThrownBy(() -> stream.collect(withPrefix("prefix", withIndex(toListOrThrow(3)))))
                 .asInstanceOf(throwable(JavalidationException.class))
                 .extracting(JavalidationException::getErrors)
                 .isEqualTo(new ValidationErrors(
@@ -121,7 +125,7 @@ class ResultCollectorsTest {
         Result<String> result3 = Result.ok("value3");
 
         var result = Stream.of(result1, result2, result3)
-                .collect(ResultCollectors.toResultList());
+                .collect(toResultList());
 
         assertThat(result.getOrThrow()).containsExactly("value1", "value2", "value3");
     }
@@ -133,7 +137,7 @@ class ResultCollectorsTest {
         Result<String> result3 = Result.ok("value3");
 
         var result = Stream.of(result1, result2, result3)
-                .collect(ResultCollectors.toResultList(3));
+                .collect(toResultList(3));
 
         assertThat(result.getOrThrow()).containsExactly("value1", "value2", "value3");
     }
@@ -145,7 +149,7 @@ class ResultCollectorsTest {
         Result<String> result3 = Result.err("root");
 
         var result = Stream.of(result1, result2, result3)
-                .collect(ResultCollectors.toResultList());
+                .collect(toResultList());
 
         assertThat(result)
                 .asInstanceOf(InstanceOfAssertFactories.type(Result.Err.class))
@@ -167,7 +171,7 @@ class ResultCollectorsTest {
         Result<String> result3 = Result.err("root");
 
         var result = Stream.of(result1, result2, result3)
-                .collect(ResultCollectors.toResultList(3));
+                .collect(toResultList(3));
 
         assertThat(result)
                 .asInstanceOf(InstanceOfAssertFactories.type(Result.Err.class))
@@ -191,7 +195,7 @@ class ResultCollectorsTest {
         Result<String> result3 = Result.ok("value3");
 
         var partitioned = Stream.of(result1, result2, result3)
-                .collect(ResultCollectors.toPartitioned());
+                .collect(ResultCollector.toPartitioned());
 
         assertThat(partitioned.value()).containsExactly("value1", "value2", "value3");
         assertThat(partitioned.errors().isEmpty()).isTrue();
@@ -204,7 +208,7 @@ class ResultCollectorsTest {
         Result<String> result3 = Result.ok("value3");
 
         var partitioned = Stream.of(result1, result2, result3)
-                .collect(ResultCollectors.toPartitioned(3));
+                .collect(ResultCollector.toPartitioned(3));
 
         assertThat(partitioned.value()).containsExactly("value1", "value2", "value3");
         assertThat(partitioned.errors().isEmpty()).isTrue();
@@ -217,7 +221,7 @@ class ResultCollectorsTest {
         Result<String> result3 = Result.err("root");
 
         var partitioned = Stream.of(result1, result2, result3)
-                .collect(ResultCollectors.toPartitioned());
+                .collect(ResultCollector.toPartitioned());
 
         assertThat(partitioned.value()).containsExactly("value1");
         assertThat(partitioned.errors()).isEqualTo(new ValidationErrors(
@@ -233,7 +237,7 @@ class ResultCollectorsTest {
         Result<String> result3 = Result.err("root");
 
         var partitioned = Stream.of(result1, result2, result3)
-                .collect(ResultCollectors.toPartitioned(3));
+                .collect(ResultCollector.toPartitioned(3));
 
         assertThat(partitioned.value()).containsExactly("value1");
         assertThat(partitioned.errors()).isEqualTo(new ValidationErrors(

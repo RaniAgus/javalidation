@@ -135,15 +135,15 @@ repositories {
 | `getErrors()`                          | Get errors (empty if Ok)                  |
 | `withPrefix(String)`                   | Namespace errors for nested objects       |
 
-### ResultCollectors
+### ResultCollector
 
 | Method                                      | Description                                                          |
 |---------------------------------------------|----------------------------------------------------------------------|
 | `toResultList()` / `toResultList(int)`      | Returns `Result<List<T>>` (`Ok` if all valid, `Err` with all errors) |
-| `toList()` / `toList(int)`                  | Returns `List<T>` or throws with all accumulated errors              |
+| `toListOrThrow()` / `toListOrThrow(int)`    | Returns `List<T>` or throws with all accumulated errors              |
 | `toPartitioned()` / `toPartitioned(int)`    | Returns valid items + errors (partial success)                       |
-| `indexed(Collector<...>)`                   | Wraps a collector to add `[0]`, `[1]`, etc. prefixes to errors       |
-| `indexed(Collector<...>, String)`           | Wraps a collector to add `prefix[0]`, `prefix[1]`, etc. to errors    |
+| `withIndex(Collector<...>)`                 | Wraps a collector to add `[0]`, `[1]`, etc. prefixes to errors       |
+| `withPrefix(String, Collector<...>)`        | Wraps a collector to add a field prefix to all errors                |
 
 > **Note:** The optional `int` parameter provides an `initialCapacity` hint to avoid ArrayList resizing when the
 > collection size is known upfront, improving performance for large streams.
@@ -372,9 +372,9 @@ for (int i = 0; i < items.size(); i++) {
 Result<List<Item>> result = validation.asResult(items);
 ```
 
-#### Stream-Based Approach with ResultCollectors
+#### Stream-Based Approach with ResultCollector
 
-The `ResultCollectors` class provides three specialized collectors for validating streams. **All three collectors
+The `ResultCollector` interface provides three specialized collectors for validating streams. **All three collectors
 accumulate all validation errors** before returning/throwing - they do not fail fast, so you can get comprehensive
 feedback on all items in the collection.
 
@@ -383,12 +383,12 @@ feedback on all items in the collection.
 Returns `Result<List<T>>` with all validation errors accumulated:
 
 ```java
-import io.github.raniagus.javalidation.ResultCollectors;
+import static io.github.raniagus.javalidation.ResultCollector.*;
 
 // Validate all items, collect ALL errors
 Result<List<User>> result = items.stream()
     .map(this::validateUser)
-    .collect(ResultCollectors.toResultList());
+    .collect(toResultList());
 
 // Handle result
 switch (result) {
@@ -396,13 +396,13 @@ switch (result) {
         processUsers(users);
     case Result.Err(ValidationErrors errors) -> {
         // Errors contain all validation failures (without indexes by default)
-        // Use indexed() wrapper to add automatic indexing
+        // Use withIndex() wrapper to add automatic indexing
         logErrors(errors);
     }
 }
 ```
 
-**2. toList() - Imperative Style**
+**2. toListOrThrow() - Imperative Style**
 
 Returns `List<T>` directly, throwing `JavalidationException` with all accumulated errors if any validation fails:
 
@@ -410,13 +410,13 @@ Returns `List<T>` directly, throwing `JavalidationException` with all accumulate
 try {
     List<User> users = items.stream()
         .map(this::validateUser)
-        .collect(ResultCollectors.toList());
+        .collect(toListOrThrow());
     
     // All items valid
     processUsers(users);
 } catch (JavalidationException e) {
     // Contains ALL errors (without indexes by default)
-    // Use indexed() wrapper to add automatic indexing
+    // Use withIndex() wrapper to add automatic indexing
     logErrors(e.getErrors());
 }
 ```
@@ -428,7 +428,7 @@ Returns `PartitionedResult<List<T>>` with both valid items and all errors:
 ```java
 var partitioned = items.stream()
     .map(this::validateUser)
-    .collect(ResultCollectors.toPartitioned());
+    .collect(toPartitioned());
 
 // Process valid items even if some failed
 List<User> validUsers = partitioned.value();
@@ -443,19 +443,19 @@ if (errors.isNotEmpty()) {
 processUsers(validUsers);
 ```
 
-**Automatic Error Indexing with indexed():**
+**Automatic Error Indexing with withIndex():**
 
-By default, the collectors do not add index prefixes to errors. Use the `indexed()` wrapper to automatically prefix
+By default, the collectors do not add index prefixes to errors. Use the `withIndex()` wrapper to automatically prefix
 errors with `[0]`, `[1]`, etc. based on the item's position in the stream:
 
 ```java
 // Without indexing (default)
-Result<List<Item>> result = stream.collect(ResultCollectors.toResultList());
+Result<List<Item>> result = stream.collect(toResultList());
 // Errors: "field": ["Error message"]
 
 // With automatic indexing
 Result<List<Item>> result = stream.collect(
-    ResultCollectors.indexed(ResultCollectors.toResultList())
+    withIndex(toResultList())
 );
 // Errors are prefixed with "[index]":
 // "[0].field": ["Error message"]
@@ -464,15 +464,16 @@ Result<List<Item>> result = stream.collect(
 
 **Custom Prefix for Nested Collections:**
 
-The `indexed()` wrapper accepts an optional `prefix` parameter to namespace errors for nested structures:
+The `withPrefix()` wrapper adds a field name prefix to all errors. You can combine it with `withIndex()` to create
+nested indexed collections:
 
 ```java
-// Validate items in an order with custom prefix
+// Validate items in an order with custom prefix and indexing
 Result<List<Item>> items = order.getItems().stream()
     .map(this::validateItem)
-    .collect(ResultCollectors.indexed(
-        ResultCollectors.toResultList(),
-        "order.items"
+    .collect(withPrefix(
+        "order.items",
+        withIndex(toResultList())
     ));
 
 // Errors appear as: "order.items[0].price", "order.items[1].name", etc.
@@ -480,9 +481,9 @@ Result<List<Item>> items = order.getItems().stream()
 // Process valid items with prefix
 var partitioned = order.getLineItems().stream()
     .map(this::validateLineItem)
-    .collect(ResultCollectors.indexed(
-        ResultCollectors.toPartitioned(),
-        "lineItems"
+    .collect(withPrefix(
+        "lineItems",
+        withIndex(toPartitioned())
     ));
 
 // Errors: "lineItems[0].quantity", "lineItems[2].discount", etc.
@@ -491,9 +492,9 @@ var partitioned = order.getLineItems().stream()
 try {
     List<Address> addresses = user.getAddresses().stream()
         .map(this::validateAddress)
-        .collect(ResultCollectors.indexed(
-            ResultCollectors.toList(),
-            "addresses"
+        .collect(withPrefix(
+            "addresses",
+            withIndex(toListOrThrow())
         ));
 } catch (JavalidationException e) {
     // Errors: "addresses[0].street", "addresses[1].zipCode", etc.
@@ -509,25 +510,25 @@ size is known upfront:
 // When you know the collection size, provide a capacity hint
 List<User> users = items.stream()
     .map(this::validateUser)
-    .collect(ResultCollectors.indexed(
-        ResultCollectors.toList(items.size()),
-        "users"
+    .collect(withPrefix(
+        "users",
+        withIndex(toListOrThrow(items.size()))
     ));
 
 // For large streams, this avoids multiple ArrayList resizing operations
 Result<List<Product>> products = productStream
     .map(this::validateProduct)
-    .collect(ResultCollectors.indexed(
-        ResultCollectors.toResultList(expectedSize),
-        "products"
+    .collect(withPrefix(
+        "products",
+        withIndex(toResultList(expectedSize))
     ));
 
 // Works with all three collectors
 var partitioned = orders.stream()
     .map(this::validateOrder)
-    .collect(ResultCollectors.indexed(
-        ResultCollectors.toPartitioned(orders.size()),
-        "orders"
+    .collect(withPrefix(
+        "orders",
+        withIndex(toPartitioned(orders.size()))
     ));
 ```
 
@@ -536,7 +537,7 @@ var partitioned = orders.stream()
 | Collector            | Use When                                              | Returns                      |
 |----------------------|-------------------------------------------------------|------------------------------|
 | `toResultList(...)`  | You want functional error handling with `Result` type | `Result<List<T>>`            |
-| `toList(...)`        | You want imperative error handling with exceptions    | `List<T>`                    |
+| `toListOrThrow(...)` | You want imperative error handling with exceptions    | `List<T>`                    |
 | `toPartitioned(...)` | You want to process valid items even if some fail     | `PartitionedResult<List<T>>` |
 
 ## Error Handling: The Error Channel
