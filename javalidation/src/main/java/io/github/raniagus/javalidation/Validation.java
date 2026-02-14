@@ -321,7 +321,7 @@ public class Validation {
     public void check() {
         ValidationErrors errors = finish();
         if (errors.isNotEmpty()) {
-            throw new JavalidationException(errors);
+            throw JavalidationException.of(errors);
         }
     }
 

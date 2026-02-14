@@ -198,7 +198,7 @@ class ValidationTest {
         var validation = Validation.create();
 
         var result = validation.asResult(() -> {
-            throw new JavalidationException(ValidationErrors.ofRoot("error"));
+            throw JavalidationException.ofRoot("error");
         });
         assertThatThrownBy(result::getOrThrow)
                 .isInstanceOf(JavalidationException.class);

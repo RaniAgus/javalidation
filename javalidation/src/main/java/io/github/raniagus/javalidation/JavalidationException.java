@@ -35,7 +35,7 @@ package io.github.raniagus.javalidation;
  * throw JavalidationException.ofField("email", "Invalid email format");
  *
  * // From accumulated errors
- * throw new JavalidationException(validationErrors);
+ * throw JavalidationException.of(validationErrors);
  * }</pre>
  *
  * @see ValidationErrors
@@ -45,14 +45,18 @@ package io.github.raniagus.javalidation;
 public class JavalidationException extends RuntimeException {
     private final ValidationErrors errors;
 
+    private JavalidationException(ValidationErrors errors) {
+        super(buildMessage(errors));
+        this.errors = errors;
+    }
+
     /**
      * Creates an exception with the given validation errors.
      *
      * @param errors the accumulated validation errors
      */
-    public JavalidationException(ValidationErrors errors) {
-        super(buildMessage(errors));
-        this.errors = errors;
+    public static JavalidationException of(ValidationErrors errors) {
+        return new JavalidationException(errors);
     }
 
     /**

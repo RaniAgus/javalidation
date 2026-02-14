@@ -144,7 +144,7 @@ public sealed interface Result<T extends @Nullable Object> {
     default T getOrThrow() {
         return switch (this) {
             case Ok<T>(T value) -> value;
-            case Err<T>(ValidationErrors errors) -> throw new JavalidationException(errors);
+            case Err<T>(ValidationErrors errors) -> throw JavalidationException.of(errors);
         };
     }
 

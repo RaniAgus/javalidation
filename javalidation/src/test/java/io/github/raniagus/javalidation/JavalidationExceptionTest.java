@@ -28,7 +28,7 @@ class JavalidationExceptionTest {
         validation.addFieldError("age", "Must be at least 18");
         validation.addFieldError("age", "Cannot be negative");
 
-        var exception = new JavalidationException(validation.finish());
+        var exception = JavalidationException.of(validation.finish());
 
         assertThat(exception.getMessage()).isEqualTo("Validation failed with 4 error(s)");
     }
@@ -36,14 +36,14 @@ class JavalidationExceptionTest {
     @Test
     void givenException_whenGetErrors_thenReturnsValidationErrors() {
         var errors = ValidationErrors.ofField("email", "Invalid format");
-        var exception = new JavalidationException(errors);
+        var exception = JavalidationException.of(errors);
 
         assertThat(exception.getErrors()).isEqualTo(errors);
     }
 
     @Test
     void givenEmptyErrors_whenGetMessage_thenReturnsZeroCount() {
-        var exception = new JavalidationException(ValidationErrors.empty());
+        var exception = JavalidationException.of(ValidationErrors.empty());
 
         assertThat(exception.getMessage()).isEqualTo("Validation failed with 0 error(s)");
     }
@@ -63,7 +63,7 @@ class JavalidationExceptionTest {
         validation.addFieldError("name", "Required");
         validation.addFieldError("age", "Too young");
 
-        var exception = new JavalidationException(validation.finish());
+        var exception = JavalidationException.of(validation.finish());
 
         assertThat(exception.getMessage()).isEqualTo("Validation failed with 4 error(s)");
     }

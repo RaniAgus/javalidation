@@ -19,7 +19,7 @@ class ResultTest {
     @Test
     void givenSupplierThrowingValidationException_whenOf_thenReturnsErr() {
         var result = Result.of(() -> {
-            throw new JavalidationException(ValidationErrors.ofRoot("error"));
+            throw JavalidationException.ofRoot("error");
         });
 
         assertThatThrownBy(result::getOrThrow)
