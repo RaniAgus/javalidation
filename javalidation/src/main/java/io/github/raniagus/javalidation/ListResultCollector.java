@@ -52,7 +52,7 @@ public abstract class ListResultCollector<T extends @Nullable Object, R, SELF ex
 
         @Override
         public ToList<T> combine(ToList<T> other) {
-            this.validation.addAll(other.validation.finish());
+            this.validation.addAll(other.validation);
             return this;
         }
 
@@ -73,7 +73,7 @@ public abstract class ListResultCollector<T extends @Nullable Object, R, SELF ex
 
         @Override
         public ToResultList<T> combine(ToResultList<T> other) {
-            this.validation.addAll(other.validation.finish());
+            this.validation.addAll(other.validation);
             return this;
         }
 
@@ -94,7 +94,7 @@ public abstract class ListResultCollector<T extends @Nullable Object, R, SELF ex
 
         @Override
         public ToPartitioned<T> combine(ToPartitioned<T> other) {
-            this.validation.addAll(other.validation.finish());
+            this.validation.addAll(other.validation);
             return this;
         }
 

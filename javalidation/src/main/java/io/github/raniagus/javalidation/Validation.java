@@ -139,6 +139,30 @@ public class Validation {
     }
 
     /**
+     * Merges all errors from another {@link Validation} into this validation.
+     * <p>
+     * Root errors are added as root errors, field errors are added as field errors with their
+     * original field names.
+     * <p>
+     * Example:
+     * <pre>{@code
+     * Validation validation = Validation.create();
+     * Validation addressErrors = validateAddress(address);
+     * validation.addAll(addressErrors);
+     * }</pre>
+     *
+     * @param validation the validation to merge (must not be null)
+     * @return this validation for method chaining
+     * @throws NullPointerException if errors is null
+     */
+    public Validation addAll(Validation validation) {
+        Objects.requireNonNull(validation);
+        addRootErrors(validation.rootErrors);
+        addFieldErrors(validation.fieldErrors);
+        return this;
+    }
+
+    /**
      * Merges all errors from another {@link ValidationErrors} into this validation.
      * <p>
      * Root errors are added as root errors, field errors are added as field errors with their

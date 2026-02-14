@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.github.raniagus.javalidation.format.TemplateString;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class ValidationTest {
@@ -90,6 +91,24 @@ class ValidationTest {
 
         assertThatThrownBy(() -> validation.addFieldError("field", null))
                 .isInstanceOf(NullPointerException.class);
+    }
+
+    // -- addAll(Validation) --
+
+    @Test
+    void givenValidation_whenAddAll_thenAddsAllErrors() {
+        var validation = Validation.create()
+                .addFieldError("field", "error");
+        var validation2 = Validation.create()
+                .addRootError("root error");
+
+        var validation3 = Validation.create()
+                .addAll(validation)
+                .addAll(validation2);
+
+        var errors = validation3.finish();
+        assertThat(errors.fieldErrors()).containsEntry("field", List.of(TemplateString.of("error")));
+        assertThat(errors.rootErrors()).containsExactly(TemplateString.of("root error"));
     }
 
     // -- addAll(ValidationErrors) --
