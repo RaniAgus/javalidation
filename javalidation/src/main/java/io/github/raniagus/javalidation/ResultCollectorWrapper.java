@@ -48,7 +48,7 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
 
         @Override
         public WithIndex<T, R, C> combine(WithIndex<T, R, C> other) {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("Cannot combine index-prefixed collectors");
         }
     }
 
