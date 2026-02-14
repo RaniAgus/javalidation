@@ -143,6 +143,43 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
     }
 
     /**
+     * Returns a {@link Collector} that accumulates errors into an existing {@link Validation} object.
+     * <p>
+     * Unlike other collectors that create new structures, this mutates and returns the provided
+     * {@link Validation}. Success values are discarded. Use {@link #withPrefix(String, Collector)}
+     * to namespace errors.
+     * <p>
+     * <strong>Example - combining multiple validation steps:</strong>
+     * <pre>{@code
+     * Validation validation = Validation.create();
+     *
+     * users.stream()
+     *     .map(this::validateUser)
+     *     .collect(withPrefix("users", into(validation)));
+     *
+     * orders.stream()
+     *     .map(this::validateOrder)
+     *     .collect(withPrefix("orders", into(validation)));
+     *
+     * validation.check(); // throws if any errors accumulated
+     * }</pre>
+     *
+     * @param validation the validation object to accumulate errors into
+     * @param <T>        the type of the success values (discarded)
+     * @return a collector that accumulates errors into the provided validation
+     * @see #withPrefix(String, Collector)
+     * @see Validation
+     */
+    static <T extends @Nullable Object> Collector<Result<T>, ValidationCollector<T>, Validation> into(Validation validation) {
+        return Collector.of(
+                () -> new ValidationCollector<>(validation),
+                ValidationCollector::add,
+                ValidationCollector::combine,
+                ValidationCollector::finish
+        );
+    }
+
+    /**
      * Returns a {@link Collector} that accumulates {@link Result} elements into a {@link List}.
      * <p>
      * This collector accumulates all validation errors before throwing. If any {@link Result.Err}

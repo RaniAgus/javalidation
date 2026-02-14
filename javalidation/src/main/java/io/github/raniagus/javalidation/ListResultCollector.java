@@ -5,7 +5,7 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 public abstract class ListResultCollector<T extends @Nullable Object, R, SELF extends ResultCollector<T, R, SELF>> implements ResultCollector<T, R, SELF> {
-    private final List<T> values;
+    protected final List<T> values;
     protected final Validation validation = Validation.create();
 
     ListResultCollector() {
@@ -52,6 +52,7 @@ public abstract class ListResultCollector<T extends @Nullable Object, R, SELF ex
 
         @Override
         public ToList<T> combine(ToList<T> other) {
+            this.values.addAll(other.values);
             this.validation.addAll(other.validation);
             return this;
         }
@@ -73,6 +74,7 @@ public abstract class ListResultCollector<T extends @Nullable Object, R, SELF ex
 
         @Override
         public ToResultList<T> combine(ToResultList<T> other) {
+            this.values.addAll(other.values);
             this.validation.addAll(other.validation);
             return this;
         }
@@ -94,6 +96,7 @@ public abstract class ListResultCollector<T extends @Nullable Object, R, SELF ex
 
         @Override
         public ToPartitioned<T> combine(ToPartitioned<T> other) {
+            this.values.addAll(other.values);
             this.validation.addAll(other.validation);
             return this;
         }
