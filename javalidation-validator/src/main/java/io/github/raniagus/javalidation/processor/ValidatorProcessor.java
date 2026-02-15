@@ -6,6 +6,7 @@ import static io.github.raniagus.javalidation.processor.ProcessorUtils.getReferr
 import io.github.raniagus.javalidation.annotation.Validator;
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.reflect.RecordComponent;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -23,8 +24,7 @@ import javax.tools.JavaFileObject;
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class ValidatorProcessor extends AbstractProcessor {
     @Override
-    public boolean process(Set<? extends TypeElement> annotations,
-                           RoundEnvironment roundEnv) {
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         for (Element element : roundEnv.getElementsAnnotatedWith(Validator.class)) {
             if (element instanceof TypeElement recordElement) {
                 if (element.getKind() != ElementKind.RECORD) {
@@ -79,11 +79,11 @@ public class ValidatorProcessor extends AbstractProcessor {
     }
 
     private void generateValidatorBody(TypeElement recordElement, StringBuilder sb) {
-        generateLocalProperties(recordElement, sb);
+        generateValidatorInjection(recordElement, sb);
         generateValidateMethod(recordElement, sb);
     }
 
-    private static void generateLocalProperties(TypeElement recordElement, StringBuilder sb) {
+    private static void generateValidatorInjection(TypeElement recordElement, StringBuilder sb) {
         for (Element enclosed : recordElement.getEnclosedElements()) {
             if (enclosed.getKind() != ElementKind.RECORD_COMPONENT) continue;
             if (enclosed instanceof RecordComponentElement component) {
@@ -129,7 +129,13 @@ public class ValidatorProcessor extends AbstractProcessor {
                     Validation validation = Validation.create();
                 """);
 
-        generateFieldValidations(recordElement, 2, sb);
+
+        for (Element enclosed : recordElement.getEnclosedElements()) {
+            if (enclosed.getKind() != ElementKind.RECORD_COMPONENT) continue;
+            if (enclosed instanceof RecordComponentElement component) {
+                generateFieldValidations(component, 2, sb);
+            }
+        }
 
         sb.append(INDENT);
         sb.append(
@@ -145,19 +151,26 @@ public class ValidatorProcessor extends AbstractProcessor {
         );
     }
 
-    private static void generateFieldValidations(TypeElement recordElement, int indentLevel, StringBuilder sb) {
-        for (Element enclosed : recordElement.getEnclosedElements()) {
-            if (enclosed.getKind() != ElementKind.RECORD_COMPONENT) continue;
-            if (enclosed instanceof RecordComponentElement component) {
-                ValidationWriter.getAllValidations(component)
-                        .flatMap(String::lines)
-                        .forEach(line -> {
-                            sb.append(INDENT.repeat(indentLevel));
-                            sb.append(line);
-                            sb.append('\n');
-                        });
-            }
-        }
+    private static void generateFieldValidations(RecordComponentElement component, int indentLevel, StringBuilder sb) {
+        ValidationWriter.getAllValidations(component)
+                .flatMap(String::lines)
+                .forEach(line -> {
+                    sb.append(INDENT.repeat(indentLevel));
+                    sb.append(line);
+                    sb.append('\n');
+                });
+
+        // TODO: Implement Iterable<T> support
+        // - Check if component corresponds to an Iterable<T> type
+        // - Get annotations and generate root validations for each element
+        // - Check if element type is a record
+        // - Call generateFieldValidations recursively by adding a prefix
+
+        // TODO: Implement Map<K, V> support
+        // - Check if component corresponds to a Map<K, V> type
+        // - Get annotations and generate root validations for each entry
+        // - Check if value types are records
+        // - Call generateFieldValidations recursively by adding a prefix
     }
 
     private static String getValidatorName(TypeElement recordElement) {
