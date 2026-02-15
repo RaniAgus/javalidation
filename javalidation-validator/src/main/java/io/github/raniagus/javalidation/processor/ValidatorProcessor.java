@@ -6,7 +6,6 @@ import static io.github.raniagus.javalidation.processor.ProcessorUtils.getReferr
 import io.github.raniagus.javalidation.annotation.Validator;
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.reflect.RecordComponent;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -26,17 +25,19 @@ public class ValidatorProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         for (Element element : roundEnv.getElementsAnnotatedWith(Validator.class)) {
-            if (element instanceof TypeElement recordElement) {
-                if (element.getKind() != ElementKind.RECORD) {
-                    processingEnv.getMessager().printMessage(
-                            Diagnostic.Kind.ERROR,
-                            "@Validator can only be applied to records"
-                    );
-                    continue;
-                }
-                generateValidator(recordElement);
+            if (!(element instanceof TypeElement recordElement)) {
+                continue;
             }
+
+            if (element.getKind() != ElementKind.RECORD) {
+                processingEnv.getMessager().printMessage(
+                        Diagnostic.Kind.ERROR, "@Validator can only be applied to records");
+                continue;
+            }
+
+            generateValidator(recordElement);
         }
+
         return true;
     }
 
