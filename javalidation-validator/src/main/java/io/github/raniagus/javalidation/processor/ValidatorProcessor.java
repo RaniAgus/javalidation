@@ -55,7 +55,7 @@ public class ValidatorProcessor extends AbstractProcessor {
                 public class %2$s implements Validator<%3$s> {
                 """.formatted(packageName, getValidatorName(recordElement), getRecordName(recordElement)));
 
-        sb.append(generateValidatorBody(recordElement, 1));
+        generateValidatorBody(recordElement, sb);
 
         sb.append(
                 """
@@ -78,44 +78,40 @@ public class ValidatorProcessor extends AbstractProcessor {
         }
     }
 
-    private StringBuilder generateValidatorBody(TypeElement recordElement, int indentLevel) {
-        StringBuilder sb = new StringBuilder();
+    private void generateValidatorBody(TypeElement recordElement, StringBuilder sb) {
+        generateLocalProperties(recordElement, sb);
+        generateValidateMethod(recordElement, sb);
+    }
+
+    private static void generateLocalProperties(TypeElement recordElement, StringBuilder sb) {
         for (Element enclosed : recordElement.getEnclosedElements()) {
             if (enclosed.getKind() != ElementKind.RECORD_COMPONENT) continue;
             if (enclosed instanceof RecordComponentElement component) {
                 TypeElement referredType = getReferredType(component);
                 if (referredType != null && referredType.getAnnotation(Validator.class) != null) {
                     String componentName = component.getSimpleName().toString();
-                    Element enclosingElement = referredType.getEnclosingElement();
-                    if (enclosingElement.getKind() == ElementKind.RECORD || enclosingElement.getKind() == ElementKind.CLASS) {
-                        sb.append(INDENT.repeat(indentLevel));
-                        sb.append(
-                                """
-                                private final Validator<%1$s> %2$sValidator = new %3$s$%4$sValidator();
-                                """.formatted(referredType.getQualifiedName(), componentName, enclosingElement, referredType.getSimpleName())
-                        );
-                    } else {
-                        sb.append(INDENT.repeat(indentLevel));
-                        sb.append(
-                                """
-                                private final Validator<%1$s> %2$sValidator = new %3$s.%4$sValidator();
-                                """.formatted(referredType.getQualifiedName(), componentName, enclosingElement, referredType.getSimpleName())
-                        );
-                    }
+                    sb.append(INDENT);
+                    sb.append(
+                            """
+                            private final Validator<%1$s> %2$sValidator = new %3$sValidator();
+                            """.formatted(referredType.getQualifiedName(), componentName, getValidatorFullName(referredType))
+                    );
                 }
             }
         }
+    }
 
+    private static void generateValidateMethod(TypeElement recordElement, StringBuilder sb) {
         sb.append("\n");
-        sb.append(INDENT.repeat(indentLevel));
+        sb.append(INDENT);
         sb.append(
                 """
                 @Override
                 """);
-        sb.append(INDENT.repeat(indentLevel));
+        sb.append(INDENT);
 
         Element enclosingElement = recordElement.getEnclosingElement();
-        if (enclosingElement.getKind() == ElementKind.RECORD) {
+        if (isEnclosingClass(enclosingElement)) {
             sb.append(
                     """
                     public ValidationErrors validate(%2$s.@Nullable %1$s obj) {
@@ -127,56 +123,74 @@ public class ValidatorProcessor extends AbstractProcessor {
                     """.formatted(recordElement.getSimpleName()));
         }
 
-        sb.append(INDENT.repeat(indentLevel));
+        sb.append(INDENT);
         sb.append(
                 """
                     Validation validation = Validation.create();
                 """);
 
+        generateFieldValidations(recordElement, 2, sb);
+
+        sb.append(INDENT);
+        sb.append(
+                """
+                    return validation.finish();
+                """
+        );
+        sb.append(INDENT);
+        sb.append(
+                """
+                }
+                """
+        );
+    }
+
+    private static void generateFieldValidations(TypeElement recordElement, int indentLevel, StringBuilder sb) {
         for (Element enclosed : recordElement.getEnclosedElements()) {
             if (enclosed.getKind() != ElementKind.RECORD_COMPONENT) continue;
             if (enclosed instanceof RecordComponentElement component) {
                 ValidationWriter.getAllValidations(component)
                         .flatMap(String::lines)
                         .forEach(line -> {
-                            sb.append(INDENT.repeat(indentLevel + 1));
+                            sb.append(INDENT.repeat(indentLevel));
                             sb.append(line);
                             sb.append('\n');
                         });
             }
         }
-
-        sb.append(INDENT.repeat(indentLevel));
-        sb.append(
-                """
-                    return validation.finish();
-                """
-        );
-        sb.append(INDENT.repeat(indentLevel));
-        sb.append(
-                """
-                }
-                """
-        );
-
-        return sb;
     }
 
     private static String getValidatorName(TypeElement recordElement) {
         Element enclosingElement = recordElement.getEnclosingElement();
-        if (enclosingElement.getKind() == ElementKind.RECORD || enclosingElement.getKind() == ElementKind.CLASS) {
+        if (isEnclosingClass(enclosingElement)) {
             return enclosingElement.getSimpleName() + "$" + recordElement.getSimpleName() + "Validator";
         }
 
         return recordElement.getSimpleName() + "Validator";
     }
 
+    private static String getValidatorFullName(TypeElement recordElement) {
+        Element enclosingElement = recordElement.getEnclosingElement();
+        if (isEnclosingClass(enclosingElement)) {
+            return enclosingElement + "$" + recordElement.getSimpleName();
+        }
+
+        return recordElement.toString();
+    }
+
     private static String getRecordName(TypeElement recordElement) {
         Element enclosingElement = recordElement.getEnclosingElement();
-        if (enclosingElement.getKind() == ElementKind.RECORD || enclosingElement.getKind() == ElementKind.CLASS) {
+        if (isEnclosingClass(enclosingElement)) {
             return enclosingElement.getSimpleName() + "." + recordElement.getSimpleName();
         }
 
         return recordElement.getSimpleName().toString();
+    }
+
+    private static boolean isEnclosingClass(Element enclosingElement) {
+        return enclosingElement.getKind() == ElementKind.CLASS
+                || enclosingElement.getKind() == ElementKind.RECORD
+                || enclosingElement.getKind() == ElementKind.INTERFACE
+                || enclosingElement.getKind() == ElementKind.ENUM;
     }
 }
