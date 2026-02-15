@@ -43,7 +43,6 @@ public class ValidatorProcessor extends AbstractProcessor {
     private void generateValidator(TypeElement recordElement) {
         String packageName = processingEnv.getElementUtils()
                 .getPackageOf(recordElement).getQualifiedName().toString();
-        String validatorName = recordElement.getSimpleName() + "Validator";
 
         StringBuilder sb = new StringBuilder();
         sb.append(
@@ -54,9 +53,9 @@ public class ValidatorProcessor extends AbstractProcessor {
                 import org.jspecify.annotations.Nullable;
                 
                 public class %2$s implements Validator<%3$s> {
-                """.formatted(packageName, validatorName, recordElement.getSimpleName()));
+                """.formatted(packageName, getValidatorName(recordElement), getRecordName(recordElement)));
 
-        sb.append(generateValidatorBody(recordElement, recordElement.getSimpleName().toString(), 1));
+        sb.append(generateValidatorBody(recordElement, 1));
 
         sb.append(
                 """
@@ -66,7 +65,7 @@ public class ValidatorProcessor extends AbstractProcessor {
 
         try {
             JavaFileObject file = processingEnv.getFiler()
-                    .createSourceFile(packageName + "." + validatorName);
+                    .createSourceFile(packageName + "." + getValidatorName(recordElement));
 
             try (Writer writer = file.openWriter()) {
                 writer.write(sb.toString());
@@ -79,21 +78,30 @@ public class ValidatorProcessor extends AbstractProcessor {
         }
     }
 
-    private StringBuilder generateValidatorBody(TypeElement recordElement, String name, int indentLevel) {
+    private StringBuilder generateValidatorBody(TypeElement recordElement, int indentLevel) {
         StringBuilder sb = new StringBuilder();
         for (Element enclosed : recordElement.getEnclosedElements()) {
             if (enclosed.getKind() != ElementKind.RECORD_COMPONENT) continue;
             if (enclosed instanceof RecordComponentElement component) {
                 TypeElement referredType = getReferredType(component);
                 if (referredType != null && referredType.getAnnotation(Validator.class) != null) {
-                    String componentFullName = referredType.getQualifiedName().toString();
                     String componentName = component.getSimpleName().toString();
-                    sb.append(INDENT.repeat(indentLevel));
-                    sb.append(
-                            """
-                            private final Validator<%1$s> %2$sValidator = new %1$sValidator();
-                            """.formatted(componentFullName, componentName)
-                    );
+                    Element enclosingElement = referredType.getEnclosingElement();
+                    if (enclosingElement.getKind() == ElementKind.RECORD || enclosingElement.getKind() == ElementKind.CLASS) {
+                        sb.append(INDENT.repeat(indentLevel));
+                        sb.append(
+                                """
+                                private final Validator<%1$s> %2$sValidator = new %3$s$%4$sValidator();
+                                """.formatted(referredType.getQualifiedName(), componentName, enclosingElement, referredType.getSimpleName())
+                        );
+                    } else {
+                        sb.append(INDENT.repeat(indentLevel));
+                        sb.append(
+                                """
+                                private final Validator<%1$s> %2$sValidator = new %3$s.%4$sValidator();
+                                """.formatted(referredType.getQualifiedName(), componentName, enclosingElement, referredType.getSimpleName())
+                        );
+                    }
                 }
             }
         }
@@ -105,10 +113,20 @@ public class ValidatorProcessor extends AbstractProcessor {
                 @Override
                 """);
         sb.append(INDENT.repeat(indentLevel));
-        sb.append(
-                """
-                public ValidationErrors validate(@Nullable %1$s obj) {
-                """.formatted(name));
+
+        Element enclosingElement = recordElement.getEnclosingElement();
+        if (enclosingElement.getKind() == ElementKind.RECORD) {
+            sb.append(
+                    """
+                    public ValidationErrors validate(%2$s.@Nullable %1$s obj) {
+                    """.formatted(recordElement.getSimpleName(), enclosingElement.getSimpleName()));
+        } else {
+            sb.append(
+                    """
+                    public ValidationErrors validate(@Nullable %1$s obj) {
+                    """.formatted(recordElement.getSimpleName()));
+        }
+
         sb.append(INDENT.repeat(indentLevel));
         sb.append(
                 """
@@ -141,40 +159,24 @@ public class ValidatorProcessor extends AbstractProcessor {
                 """
         );
 
-        // Generate nested validator classes for inner records
-        for (Element enclosed : recordElement.getEnclosedElements()) {
-            if (enclosed.getKind() == ElementKind.RECORD && enclosed instanceof TypeElement nestedRecord) {
-                if (nestedRecord.getAnnotation(Validator.class) != null) {
-                    sb.append("\n");
-                    sb.append(generateNestedValidatorClass(recordElement, nestedRecord, indentLevel));
-                }
-            }
-        }
-
         return sb;
     }
 
-    private StringBuilder generateNestedValidatorClass(TypeElement parent, TypeElement recordElement, int indentLevel) {
-        String indent = INDENT.repeat(indentLevel);
-        String recordName = parent.getSimpleName() + "." + recordElement.getSimpleName();
+    private static String getValidatorName(TypeElement recordElement) {
+        Element enclosingElement = recordElement.getEnclosingElement();
+        if (enclosingElement.getKind() == ElementKind.RECORD || enclosingElement.getKind() == ElementKind.CLASS) {
+            return enclosingElement.getSimpleName() + "$" + recordElement.getSimpleName() + "Validator";
+        }
 
-        StringBuilder sb = new StringBuilder();
+        return recordElement.getSimpleName() + "Validator";
+    }
 
-        sb.append(INDENT.repeat(indentLevel));
-        sb.append(
-                """
-                public static class %1$sValidator implements Validator<%2$s> {
-                """.formatted(recordElement.getSimpleName(), recordName));
+    private static String getRecordName(TypeElement recordElement) {
+        Element enclosingElement = recordElement.getEnclosingElement();
+        if (enclosingElement.getKind() == ElementKind.RECORD || enclosingElement.getKind() == ElementKind.CLASS) {
+            return enclosingElement.getSimpleName() + "." + recordElement.getSimpleName();
+        }
 
-        sb.append(generateValidatorBody(recordElement, recordName, indentLevel + 1));
-
-        sb.append(indent);
-        sb.append(
-                """
-                }
-                """
-        );
-
-        return sb;
+        return recordElement.getSimpleName().toString();
     }
 }

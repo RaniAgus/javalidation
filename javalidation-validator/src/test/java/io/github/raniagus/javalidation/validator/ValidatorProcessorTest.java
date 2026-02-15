@@ -4,7 +4,6 @@ import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
 import io.github.raniagus.javalidation.processor.ValidatorProcessor;
 import javax.tools.JavaFileObject;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.google.testing.compile.CompilationSubject.assertThat;
@@ -184,7 +183,6 @@ class ValidatorProcessorTest {
     }
 
     @Test
-    @Disabled
     void shouldGenerateValidatorForAnnotatedRecordWithNestedRecord() {
         // Arrange - create source file in memory
         JavaFileObject sourceFile = JavaFileObjects.forSourceString(
@@ -228,7 +226,7 @@ class ValidatorProcessorTest {
                         import org.jspecify.annotations.Nullable;
                         
                         public class UserRequestValidator implements Validator<UserRequest> {
-                            private final Validator<test.UserAddress> addressValidator = new test.UserAddressValidator();
+                            private final Validator<test.UserRequest.UserAddress> addressValidator = new test.UserRequest$UserAddressValidator();
 
                             @Override
                             public ValidationErrors validate(@Nullable UserRequest obj) {
@@ -256,13 +254,24 @@ class ValidatorProcessorTest {
                                 }
                                 return validation.finish();
                             }
-
-                            public static class UserAddressValidator implements Validator<test.UserRequest.UserAddress> {
-                                @Override
-                                public ValidationErrors validate(@Nullable UserAddress obj) {
-                                    Validation validation = Validation.create();
-                                    return validation.finish();
-                                }
+                        }
+                        """
+                ));
+        assertThat(compilation)
+                .generatedSourceFile("test.UserRequest$UserAddressValidator")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString(
+                        "test.UserRequest$UserAddressValidator",
+                        """
+                        package test;
+                        
+                        import io.github.raniagus.javalidation.*;
+                        import org.jspecify.annotations.Nullable;
+                        
+                        public class UserRequest$UserAddressValidator implements Validator<UserRequest.UserAddress> {
+                            @Override
+                            public ValidationErrors validate(UserRequest.@Nullable UserAddress obj) {
+                                Validation validation = Validation.create();
+                                return validation.finish();
                             }
                         }
                         """
