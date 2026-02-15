@@ -1,0 +1,263 @@
+package io.github.raniagus.javalidation.validator;
+
+import com.google.testing.compile.Compilation;
+import com.google.testing.compile.JavaFileObjects;
+import io.github.raniagus.javalidation.processor.ValidatorProcessor;
+import javax.tools.JavaFileObject;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+import static com.google.testing.compile.CompilationSubject.assertThat;
+import static com.google.testing.compile.Compiler.javac;
+
+class ValidatorProcessorTest {
+
+    @Test
+    void shouldReportErrorForNonRecordType() {
+        JavaFileObject sourceFile = JavaFileObjects.forSourceString(
+                "test.InvalidClass",
+                """
+                package test;
+                
+                import io.github.raniagus.javalidation.annotation.*;
+                
+                @Validator
+                public class InvalidClass {
+                    private String field;
+                }
+                """
+        );
+
+        Compilation compilation = javac()
+                .withProcessors(new ValidatorProcessor())
+                .compile(sourceFile);
+
+        assertThat(compilation).failed();
+        assertThat(compilation)
+                .hadErrorContaining("@Validator can only be applied to records");
+    }
+
+    @Test
+    void shouldHandleRecordWithNoValidationAnnotations() {
+        JavaFileObject sourceFile = JavaFileObjects.forSourceString(
+                "test.SimpleRecord",
+                """
+                package test;
+                
+                import io.github.raniagus.javalidation.annotation.*;
+                
+                @Validator
+                public record SimpleRecord(String name, int age) {}
+                """
+        );
+
+        Compilation compilation = javac()
+                .withProcessors(new ValidatorProcessor())
+                .compile(sourceFile);
+
+        assertThat(compilation).succeeded();
+        assertThat(compilation)
+                .generatedSourceFile("test.SimpleRecordValidator")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString(
+                        "test.SimpleRecordValidator",
+                        """
+                               package test;
+                               
+                               import io.github.raniagus.javalidation.*;
+                               import org.jspecify.annotations.Nullable;
+                               
+                               public class SimpleRecordValidator implements Validator<@Nullable SimpleRecord> {
+                                   @Override
+                                   public ValidationErrors validate(@Nullable SimpleRecord obj) {
+                                       Validation validation = Validation.create();
+                                       return validation.finish();
+                                   }
+                               }
+                               """
+                ));
+    }
+
+    @Test
+    void shouldGenerateValidatorForAnnotatedRecord() {
+        // Arrange - create source files in memory
+        JavaFileObject sourceFile1 = JavaFileObjects.forSourceString(
+                "test.UserRequest",
+                """
+                package test;
+                
+                import io.github.raniagus.javalidation.annotation.*;
+                import jakarta.validation.constraints.*;
+                
+                @Validator
+                public record UserRequest(
+                    @NotNull @Size(min = 3, max = 50) String username,
+                    @Email String email,
+                    @Min(18) Integer age,
+                    @NotNull UserAddress address
+                ) {}
+                """
+        );
+
+        JavaFileObject sourceFile2 = JavaFileObjects.forSourceString(
+                "test.UserAddress",
+                """
+                package test;
+                
+                import io.github.raniagus.javalidation.annotation.*;
+                import jakarta.validation.constraints.*;
+                
+                @Validator
+                public record UserAddress(String street, String city) {}
+                """
+        );
+
+        // Act - compile with your processor
+        Compilation compilation = javac()
+                .withProcessors(new ValidatorProcessor())
+                .compile(sourceFile1, sourceFile2);
+
+        // Assert - compilation succeeded
+        assertThat(compilation).succeeded();
+
+        // Assert - generated file exists
+        assertThat(compilation)
+                .generatedSourceFile("test.UserRequestValidator")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString(
+                        "test.UserRequestValidator",
+                        """
+                        package test;
+                        
+                        import io.github.raniagus.javalidation.*;
+                        import org.jspecify.annotations.Nullable;
+                        
+                        public class UserRequestValidator implements Validator<@Nullable UserRequest> {
+                            private final Validator<test.UserAddress> addressValidator = new test.UserAddressValidator();
+
+                            @Override
+                            public ValidationErrors validate(@Nullable UserRequest obj) {
+                                Validation validation = Validation.create();
+                                if (obj.username() == null) {
+                                    validation.addFieldError("username", "must not be null");
+                                }
+                                if (obj.username() != null) {
+                                    int length = obj.username().length();
+                                    if (length < 3 || length > 50) {
+                                        validation.addFieldError("username", "size must be between {0} and {1}", 3, 50);
+                                    }
+                                }
+                                if (obj.email() != null && !obj.email().matches("^[^@]+@[^@]+\\\\.[^@]+$")) {
+                                    validation.addFieldError("email", "must be a well-formed email address");
+                                }
+                                if (obj.age() != null && obj.age() < 18) {
+                                    validation.addFieldError("age", "must be greater than or equal to {0}", 18);
+                                }
+                                if (obj.address() == null) {
+                                    validation.addFieldError("address", "must not be null");
+                                }
+                                if (obj.address() != null) {
+                                    validation.addAll(addressValidator.validate(obj.address()), new StringBuilder("address"));
+                                }
+                                return validation.finish();
+                            }
+                        }
+                        """
+                ));
+        assertThat(compilation)
+                .generatedSourceFile("test.UserAddressValidator")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString(
+                        "test.UserAddressValidator",
+                        """
+                        package test;
+                        
+                        import io.github.raniagus.javalidation.*;
+                        import org.jspecify.annotations.Nullable;
+                        
+                        public class UserAddressValidator implements Validator<@Nullable UserAddress> {
+                            @Override
+                            public ValidationErrors validate(@Nullable UserAddress obj) {
+                                Validation validation = Validation.create();
+                                return validation.finish();
+                            }
+                        }
+                        """
+                ));
+    }
+
+    @Test
+    @Disabled
+    void shouldGenerateValidatorForAnnotatedRecordWithNestedRecord() {
+        // Arrange - create source file in memory
+        JavaFileObject sourceFile = JavaFileObjects.forSourceString(
+                "test.UserRequest",
+                """
+                package test;
+                
+                import io.github.raniagus.javalidation.annotation.*;
+                import jakarta.validation.constraints.*;
+                
+                @Validator
+                public record UserRequest(
+                    @NotNull @Size(min = 3, max = 50) String username,
+                    @Email String email,
+                    @Min(18) Integer age,
+                    @NotNull UserAddress address
+                ) {
+                    @Validator
+                    public record UserAddress(String street, String city) {}
+                }
+                """
+        );
+
+        // Act - compile with your processor
+        Compilation compilation = javac()
+                .withProcessors(new ValidatorProcessor())
+                .compile(sourceFile);
+
+        // Assert - compilation succeeded
+        assertThat(compilation).succeeded();
+
+        // Assert - generated file exists
+        assertThat(compilation)
+                .generatedSourceFile("test.UserRequestValidator")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString(
+                        "test.UserRequestValidator",
+                        """
+                        package test;
+                        
+                        import io.github.raniagus.javalidation.*;
+                        import org.jspecify.annotations.Nullable;
+                        
+                        public class UserRequestValidator implements Validator<@Nullable UserRequest> {
+                            private final Validator<test.UserAddress> addressValidator = new test.UserAddressValidator();
+
+                            @Override
+                            public ValidationErrors validate(@Nullable UserRequest obj) {
+                                Validation validation = Validation.create();
+                                if (obj.username() == null) {
+                                    validation.addFieldError("username", "must not be null");
+                                }
+                                if (obj.username() != null) {
+                                    int length = obj.username().length();
+                                    if (length < 3 || length > 50) {
+                                        validation.addFieldError("username", "size must be between {0} and {1}", 3, 50);
+                                    }
+                                }
+                                if (obj.email() != null && !obj.email().matches("^[^@]+@[^@]+\\\\.[^@]+$")) {
+                                    validation.addFieldError("email", "must be a well-formed email address");
+                                }
+                                if (obj.age() != null && obj.age() < 18) {
+                                    validation.addFieldError("age", "must be greater than or equal to {0}", 18);
+                                }
+                                if (obj.address() == null) {
+                                    validation.addFieldError("address", "must not be null");
+                                }
+                                if (obj.address() != null) {
+                                    validation.addAll(addressValidator.validate(obj.address()), new StringBuilder("address"));
+                                }
+                                return validation.finish();
+                            }
+                        }
+                        """
+                ));
+    }
+}
