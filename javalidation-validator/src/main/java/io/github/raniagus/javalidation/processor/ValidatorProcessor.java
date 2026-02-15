@@ -35,8 +35,18 @@ public class ValidatorProcessor extends AbstractProcessor {
                 continue;
             }
 
+            // TODO: Refactor to first parse all annotations into well-known writers, then generate the source code using a visitor pattern to determine indents.
+            // RecordValidatorClass
+            //   - RecordValidatorField
+            //      - FieldsValidator
+            //        - NullCheckValidator -> NotNullValidator or SkipValidator
+            //        - IfNotNullValidator[] -> MinValidator, MaxValidator..., NestedValidator
+            //            - IterableValidator
+            //                - FieldsValidator
             generateValidator(recordElement);
         }
+
+        // TODO: Generate a validator locator.
 
         return true;
     }
