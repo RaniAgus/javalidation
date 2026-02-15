@@ -53,10 +53,16 @@ public class ValidatorProcessor extends AbstractProcessor {
                 import io.github.raniagus.javalidation.*;
                 import org.jspecify.annotations.Nullable;
                 
-                public class %2$s implements Validator<@Nullable %3$s> {
+                public class %2$s implements Validator<%3$s> {
                 """.formatted(packageName, validatorName, recordElement.getSimpleName()));
 
-        sb.append(generateValidatorBody(recordElement, 0));
+        sb.append(generateValidatorBody(recordElement, recordElement.getSimpleName().toString(), 1));
+
+        sb.append(
+                """
+                }
+                """
+        );
 
         try {
             JavaFileObject file = processingEnv.getFiler()
@@ -73,7 +79,7 @@ public class ValidatorProcessor extends AbstractProcessor {
         }
     }
 
-    private StringBuilder generateValidatorBody(TypeElement recordElement, int indentLevel) {
+    private StringBuilder generateValidatorBody(TypeElement recordElement, String name, int indentLevel) {
         StringBuilder sb = new StringBuilder();
         for (Element enclosed : recordElement.getEnclosedElements()) {
             if (enclosed.getKind() != ElementKind.RECORD_COMPONENT) continue;
@@ -82,24 +88,32 @@ public class ValidatorProcessor extends AbstractProcessor {
                 if (referredType != null && referredType.getAnnotation(Validator.class) != null) {
                     String componentFullName = referredType.getQualifiedName().toString();
                     String componentName = component.getSimpleName().toString();
+                    sb.append(INDENT.repeat(indentLevel));
                     sb.append(
                             """
-                                private final Validator<%1$s> %2$sValidator = new %1$sValidator();
+                            private final Validator<%1$s> %2$sValidator = new %1$sValidator();
                             """.formatted(componentFullName, componentName)
                     );
                 }
             }
         }
 
+        sb.append("\n");
+        sb.append(INDENT.repeat(indentLevel));
         sb.append(
                 """
-                
-                    @Override
-                    public ValidationErrors validate(@Nullable %1$s obj) {
-                        Validation validation = Validation.create();
-                """.formatted(recordElement.getSimpleName()));
-
-        String indent = INDENT.repeat(indentLevel + 2);
+                @Override
+                """);
+        sb.append(INDENT.repeat(indentLevel));
+        sb.append(
+                """
+                public ValidationErrors validate(@Nullable %1$s obj) {
+                """.formatted(name));
+        sb.append(INDENT.repeat(indentLevel));
+        sb.append(
+                """
+                    Validation validation = Validation.create();
+                """);
 
         for (Element enclosed : recordElement.getEnclosedElements()) {
             if (enclosed.getKind() != ElementKind.RECORD_COMPONENT) continue;
@@ -107,22 +121,54 @@ public class ValidatorProcessor extends AbstractProcessor {
                 ValidationWriter.getAllValidations(component)
                         .flatMap(String::lines)
                         .forEach(line -> {
-                            sb.append(indent);
+                            sb.append(INDENT.repeat(indentLevel + 1));
                             sb.append(line);
                             sb.append('\n');
                         });
             }
         }
 
+        sb.append(INDENT.repeat(indentLevel));
         sb.append(
                 """
-                        return validation.finish();
-                    }
+                    return validation.finish();
+                """
+        );
+        sb.append(INDENT.repeat(indentLevel));
+        sb.append(
+                """
+                }
                 """
         );
 
-        // TODO: Create validator class for each nested record
+        // Generate nested validator classes for inner records
+        for (Element enclosed : recordElement.getEnclosedElements()) {
+            if (enclosed.getKind() == ElementKind.RECORD && enclosed instanceof TypeElement nestedRecord) {
+                if (nestedRecord.getAnnotation(Validator.class) != null) {
+                    sb.append("\n");
+                    sb.append(generateNestedValidatorClass(recordElement, nestedRecord, indentLevel));
+                }
+            }
+        }
 
+        return sb;
+    }
+
+    private StringBuilder generateNestedValidatorClass(TypeElement parent, TypeElement recordElement, int indentLevel) {
+        String indent = INDENT.repeat(indentLevel);
+        String recordName = parent.getSimpleName() + "." + recordElement.getSimpleName();
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(INDENT.repeat(indentLevel));
+        sb.append(
+                """
+                public static class %1$sValidator implements Validator<%2$s> {
+                """.formatted(recordElement.getSimpleName(), recordName));
+
+        sb.append(generateValidatorBody(recordElement, recordName, indentLevel + 1));
+
+        sb.append(indent);
         sb.append(
                 """
                 }

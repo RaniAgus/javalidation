@@ -66,7 +66,7 @@ class ValidatorProcessorTest {
                                import io.github.raniagus.javalidation.*;
                                import org.jspecify.annotations.Nullable;
                                
-                               public class SimpleRecordValidator implements Validator<@Nullable SimpleRecord> {
+                               public class SimpleRecordValidator implements Validator<SimpleRecord> {
                                    @Override
                                    public ValidationErrors validate(@Nullable SimpleRecord obj) {
                                        Validation validation = Validation.create();
@@ -130,7 +130,7 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.*;
                         import org.jspecify.annotations.Nullable;
                         
-                        public class UserRequestValidator implements Validator<@Nullable UserRequest> {
+                        public class UserRequestValidator implements Validator<UserRequest> {
                             private final Validator<test.UserAddress> addressValidator = new test.UserAddressValidator();
 
                             @Override
@@ -172,7 +172,7 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.*;
                         import org.jspecify.annotations.Nullable;
                         
-                        public class UserAddressValidator implements Validator<@Nullable UserAddress> {
+                        public class UserAddressValidator implements Validator<UserAddress> {
                             @Override
                             public ValidationErrors validate(@Nullable UserAddress obj) {
                                 Validation validation = Validation.create();
@@ -227,7 +227,7 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.*;
                         import org.jspecify.annotations.Nullable;
                         
-                        public class UserRequestValidator implements Validator<@Nullable UserRequest> {
+                        public class UserRequestValidator implements Validator<UserRequest> {
                             private final Validator<test.UserAddress> addressValidator = new test.UserAddressValidator();
 
                             @Override
@@ -255,6 +255,14 @@ class ValidatorProcessorTest {
                                     validation.addAll(addressValidator.validate(obj.address()), new StringBuilder("address"));
                                 }
                                 return validation.finish();
+                            }
+
+                            public static class UserAddressValidator implements Validator<test.UserRequest.UserAddress> {
+                                @Override
+                                public ValidationErrors validate(@Nullable UserAddress obj) {
+                                    Validation validation = Validation.create();
+                                    return validation.finish();
+                                }
                             }
                         }
                         """
