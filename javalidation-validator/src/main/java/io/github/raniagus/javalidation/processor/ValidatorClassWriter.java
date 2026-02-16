@@ -5,7 +5,7 @@ import java.util.stream.Stream;
 
 public record ValidatorClassWriter(
         String packageName,
-        String validatorName, // "RecordNameValidator or EnclosingClass$RecordNameValidator"
+        String className, // "RecordNameValidator or EnclosingClass$RecordNameValidator"
         String enclosingClassPrefix, // "EnclosingClass." or ""
         String recordName,
         String recordFullName,
@@ -24,9 +24,11 @@ public record ValidatorClassWriter(
         );
     }
 
-    @Override
-    public String fullName() {
-        return packageName + "." + validatorName;
+    public String recordImportName() {
+        if (enclosingClassPrefix.isEmpty()) {
+            return recordFullName;
+        }
+        return recordFullName.substring(0, recordFullName.length() - recordName.length() - 1);
     }
 
     @Override
@@ -34,7 +36,7 @@ public record ValidatorClassWriter(
         out.write(
                 """
                 public class %s implements Validator<%s%s> {
-                """.formatted(validatorName, enclosingClassPrefix, recordName));
+                """.formatted(className, enclosingClassPrefix, recordName));
         out.incrementIndentationLevel();
         for (FieldWriter writer : fieldWriters) {
             writer.writePropertiesTo(out);

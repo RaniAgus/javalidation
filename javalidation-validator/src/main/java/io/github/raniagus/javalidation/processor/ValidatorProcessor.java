@@ -4,8 +4,9 @@ import static io.github.raniagus.javalidation.processor.JakartaAnnotationParser.
 
 import io.github.raniagus.javalidation.annotation.Validator;
 import io.github.raniagus.javalidation.format.FieldKeyFormatter;
-import jakarta.validation.constraints.*;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -27,14 +28,21 @@ import org.jspecify.annotations.Nullable;
 @SupportedAnnotationTypes("io.github.raniagus.javalidation.annotation.Validator")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class ValidatorProcessor extends AbstractProcessor {
+    private final List<ValidatorClassWriter> WRITERS = Collections.synchronizedList(new ArrayList<>());
+    private boolean generated = false;
+
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         List<ValidatorClassWriter> classWriters = parseClassWriters(roundEnv);
 
-        // TODO: Generate a validator locator
-
         for (ValidatorClassWriter classWriter : classWriters) {
             writeClass(classWriter);
+            WRITERS.add(classWriter);
+        }
+
+        if (roundEnv.processingOver() && !generated) {
+            writeClass(new ValidatorsClassWriter(WRITERS));
+            generated = true;
         }
 
         return true;

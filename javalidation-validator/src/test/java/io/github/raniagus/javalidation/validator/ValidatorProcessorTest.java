@@ -36,6 +36,7 @@ class ValidatorProcessorTest {
 
     @Test
     void shouldHandleRecordWithNoValidationAnnotations() {
+        // Arrange - create source files in memory
         JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.SimpleRecord", """
                 package test;
                 
@@ -46,11 +47,15 @@ class ValidatorProcessorTest {
                 """
         );
 
+        // Act - compile with your processor
         Compilation compilation = javac()
                 .withProcessors(new ValidatorProcessor())
                 .compile(sourceFile);
 
+        // Assert - compilation succeeded
         assertThat(compilation).succeeded();
+
+        // Assert - all generated files match expected
         assertThat(compilation)
                 .generatedSourceFile("test.SimpleRecordValidator")
                 .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.SimpleRecordValidator", """
@@ -70,6 +75,33 @@ class ValidatorProcessorTest {
                         }
                         """
                 ));
+        assertThat(compilation)
+                .generatedSourceFile("io.github.raniagus.javalidation.validator.Validators")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("io.github.raniagus.javalidation.validator.Validators", """
+                        package io.github.raniagus.javalidation.validator;
+                        
+                        import io.github.raniagus.javalidation.validator.Validator;
+                        import java.util.Map;
+                        import test.SimpleRecord;
+                        import test.SimpleRecordValidator;
+                        
+                        public final class Validators {
+                            private static final Map<Class<?>, Validator<?>> CACHE;
+                        
+                            private Validators() {}
+                        
+                            static {
+                                CACHE = Map.ofEntries(
+                                    Map.entry(SimpleRecord.class, new SimpleRecordValidator())
+                                );
+                            }
+                        
+                            @SuppressWarnings("unchecked")
+                            public static <T> Validator<T> getValidator(Class<T> clazz) {
+                                return (Validator<T>) CACHE.get(clazz);
+                            }
+                        }
+                        """));
     }
 
     @Test
@@ -110,7 +142,7 @@ class ValidatorProcessorTest {
         // Assert - compilation succeeded
         assertThat(compilation).succeeded();
 
-        // Assert - generated file exists
+        // Assert - all generated files match expected
         assertThat(compilation)
                 .generatedSourceFile("test.UserRequestValidator")
                 .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.UserRequestValidator", """
@@ -176,11 +208,41 @@ class ValidatorProcessorTest {
                         }
                         """
                 ));
+        assertThat(compilation)
+                .generatedSourceFile("io.github.raniagus.javalidation.validator.Validators")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("io.github.raniagus.javalidation.validator.Validators", """
+                        package io.github.raniagus.javalidation.validator;
+                        
+                        import io.github.raniagus.javalidation.validator.Validator;
+                        import java.util.Map;
+                        import test.UserAddress;
+                        import test.UserAddressValidator;
+                        import test.UserRequest;
+                        import test.UserRequestValidator;
+                        
+                        public final class Validators {
+                            private static final Map<Class<?>, Validator<?>> CACHE;
+                        
+                            private Validators() {}
+                        
+                            static {
+                                CACHE = Map.ofEntries(
+                                        Map.entry(UserRequest.class, new UserRequestValidator())
+                                      , Map.entry(UserAddress.class, new UserAddressValidator())
+                                );
+                            }
+                        
+                            @SuppressWarnings("unchecked")
+                            public static <T> Validator<T> getValidator(Class<T> clazz) {
+                                return (Validator<T>) CACHE.get(clazz);
+                            }
+                        }
+                        """));
     }
 
     @Test
     void shouldGenerateValidatorForAnnotatedRecordWithNestedRecord() {
-        // Arrange - create source file in memory
+        // Arrange - create source files in memory
         JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.UserRequest", """
                 package test;
                 
@@ -208,7 +270,7 @@ class ValidatorProcessorTest {
         // Assert - compilation succeeded
         assertThat(compilation).succeeded();
 
-        // Assert - generated file exists
+        // Assert - all generated files match expected
         assertThat(compilation)
                 .generatedSourceFile("test.UserRequestValidator")
                 .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.UserRequestValidator", """
@@ -276,5 +338,34 @@ class ValidatorProcessorTest {
                         }
                         """
                 ));
+        assertThat(compilation)
+                .generatedSourceFile("io.github.raniagus.javalidation.validator.Validators")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("io.github.raniagus.javalidation.validator.Validators", """
+                        package io.github.raniagus.javalidation.validator;
+                        
+                        import io.github.raniagus.javalidation.validator.Validator;
+                        import java.util.Map;
+                        import test.UserRequest;
+                        import test.UserRequest$UserAddressValidator;
+                        import test.UserRequestValidator;
+                        
+                        public final class Validators {
+                            private static final Map<Class<?>, Validator<?>> CACHE;
+                        
+                            private Validators() {}
+                        
+                            static {
+                                CACHE = Map.ofEntries(
+                                        Map.entry(UserRequest.class, new UserRequestValidator())
+                                      , Map.entry(UserRequest.UserAddress.class, new UserRequest$UserAddressValidator())
+                                );
+                            }
+                        
+                            @SuppressWarnings("unchecked")
+                            public static <T> Validator<T> getValidator(Class<T> clazz) {
+                                return (Validator<T>) CACHE.get(clazz);
+                            }
+                        }
+                        """));
     }
 }
