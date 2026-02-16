@@ -133,7 +133,13 @@ String fallback = failure.getOrElse("default");   // "default"
 
 // Transform success values
 Result<Integer> age = Result.ok("25")
-    .map(Integer::parseInt);  // Ok(25)
+    .map(value -> {
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            throw JavalidationException.ofRoot("Not a valid number: {0}", value);
+        }
+    });  // Ok(25)
 
 // Chain dependent validations (stops at first error)
 Result<User> user = validateEmail(email)
@@ -267,22 +273,22 @@ Use `withPrefix()` to namespace errors for nested structures:
 
 ```java
 record Address(String street, String city, String zipCode) {}
-record Person(String name, Address address) {}
+record Person(String name, Address contactAddress) {}
 
-static Result<Address> validateAddress(Address address) {
-    return validateStreet(address.street())
-        .and(validateCity(address.city()))
-        .and(validateZipCode(address.zipCode()))
-        .combine((street, city, zip) -> address);
+static Result<Address> validateAddress(String street, String city, String zipCode) {
+    return validateStreet(street)
+        .and(validateCity(city))
+        .and(validateZipCode(zipCode))
+        .combine((s, c, z) -> new Address(s, c, z)); // Combine up to 10 results!
 }
 
-static Result<Person> validatePersonWithAddress(String name, Address address) {
+static Result<Person> validatePersonWithAddress(String name, String street, String city, String zipCode) {
     return validateName(name)
-        .and(validateAddress(address).withPrefix("address"))
+        .and(validateAddress(street, city, zipCode).withPrefix("contactAddress"))
         .combine((n, a) -> new Person(n, a));
 }
 
-// Errors become: "address.street", "address.city", "address.zipCode"
+// Errors become: "contactAddress.street", "contactAddress.city", "contactAddress.zipCode"
 ```
 
 #### Collection Validation
@@ -413,7 +419,6 @@ public class UserController {
     public ResponseEntity<?> registerUser(@RequestBody UserRegistrationRequest request) {
         try {
             return switch (validator.validateRegistrationRequest(request)) {
-                // Internal checks (side effects: database queries, etc.)
                 case Result.Ok(User user) -> ResponseEntity.ok(userService.createUser(user));
 
                 // 422 Unprocessable Content: Request is well-formed but violates business rules
@@ -434,7 +439,7 @@ public class UserController {
 @Component
 public class UserValidator {
     public Result<User> validateRegistrationRequest(UserRegistrationRequest request) {
-        validateName(request.name())
+        return validateName(request.name())
             .and(validateAge(request.age()))
             .and(validateEmail(request.email()))
             .and(validatePassword(request.password()))
@@ -484,9 +489,9 @@ JavalidationModule module = JavalidationModule.getDefault();
 
 // With opt-in options
 JavalidationModule module = JavalidationModule.builder()
-        .withFlattenedErrors() // Flattened errors (optional)
-        .withDotNotation()    // Dot notation for field errors (optional)
-        .withBracketNotation() // Bracket notation for field errors (optional)
+        .withFlattenedErrors() // Flattened errors (both root and field errors in a single object)
+        .withDotNotation()     // Dot notation for field errors (eg: "users.0.address")
+        .withBracketNotation() // Bracket notation for field errors (eg: "users[0][address]")
         .build();
 
 // Register module
@@ -560,8 +565,10 @@ Result<User> failure = Result.err("email", "Invalid format");
 ```yaml
 # application.yml
 io.github.raniagus.javalidation:
-  use-message-source: true   # Use Spring MessageSource for i18n (default: true)
-  flatten-errors: false      # Flatten JSON error structure (default: false)
+  key-notation: property_path # Choose how to serialize field keys (property_path, dot or brackets) 
+  use-message-source: true    # Use Spring MessageSource for i18n (default: true)
+  flatten-errors: false       # Flatten JSON error structure (default: false)
+  
 ```
 
 **Internationalization:**
