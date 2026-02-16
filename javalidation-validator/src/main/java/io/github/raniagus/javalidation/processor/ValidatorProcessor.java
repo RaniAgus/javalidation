@@ -2,7 +2,7 @@ package io.github.raniagus.javalidation.processor;
 
 import static io.github.raniagus.javalidation.processor.JakartaAnnotationParser.*;
 
-import io.github.raniagus.javalidation.annotation.Validator;
+import io.github.raniagus.javalidation.annotation.Validate;
 import io.github.raniagus.javalidation.format.BracketNotationFormatter;
 import io.github.raniagus.javalidation.format.PropertyPathNotationFormatter;
 import io.github.raniagus.javalidation.format.DotNotationFormatter;
@@ -28,7 +28,7 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import org.jspecify.annotations.Nullable;
 
-@SupportedAnnotationTypes("io.github.raniagus.javalidation.annotation.Validator")
+@SupportedAnnotationTypes("io.github.raniagus.javalidation.annotation.Validate")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class ValidatorProcessor extends AbstractProcessor {
     private static final String OPTIONS_PREFIX = "io.github.raniagus.javalidation.";
@@ -80,7 +80,7 @@ public class ValidatorProcessor extends AbstractProcessor {
     // -- Class writer --
 
     private List<ValidatorClassWriter> parseClassWriters(RoundEnvironment roundEnv) {
-        return roundEnv.getElementsAnnotatedWith(Validator.class).stream()
+        return roundEnv.getElementsAnnotatedWith(Validate.class).stream()
                 .flatMap(element -> {
                     if (!(element instanceof TypeElement recordElement)) {
                         return Stream.empty();
@@ -88,7 +88,7 @@ public class ValidatorProcessor extends AbstractProcessor {
 
                     if (recordElement.getKind() != ElementKind.RECORD) {
                         processingEnv.getMessager().printMessage(
-                                Diagnostic.Kind.ERROR, "@Validator can only be applied to records, but it was applied to " + recordElement);
+                                Diagnostic.Kind.ERROR, "@Validate can only be applied to records, but it was applied to " + recordElement);
                         return Stream.empty();
                     }
 
@@ -155,7 +155,7 @@ public class ValidatorProcessor extends AbstractProcessor {
 
     private ValidationWriter.@Nullable NullUnsafeWriter parseValidatorAnnotation(RecordComponentElement component) {
         TypeElement referredType = getReferredType(component);
-        if (referredType == null || referredType.getAnnotation(Validator.class) == null) {
+        if (referredType == null || referredType.getAnnotation(Validate.class) == null) {
             return null;
         }
 

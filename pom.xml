@@ -38,8 +38,8 @@
     <modules>
         <module>javalidation</module>
         <module>javalidation-jackson</module>
-        <module>javalidation-spring-boot-starter</module>
         <module>javalidation-validator</module>
+        <module>javalidation-spring-boot-starter</module>
     </modules>
 
     <properties>

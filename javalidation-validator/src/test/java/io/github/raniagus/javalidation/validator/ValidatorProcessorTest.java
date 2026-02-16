@@ -18,7 +18,7 @@ class ValidatorProcessorTest {
                 
                 import io.github.raniagus.javalidation.annotation.*;
                 
-                @Validator
+                @Validate
                 public class InvalidClass {
                     private String field;
                 }
@@ -31,7 +31,7 @@ class ValidatorProcessorTest {
 
         assertThat(compilation).failed();
         assertThat(compilation)
-                .hadErrorContaining("@Validator can only be applied to records");
+                .hadErrorContaining("@Validate can only be applied to records");
     }
 
     @Test
@@ -42,7 +42,7 @@ class ValidatorProcessorTest {
                 
                 import io.github.raniagus.javalidation.annotation.*;
                 
-                @Validator
+                @Validate
                 public record SimpleRecord(String name, int age) {}
                 """
         );
@@ -119,7 +119,7 @@ class ValidatorProcessorTest {
                 import io.github.raniagus.javalidation.annotation.*;
                 import jakarta.validation.constraints.*;
                 
-                @Validator
+                @Validate
                 public record UserRequest(
                     @NotNull @Size(min = 3, max = 50) String username,
                     @Email String email,
@@ -135,7 +135,7 @@ class ValidatorProcessorTest {
                 import io.github.raniagus.javalidation.annotation.*;
                 import jakarta.validation.constraints.*;
                 
-                @Validator
+                @Validate
                 public record UserAddress(String street, String city) {}
                 """
         );
@@ -262,14 +262,14 @@ class ValidatorProcessorTest {
                 import io.github.raniagus.javalidation.annotation.*;
                 import jakarta.validation.constraints.*;
                 
-                @Validator
+                @Validate
                 public record UserRequest(
                     @NotNull @Size(min = 3, max = 50) String username,
                     @Email String email,
                     @Min(18) Integer age,
                     @NotNull UserAddress address
                 ) {
-                    @Validator
+                    @Validate
                     public record UserAddress(String street, String city) {}
                 }
                 """
