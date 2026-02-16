@@ -92,6 +92,7 @@ public class ValidatorProcessor extends AbstractProcessor {
                 getEnclosingClassPrefix(recordElement, "."),
                 getRecordName(recordElement),
                 getRecordFullName(recordElement),
+                getRecordImportName(recordElement),
                 parseFieldWriters(recordElement)
         );
     }
@@ -146,7 +147,9 @@ public class ValidatorProcessor extends AbstractProcessor {
         }
 
         return new ValidationWriter.Validator(
-                getRecordFullName(referredType),
+                getRecordImportName(referredType),
+                getEnclosingClassPrefix(referredType, "."),
+                getRecordName(referredType),
                 getValidatorName(referredType),
                 getValidatorFullName(referredType)
         );
@@ -190,6 +193,14 @@ public class ValidatorProcessor extends AbstractProcessor {
     }
 
     private static String getRecordFullName(TypeElement recordElement) {
+        return recordElement.getQualifiedName().toString();
+    }
+
+    private static String getRecordImportName(TypeElement recordElement) {
+        Element enclosingElement = recordElement.getEnclosingElement();
+        if (isEnclosingClass(enclosingElement)) {
+            return enclosingElement.toString();
+        }
         return recordElement.getQualifiedName().toString();
     }
 

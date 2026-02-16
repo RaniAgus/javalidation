@@ -141,20 +141,27 @@ public sealed interface ValidationWriter {
     }
 
     record Validator(
-            String referredTypeFullName,
-            String referredValidatorName,
-            String referredValidatorFullName
+            String referredTypeImport, // "com.example.RecordName"
+            String referredTypeEnclosingClassPrefix, // "" or "EnclosingClass."
+            String referredTypeName, // "RecordName"
+            String referredValidatorName, // "RecordNameValidator" or "EnclosingClass$RecordNameValidator"
+            String referredValidatorFullName // "com.example.RecordNameValidator" or "com.example.EnclosingClass$RecordNameValidator"
     ) implements NullUnsafeWriter {
         @Override
         public Stream<String> imports() {
-            return Stream.of(referredValidatorFullName);
+            return Stream.of(referredTypeImport, referredValidatorFullName);
         }
 
         @Override
         public void writePropertiesTo(ValidationOutput out, String field) {
             out.write("""
-                    private final Validator<%s> %s = new %s();
-                    """.formatted(referredTypeFullName, validatorProperty(field), referredValidatorName));
+                    private final Validator<%s%s> %s = new %s();
+                    """.formatted(
+                            referredTypeEnclosingClassPrefix,
+                            referredTypeName,
+                            validatorProperty(field),
+                            referredValidatorName
+                    ));
         }
 
         @Override

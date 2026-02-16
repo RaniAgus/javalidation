@@ -152,10 +152,11 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
                         import org.jspecify.annotations.Nullable;
+                        import test.UserAddress;
                         import test.UserAddressValidator;
                         
                         public class UserRequestValidator implements Validator<UserRequest> {
-                            private final Validator<test.UserAddress> addressValidator = new UserAddressValidator();
+                            private final Validator<UserAddress> addressValidator = new UserAddressValidator();
 
                             @Override
                             public ValidationErrors validate(@Nullable UserRequest obj0) {
@@ -280,10 +281,11 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
                         import org.jspecify.annotations.Nullable;
+                        import test.UserRequest;
                         import test.UserRequest$UserAddressValidator;
                         
                         public class UserRequestValidator implements Validator<UserRequest> {
-                            private final Validator<test.UserRequest.UserAddress> addressValidator = new UserRequest$UserAddressValidator();
+                            private final Validator<UserRequest.UserAddress> addressValidator = new UserRequest$UserAddressValidator();
 
                             @Override
                             public ValidationErrors validate(@Nullable UserRequest obj0) {

@@ -4,11 +4,12 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public record ValidatorClassWriter(
-        String packageName,
+        String packageName, // "com.example"
         String className, // "RecordNameValidator or EnclosingClass$RecordNameValidator"
-        String enclosingClassPrefix, // "EnclosingClass." or ""
-        String recordName,
-        String recordFullName,
+        String enclosingClassPrefix, // "" or "EnclosingClass."
+        String recordName, // "RecordName"
+        String recordFullName, // "EnclosingClass.RecordName"
+        String recordImportName, // "com.example.RecordName" or "com.example.EnclosingClass"
         List<FieldWriter> fieldWriters
 ) implements ClassWriter {
     @Override
@@ -22,13 +23,6 @@ public record ValidatorClassWriter(
                 ),
                 fieldWriters.stream().flatMap(FieldWriter::imports)
         );
-    }
-
-    public String recordImportName() {
-        if (enclosingClassPrefix.isEmpty()) {
-            return recordFullName;
-        }
-        return recordFullName.substring(0, recordFullName.length() - recordName.length() - 1);
     }
 
     @Override
