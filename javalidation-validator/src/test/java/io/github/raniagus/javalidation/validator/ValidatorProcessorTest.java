@@ -67,7 +67,7 @@ class ValidatorProcessorTest {
                                
                                public class SimpleRecordValidator implements Validator<SimpleRecord> {
                                    @Override
-                                   public ValidationErrors validate(@Nullable SimpleRecord obj) {
+                                   public ValidationErrors validate(@Nullable SimpleRecord obj0) {
                                        Validation validation = Validation.create();
                                        return validation.finish();
                                    }
@@ -133,28 +133,31 @@ class ValidatorProcessorTest {
                             private final Validator<test.UserAddress> addressValidator = new test.UserAddressValidator();
 
                             @Override
-                            public ValidationErrors validate(@Nullable UserRequest obj) {
+                            public ValidationErrors validate(@Nullable UserRequest obj0) {
                                 Validation validation = Validation.create();
-                                if (obj.username() == null) {
+                                if (obj0.username() == null) {
                                     validation.addFieldError("username", "must not be null");
                                 }
-                                if (obj.username() != null) {
-                                    int length = obj.username().length();
-                                    if (length < 3 || length > 50) {
+                                if (obj0.username() != null) {
+                                    if (obj0.username().length() < 3 || obj0.username().length() > 50) {
                                         validation.addFieldError("username", "size must be between {0} and {1}", 3, 50);
                                     }
                                 }
-                                if (obj.email() != null && !obj.email().matches("^[^@]+@[^@]+\\\\.[^@]+$")) {
-                                    validation.addFieldError("email", "must be a well-formed email address");
+                                if (obj0.email() != null) {
+                                    if (!obj0.email().matches("^[^@]+@[^@]+\\\\.[^@]+$")) {
+                                        validation.addFieldError("email", "must be a well-formed email address");
+                                    }
                                 }
-                                if (obj.age() != null && obj.age() < 18) {
-                                    validation.addFieldError("age", "must be greater than or equal to {0}", 18);
+                                if (obj0.age() != null) {
+                                    if (obj0.age() < 18) {
+                                        validation.addFieldError("age", "must be greater than or equal to {0}", 18);
+                                    }
                                 }
-                                if (obj.address() == null) {
+                                if (obj0.address() == null) {
                                     validation.addFieldError("address", "must not be null");
                                 }
-                                if (obj.address() != null) {
-                                    validation.addAll(addressValidator.validate(obj.address()), new StringBuilder("address"));
+                                if (obj0.address() != null) {
+                                    validation.addAll(addressValidator.validate(obj0.address()), new Object[]{"address"});
                                 }
                                 return validation.finish();
                             }
@@ -173,7 +176,7 @@ class ValidatorProcessorTest {
                         
                         public class UserAddressValidator implements Validator<UserAddress> {
                             @Override
-                            public ValidationErrors validate(@Nullable UserAddress obj) {
+                            public ValidationErrors validate(@Nullable UserAddress obj0) {
                                 Validation validation = Validation.create();
                                 return validation.finish();
                             }
@@ -229,28 +232,31 @@ class ValidatorProcessorTest {
                             private final Validator<test.UserRequest.UserAddress> addressValidator = new test.UserRequest$UserAddressValidator();
 
                             @Override
-                            public ValidationErrors validate(@Nullable UserRequest obj) {
+                            public ValidationErrors validate(@Nullable UserRequest obj0) {
                                 Validation validation = Validation.create();
-                                if (obj.username() == null) {
+                                if (obj0.username() == null) {
                                     validation.addFieldError("username", "must not be null");
                                 }
-                                if (obj.username() != null) {
-                                    int length = obj.username().length();
-                                    if (length < 3 || length > 50) {
+                                if (obj0.username() != null) {
+                                    if (obj0.username().length() < 3 || obj0.username().length() > 50) {
                                         validation.addFieldError("username", "size must be between {0} and {1}", 3, 50);
                                     }
                                 }
-                                if (obj.email() != null && !obj.email().matches("^[^@]+@[^@]+\\\\.[^@]+$")) {
-                                    validation.addFieldError("email", "must be a well-formed email address");
+                                if (obj0.email() != null) {
+                                    if (!obj0.email().matches("^[^@]+@[^@]+\\\\.[^@]+$")) {
+                                        validation.addFieldError("email", "must be a well-formed email address");
+                                    }
                                 }
-                                if (obj.age() != null && obj.age() < 18) {
-                                    validation.addFieldError("age", "must be greater than or equal to {0}", 18);
+                                if (obj0.age() != null) {
+                                    if (obj0.age() < 18) {
+                                        validation.addFieldError("age", "must be greater than or equal to {0}", 18);
+                                    }
                                 }
-                                if (obj.address() == null) {
+                                if (obj0.address() == null) {
                                     validation.addFieldError("address", "must not be null");
                                 }
-                                if (obj.address() != null) {
-                                    validation.addAll(addressValidator.validate(obj.address()), new StringBuilder("address"));
+                                if (obj0.address() != null) {
+                                    validation.addAll(addressValidator.validate(obj0.address()), new Object[]{"address"});
                                 }
                                 return validation.finish();
                             }
@@ -269,7 +275,7 @@ class ValidatorProcessorTest {
                         
                         public class UserRequest$UserAddressValidator implements Validator<UserRequest.UserAddress> {
                             @Override
-                            public ValidationErrors validate(UserRequest.@Nullable UserAddress obj) {
+                            public ValidationErrors validate(UserRequest.@Nullable UserAddress obj0) {
                                 Validation validation = Validation.create();
                                 return validation.finish();
                             }
