@@ -1,6 +1,7 @@
 package io.github.raniagus.javalidation.processor;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public record ValidatorClassWriter(
         String packageName,
@@ -11,21 +12,29 @@ public record ValidatorClassWriter(
         List<FieldWriter> fieldWriters
 ) implements ClassWriter {
     @Override
+    public Stream<String> imports() {
+        return Stream.concat(
+                Stream.of(
+                        "io.github.raniagus.javalidation.Validation",
+                        "io.github.raniagus.javalidation.ValidationErrors",
+                        "io.github.raniagus.javalidation.validator.Validator",
+                        "org.jspecify.annotations.Nullable"
+                ),
+                fieldWriters.stream().flatMap(FieldWriter::imports)
+        );
+    }
+
+    @Override
     public String fullName() {
         return packageName + "." + validatorName;
     }
 
     @Override
-    public void write(ValidationOutput out) {
+    public void writeBody(ValidationOutput out) {
         out.write(
                 """
-                package %s;
-                
-                import io.github.raniagus.javalidation.*;
-                import org.jspecify.annotations.Nullable;
-                
                 public class %s implements Validator<%s%s> {
-                """.formatted(packageName, validatorName, enclosingClassPrefix, recordName));
+                """.formatted(validatorName, enclosingClassPrefix, recordName));
         out.incrementIndentationLevel();
         for (FieldWriter writer : fieldWriters) {
             writer.writePropertiesTo(out);

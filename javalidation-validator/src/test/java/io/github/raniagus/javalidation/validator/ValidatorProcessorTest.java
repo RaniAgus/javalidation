@@ -13,9 +13,7 @@ class ValidatorProcessorTest {
 
     @Test
     void shouldReportErrorForNonRecordType() {
-        JavaFileObject sourceFile = JavaFileObjects.forSourceString(
-                "test.InvalidClass",
-                """
+        JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.InvalidClass", """
                 package test;
                 
                 import io.github.raniagus.javalidation.annotation.*;
@@ -38,9 +36,7 @@ class ValidatorProcessorTest {
 
     @Test
     void shouldHandleRecordWithNoValidationAnnotations() {
-        JavaFileObject sourceFile = JavaFileObjects.forSourceString(
-                "test.SimpleRecord",
-                """
+        JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.SimpleRecord", """
                 package test;
                 
                 import io.github.raniagus.javalidation.annotation.*;
@@ -57,31 +53,29 @@ class ValidatorProcessorTest {
         assertThat(compilation).succeeded();
         assertThat(compilation)
                 .generatedSourceFile("test.SimpleRecordValidator")
-                .hasSourceEquivalentTo(JavaFileObjects.forSourceString(
-                        "test.SimpleRecordValidator",
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.SimpleRecordValidator", """
+                        package test;
+                        
+                        import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.ValidationErrors;
+                        import io.github.raniagus.javalidation.validator.Validator;
+                        import org.jspecify.annotations.Nullable;
+                        
+                        public class SimpleRecordValidator implements Validator<SimpleRecord> {
+                           @Override
+                           public ValidationErrors validate(@Nullable SimpleRecord obj0) {
+                               Validation validation = Validation.create();
+                               return validation.finish();
+                           }
+                        }
                         """
-                               package test;
-                               
-                               import io.github.raniagus.javalidation.*;
-                               import org.jspecify.annotations.Nullable;
-                               
-                               public class SimpleRecordValidator implements Validator<SimpleRecord> {
-                                   @Override
-                                   public ValidationErrors validate(@Nullable SimpleRecord obj0) {
-                                       Validation validation = Validation.create();
-                                       return validation.finish();
-                                   }
-                               }
-                               """
                 ));
     }
 
     @Test
     void shouldGenerateValidatorForAnnotatedRecord() {
         // Arrange - create source files in memory
-        JavaFileObject sourceFile1 = JavaFileObjects.forSourceString(
-                "test.UserRequest",
-                """
+        JavaFileObject sourceFile1 = JavaFileObjects.forSourceString("test.UserRequest", """
                 package test;
                 
                 import io.github.raniagus.javalidation.annotation.*;
@@ -97,9 +91,7 @@ class ValidatorProcessorTest {
                 """
         );
 
-        JavaFileObject sourceFile2 = JavaFileObjects.forSourceString(
-                "test.UserAddress",
-                """
+        JavaFileObject sourceFile2 = JavaFileObjects.forSourceString("test.UserAddress", """
                 package test;
                 
                 import io.github.raniagus.javalidation.annotation.*;
@@ -121,16 +113,17 @@ class ValidatorProcessorTest {
         // Assert - generated file exists
         assertThat(compilation)
                 .generatedSourceFile("test.UserRequestValidator")
-                .hasSourceEquivalentTo(JavaFileObjects.forSourceString(
-                        "test.UserRequestValidator",
-                        """
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.UserRequestValidator", """
                         package test;
                         
-                        import io.github.raniagus.javalidation.*;
+                        import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.ValidationErrors;
+                        import io.github.raniagus.javalidation.validator.Validator;
                         import org.jspecify.annotations.Nullable;
+                        import test.UserAddressValidator;
                         
                         public class UserRequestValidator implements Validator<UserRequest> {
-                            private final Validator<test.UserAddress> addressValidator = new test.UserAddressValidator();
+                            private final Validator<test.UserAddress> addressValidator = new UserAddressValidator();
 
                             @Override
                             public ValidationErrors validate(@Nullable UserRequest obj0) {
@@ -166,12 +159,12 @@ class ValidatorProcessorTest {
                 ));
         assertThat(compilation)
                 .generatedSourceFile("test.UserAddressValidator")
-                .hasSourceEquivalentTo(JavaFileObjects.forSourceString(
-                        "test.UserAddressValidator",
-                        """
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.UserAddressValidator", """
                         package test;
                         
-                        import io.github.raniagus.javalidation.*;
+                        import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.ValidationErrors;
+                        import io.github.raniagus.javalidation.validator.Validator;
                         import org.jspecify.annotations.Nullable;
                         
                         public class UserAddressValidator implements Validator<UserAddress> {
@@ -188,9 +181,7 @@ class ValidatorProcessorTest {
     @Test
     void shouldGenerateValidatorForAnnotatedRecordWithNestedRecord() {
         // Arrange - create source file in memory
-        JavaFileObject sourceFile = JavaFileObjects.forSourceString(
-                "test.UserRequest",
-                """
+        JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.UserRequest", """
                 package test;
                 
                 import io.github.raniagus.javalidation.annotation.*;
@@ -220,16 +211,17 @@ class ValidatorProcessorTest {
         // Assert - generated file exists
         assertThat(compilation)
                 .generatedSourceFile("test.UserRequestValidator")
-                .hasSourceEquivalentTo(JavaFileObjects.forSourceString(
-                        "test.UserRequestValidator",
-                        """
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.UserRequestValidator", """
                         package test;
                         
-                        import io.github.raniagus.javalidation.*;
+                        import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.ValidationErrors;
+                        import io.github.raniagus.javalidation.validator.Validator;
                         import org.jspecify.annotations.Nullable;
+                        import test.UserRequest$UserAddressValidator;
                         
                         public class UserRequestValidator implements Validator<UserRequest> {
-                            private final Validator<test.UserRequest.UserAddress> addressValidator = new test.UserRequest$UserAddressValidator();
+                            private final Validator<test.UserRequest.UserAddress> addressValidator = new UserRequest$UserAddressValidator();
 
                             @Override
                             public ValidationErrors validate(@Nullable UserRequest obj0) {
@@ -270,7 +262,9 @@ class ValidatorProcessorTest {
                         """
                         package test;
                         
-                        import io.github.raniagus.javalidation.*;
+                        import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.ValidationErrors;
+                        import io.github.raniagus.javalidation.validator.Validator;
                         import org.jspecify.annotations.Nullable;
                         
                         public class UserRequest$UserAddressValidator implements Validator<UserRequest.UserAddress> {

@@ -1,7 +1,15 @@
 package io.github.raniagus.javalidation.processor;
 
+import java.util.stream.Stream;
+
 public sealed interface ValidationWriter {
-    default void writePropertiesTo(ValidationOutput out, String field) {}
+    default Stream<String> imports() {
+        return Stream.empty();
+    }
+
+    default void writePropertiesTo(ValidationOutput out, String field) {
+    }
+
     void writeBodyTo(ValidationOutput out, String field);
 
     sealed interface NullSafeWriter extends ValidationWriter {}
@@ -149,13 +157,19 @@ public sealed interface ValidationWriter {
 
     record Validator(
             String referredTypeFullName,
+            String referredValidatorName,
             String referredValidatorFullName
     ) implements NullUnsafeWriter {
+        @Override
+        public Stream<String> imports() {
+            return Stream.of(referredValidatorFullName);
+        }
+
         @Override
         public void writePropertiesTo(ValidationOutput out, String field) {
             out.write("""
                     private final Validator<%s> %s = new %s();
-                    """.formatted(referredTypeFullName, validatorProperty(field), referredValidatorFullName));
+                    """.formatted(referredTypeFullName, validatorProperty(field), referredValidatorName));
         }
 
         @Override

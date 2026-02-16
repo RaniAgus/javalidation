@@ -1,5 +1,6 @@
-package io.github.raniagus.javalidation;
+package io.github.raniagus.javalidation.validator;
 
+import io.github.raniagus.javalidation.ValidationErrors;
 import org.jspecify.annotations.Nullable;
 
 @FunctionalInterface

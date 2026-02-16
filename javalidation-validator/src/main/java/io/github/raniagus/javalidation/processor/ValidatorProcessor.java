@@ -139,6 +139,7 @@ public class ValidatorProcessor extends AbstractProcessor {
 
         return new ValidationWriter.Validator(
                 getRecordFullName(referredType),
+                getValidatorName(referredType),
                 getValidatorFullName(referredType)
         );
     }
