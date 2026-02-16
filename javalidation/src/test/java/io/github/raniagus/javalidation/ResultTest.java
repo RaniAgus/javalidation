@@ -115,7 +115,7 @@ class ResultTest {
 
         var errors = result.getErrors();
         assertThat(errors.isEmpty()).isFalse();
-        assertThat(errors.fieldErrors()).containsKey("field");
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("field"));
     }
 
     // -- getOrElse --
@@ -167,7 +167,7 @@ class ResultTest {
         var result = Result.<String>err("field", "error").withPrefix("root");
 
         var errors = result.getErrors();
-        assertThat(errors.fieldErrors()).containsKey("root.field");
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("root", "field"));
     }
 
     @Test
@@ -179,10 +179,10 @@ class ResultTest {
 
     @Test
     void givenErr_whenWithPrefixVarargs_thenBuildsPrefix() {
-        var result = Result.<String>err("field", "error").withPrefix("root", ".", "sub");
+        var result = Result.<String>err("field", "error").withPrefix("root", "sub");
 
         var errors = result.getErrors();
-        assertThat(errors.fieldErrors()).containsKey("root.sub.field");
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("root", "sub", "field"));
     }
 
     // -- and --
@@ -245,7 +245,7 @@ class ResultTest {
 
         var errors = result.getErrors();
         assertThat(errors.fieldErrors()).hasSize(2);
-        assertThat(errors.fieldErrors()).containsKeys("first", "second");
+        assertThat(errors.fieldErrors()).containsKeys(FieldKey.of("first"), FieldKey.of("second"));
     }
 
     @Test
@@ -282,7 +282,7 @@ class ResultTest {
 
         var errors = result.getErrors();
         assertThat(errors.fieldErrors()).hasSize(2);
-        assertThat(errors.fieldErrors()).containsKeys("field1", "field2");
+        assertThat(errors.fieldErrors()).containsKeys(FieldKey.of("field1"), FieldKey.of("field2"));
     }
 
     // -- map --
@@ -338,7 +338,7 @@ class ResultTest {
         var result = originalError.mapErr(errors -> errors.withPrefix("prefix"));
 
         var errors = result.getErrors();
-        assertThat(errors.fieldErrors()).containsKey("prefix.field");
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("prefix", "field"));
     }
 
     // -- bimap --
@@ -362,8 +362,8 @@ class ResultTest {
                 );
 
         var errors = result.getErrors();
-        assertThat(errors.fieldErrors()).containsKey("user.age");
-        assertThat(errors.fieldErrors()).doesNotContainKey("age");
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("user", "age"));
+        assertThat(errors.fieldErrors()).doesNotContainKey(FieldKey.of("age"));
     }
 
     // -- peek --
@@ -485,8 +485,8 @@ class ResultTest {
                 .flatMapErr(errors -> Result.err("second", "error2"));
 
         var resultErrors = result.getErrors();
-        assertThat(resultErrors.fieldErrors()).containsKey("second");
-        assertThat(resultErrors.fieldErrors()).doesNotContainKey("first");
+        assertThat(resultErrors.fieldErrors()).containsKey(FieldKey.of("second"));
+        assertThat(resultErrors.fieldErrors()).doesNotContainKey(FieldKey.of("first"));
     }
 
     @Test
@@ -555,7 +555,7 @@ class ResultTest {
         });
 
         var errors = result.getErrors();
-        assertThat(errors.fieldErrors()).containsKey("username");
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("username"));
     }
 
     @Test
@@ -566,7 +566,7 @@ class ResultTest {
                 });
 
         var errors = result.getErrors();
-        assertThat(errors.fieldErrors()).containsKey("field");
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("field"));
         assertThat(errors.rootErrors()).isEmpty();
     }
 
@@ -608,7 +608,7 @@ class ResultTest {
                 .filter(x -> x > 0, "Value must be positive");
 
         var errors = result.getErrors();
-        assertThat(errors.fieldErrors()).containsKey("initial");
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("initial"));
     }
 
     // -- filter (field error) --
@@ -633,7 +633,7 @@ class ResultTest {
         );
 
         var errors = result.getErrors();
-        assertThat(errors.fieldErrors()).containsKey("username");
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("username"));
     }
 
     private void raiseJavalidationException() {

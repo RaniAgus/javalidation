@@ -5,7 +5,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.list;
 
 import io.github.raniagus.javalidation.Result;
 import io.github.raniagus.javalidation.ValidationErrors;
-import io.github.raniagus.javalidation.format.TemplateString;
+import io.github.raniagus.javalidation.TemplateString;
 import io.github.raniagus.javalidation.util.ErrorStrings;
 import io.github.raniagus.javalidation.util.Person;
 import org.junit.jupiter.api.Test;

@@ -3,7 +3,7 @@ package io.github.raniagus.javalidation.jackson;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import io.github.raniagus.javalidation.format.TemplateString;
+import io.github.raniagus.javalidation.TemplateString;
 import io.github.raniagus.javalidation.format.TemplateStringFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,7 +48,7 @@ class TemplateStringSerializerTest {
 
     @Test
     void givenCustomFormatter_whenSerialize_thenUsesCustomFormatter() {
-        TemplateStringFormatter custom = ts -> "CUSTOM: " + (ts != null ? ts.message() : "null");
+        TemplateStringFormatter custom = ts -> "CUSTOM: " + ts.message();
         mapper = JsonMapper.builder()
                 .addModule(JavalidationModule.builder()
                         .withTemplateStringFormatter(custom)

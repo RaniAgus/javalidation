@@ -1,4 +1,4 @@
-package io.github.raniagus.javalidation.format;
+package io.github.raniagus.javalidation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -1,5 +1,6 @@
-package io.github.raniagus.javalidation.format;
+package io.github.raniagus.javalidation;
 
+import io.github.raniagus.javalidation.format.TemplateStringFormatter;
 import java.util.Arrays;
 import java.util.Objects;
 

@@ -7,7 +7,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.throwable;
 
-import io.github.raniagus.javalidation.format.TemplateString;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -57,7 +56,7 @@ class ListResultCollectorTest {
                     .extracting(JavalidationException::getErrors)
                     .isEqualTo(new ValidationErrors(
                             List.of(TemplateString.of("root")),
-                            Map.of("field", List.of(TemplateString.of("error")))
+                            Map.of(FieldKey.of("field"), List.of(TemplateString.of("error")))
                     ));
         }
 
@@ -74,7 +73,7 @@ class ListResultCollectorTest {
                     .extracting(JavalidationException::getErrors)
                     .isEqualTo(new ValidationErrors(
                             List.of(TemplateString.of("root")),
-                            Map.of("field", List.of(TemplateString.of("error")))
+                            Map.of(FieldKey.of("field"), List.of(TemplateString.of("error")))
                     ));
         }
 
@@ -91,8 +90,8 @@ class ListResultCollectorTest {
                     .isEqualTo(new ValidationErrors(
                             List.of(),
                             Map.of(
-                                    "field1", List.of(TemplateString.of("error1")),
-                                    "field2", List.of(TemplateString.of("error2"))
+                                    FieldKey.of("field1"), List.of(TemplateString.of("error1")),
+                                    FieldKey.of("field2"), List.of(TemplateString.of("error2"))
                             )
                     ));
         }
@@ -139,7 +138,7 @@ class ListResultCollectorTest {
                     .extracting(Result.Err::errors)
                     .isEqualTo(new ValidationErrors(
                             List.of(TemplateString.of("root")),
-                            Map.of("field", List.of(TemplateString.of("error")))
+                            Map.of(FieldKey.of("field"), List.of(TemplateString.of("error")))
                     ));
         }
 
@@ -157,7 +156,7 @@ class ListResultCollectorTest {
                     .extracting(Result.Err::errors)
                     .isEqualTo(new ValidationErrors(
                             List.of(TemplateString.of("root")),
-                            Map.of("field", List.of(TemplateString.of("error")))
+                            Map.of(FieldKey.of("field"), List.of(TemplateString.of("error")))
                     ));
         }
 
@@ -175,8 +174,8 @@ class ListResultCollectorTest {
                     .isEqualTo(new ValidationErrors(
                             List.of(),
                             Map.of(
-                                    "field1", List.of(TemplateString.of("error1")),
-                                    "field2", List.of(TemplateString.of("error2"))
+                                    FieldKey.of("field1"), List.of(TemplateString.of("error1")),
+                                    FieldKey.of("field2"), List.of(TemplateString.of("error2"))
                             )
                     ));
         }
@@ -223,7 +222,7 @@ class ListResultCollectorTest {
             assertThat(partitioned.value()).containsExactly("value1");
             assertThat(partitioned.errors()).isEqualTo(new ValidationErrors(
                     List.of(TemplateString.of("root")),
-                    Map.of("field", List.of(TemplateString.of("error")))
+                    Map.of(FieldKey.of("field"), List.of(TemplateString.of("error")))
             ));
         }
 
@@ -239,7 +238,7 @@ class ListResultCollectorTest {
             assertThat(partitioned.value()).containsExactly("value1");
             assertThat(partitioned.errors()).isEqualTo(new ValidationErrors(
                     List.of(TemplateString.of("root")),
-                    Map.of("field", List.of(TemplateString.of("error")))
+                    Map.of(FieldKey.of("field"), List.of(TemplateString.of("error")))
             ));
         }
 
@@ -255,8 +254,8 @@ class ListResultCollectorTest {
             assertThat(partitioned.errors()).isEqualTo(new ValidationErrors(
                     List.of(),
                     Map.of(
-                            "field1", List.of(TemplateString.of("error1")),
-                            "field2", List.of(TemplateString.of("error2"))
+                            FieldKey.of("field1"), List.of(TemplateString.of("error1")),
+                            FieldKey.of("field2"), List.of(TemplateString.of("error2"))
                     )
             ));
         }
@@ -275,8 +274,8 @@ class ListResultCollectorTest {
             assertThat(partitioned.errors()).isEqualTo(new ValidationErrors(
                     List.of(),
                     Map.of(
-                            "field2", List.of(TemplateString.of("error2")),
-                            "field4", List.of(TemplateString.of("error4"))
+                            FieldKey.of("field2"), List.of(TemplateString.of("error2")),
+                            FieldKey.of("field4"), List.of(TemplateString.of("error4"))
                     )
             ));
         }

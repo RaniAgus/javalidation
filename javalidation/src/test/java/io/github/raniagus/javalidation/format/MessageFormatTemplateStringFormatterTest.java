@@ -2,6 +2,7 @@ package io.github.raniagus.javalidation.format;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.github.raniagus.javalidation.TemplateString;
 import org.junit.jupiter.api.Test;
 
 class MessageFormatTemplateStringFormatterTest {

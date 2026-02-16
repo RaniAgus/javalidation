@@ -8,6 +8,16 @@ public class JavalidationProperties {
     public static final String PREFIX = "io.github.raniagus.javalidation";
 
     /**
+     * The formatter to use for serializing field keys. This can be set to one of the following values:
+     * <ul>
+     *     <li>{@code default} (default): Uses the default formatter with {@link io.github.raniagus.javalidation.format.DefaultNotationFormatter}</li>
+     *     <li>{@code dot}: Uses the formatter with dots as separators ({@link io.github.raniagus.javalidation.format.DotNotationFormatter})</li>
+     *     <li>{@code bracket}: Uses the formatter with square brackets as separators ({@link io.github.raniagus.javalidation.format.BracketNotationFormatter})</li>
+     * </ul>
+     */
+    private KeyNotation keyNotation = KeyNotation.PROPERTY_PATH;
+
+    /**
      * Whether to use {@link org.springframework.context.MessageSource} to resolve error messages. When false,
      * the default formatter with {@link java.text.MessageFormat#format(String, Object...)} is used.
      * This feature is enabled by default.
@@ -15,12 +25,20 @@ public class JavalidationProperties {
     private boolean useMessageSource = true;
 
     /**
-     * Whether to flatten ValidationErrors into a single object, with empty string as key for root errors. When false,
+     * Whether to flatten ValidationErrors into a single object, with empty string as parts for root errors. When false,
      * the nested structure is preserved, separating {@link ValidationErrors#rootErrors()} and
      * {@link ValidationErrors#fieldErrors()}.
      * This feature is disabled by default.
      */
     private boolean flattenErrors = false;
+
+    public KeyNotation getKeyNotation() {
+        return keyNotation;
+    }
+
+    public void setKeyNotation(KeyNotation keyNotation) {
+        this.keyNotation = keyNotation;
+    }
 
     public boolean isUseMessageSource() {
         return useMessageSource;

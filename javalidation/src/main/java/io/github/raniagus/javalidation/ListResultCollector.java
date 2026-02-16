@@ -26,7 +26,7 @@ public abstract class ListResultCollector<T extends @Nullable Object, R, SELF ex
     }
 
     @Override
-    public void add(Result<T> result, StringBuilder prefix) {
+    public void add(Result<T> result, Object[] prefix) {
         switch (result) {
             case Result.Ok<T>(T value) -> values.add(value);
             case Result.Err<T>(ValidationErrors validationErrors) ->

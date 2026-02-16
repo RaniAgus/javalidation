@@ -1,5 +1,6 @@
 package io.github.raniagus.javalidation.format;
 
+import io.github.raniagus.javalidation.TemplateString;
 import java.text.MessageFormat;
 
 public class MessageFormatTemplateStringFormatter implements TemplateStringFormatter {

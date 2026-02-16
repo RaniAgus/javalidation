@@ -2,7 +2,7 @@ package io.github.raniagus.javalidation.jackson;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.github.raniagus.javalidation.format.TemplateString;
+import io.github.raniagus.javalidation.TemplateString;
 import java.util.List;
 import java.util.Map;
 

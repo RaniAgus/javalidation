@@ -482,10 +482,12 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 // Default: structured errors
 JavalidationModule module = JavalidationModule.getDefault();
 
-// Flattened errors (optional)
+// With opt-in options
 JavalidationModule module = JavalidationModule.builder()
-    .withFlattenedErrors()
-    .build();
+        .withFlattenedErrors() // Flattened errors (optional)
+        .withDotNotation()    // Dot notation for field errors (optional)
+        .withBracketNotation() // Bracket notation for field errors (optional)
+        .build();
 
 // Register module
 JsonMapper mapper = JsonMapper.builder()
@@ -499,7 +501,9 @@ JsonMapper mapper = JsonMapper.builder()
   "rootErrors": ["Order validation failed"],
   "fieldErrors": {
     "email": ["Invalid email format"],
-    "age": ["Must be at least 18"]
+    "age": ["Must be at least 18"],
+    "addresses[0].street": ["Street is required"],
+    "addresses[0].city": ["City is required"]
   }
 }
 ```
@@ -509,7 +513,35 @@ JsonMapper mapper = JsonMapper.builder()
 {
   "": ["Order validation failed"],
   "email": ["Invalid email format"],
-  "age": ["Must be at least 18"]
+  "age": ["Must be at least 18"],
+  "addresses[0].street": ["Street is required"],
+  "addresses[0].city": ["City is required"]
+}
+```
+
+**ValidationErrors JSON (with dot notation):**
+```json
+{
+  "rootErrors": ["Order validation failed"],
+  "fieldErrors": {
+    "email": ["Invalid email format"],
+    "age": ["Must be at least 18"],
+    "addresses.0.street": ["Street is required"],
+    "addresses.0.city": ["City is required"]
+  }
+}
+```
+
+**ValidationErrors JSON (with bracket notation):**
+```json
+{
+  "rootErrors": ["Order validation failed"],
+  "fieldErrors": {
+    "email": ["Invalid email format"],
+    "age": ["Must be at least 18"],
+    "addresses[0][street]": ["Street is required"],
+    "addresses[0][city]": ["City is required"]
+  }
 }
 ```
 

@@ -2,8 +2,9 @@ package io.github.raniagus.javalidation.spring;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.github.raniagus.javalidation.FieldKey;
 import io.github.raniagus.javalidation.ValidationErrors;
-import io.github.raniagus.javalidation.format.TemplateString;
+import io.github.raniagus.javalidation.TemplateString;
 import java.util.List;
 import java.util.Map;
 import org.assertj.core.api.AssertionsForClassTypes;
@@ -17,7 +18,7 @@ class ValidationErrorsSerializerAutoConfigurationTest extends AutoConfigurationT
     static ValidationErrors ERRORS = new ValidationErrors(
             List.of(TemplateString.of("global error")),
             Map.of(
-                    "email", List.of(TemplateString.of("invalid format"))
+                    FieldKey.of("email"), List.of(TemplateString.of("invalid format"))
             )
     );
 

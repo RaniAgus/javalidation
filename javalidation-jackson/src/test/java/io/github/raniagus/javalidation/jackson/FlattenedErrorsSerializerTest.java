@@ -3,8 +3,9 @@ package io.github.raniagus.javalidation.jackson;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import io.github.raniagus.javalidation.FieldKey;
 import io.github.raniagus.javalidation.ValidationErrors;
-import io.github.raniagus.javalidation.format.TemplateString;
+import io.github.raniagus.javalidation.TemplateString;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,8 +45,8 @@ class FlattenedErrorsSerializerTest {
         ValidationErrors errors = new ValidationErrors(
                 List.of(),
                 Map.of(
-                        "name", List.of(TemplateString.of("required")),
-                        "age", List.of(TemplateString.of("invalid"))
+                        FieldKey.of("name"), List.of(TemplateString.of("required")),
+                        FieldKey.of("age"), List.of(TemplateString.of("invalid"))
                 )
         );
 
@@ -61,7 +62,7 @@ class FlattenedErrorsSerializerTest {
         ValidationErrors errors = new ValidationErrors(
                 List.of(TemplateString.of("global error")),
                 Map.of(
-                        "email", List.of(TemplateString.of("invalid format"))
+                        FieldKey.of("email"), List.of(TemplateString.of("invalid format"))
                 )
         );
 
@@ -102,7 +103,7 @@ class FlattenedErrorsSerializerTest {
                 new ValidationErrors(
                         List.of(TemplateString.of("root")),
                         Map.of(
-                                "field", List.of(TemplateString.of("bad value"))
+                                FieldKey.of("field"), List.of(TemplateString.of("bad value"))
                         )
                 )
         );

@@ -2,6 +2,7 @@ package io.github.raniagus.javalidation.jackson;
 
 import static tools.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS;
 
+import io.github.raniagus.javalidation.FieldKey;
 import io.github.raniagus.javalidation.ValidationErrors;
 import java.util.Map;
 import tools.jackson.core.JsonGenerator;
@@ -22,7 +23,8 @@ public class FlattenedErrorsSerializer extends ValueSerializer<ValidationErrors>
                 : value.fieldErrors().entrySet();
 
         for (var entry : entries) {
-            context.defaultSerializeProperty(entry.getKey(), entry.getValue(), gen);
+            context.findKeySerializer(FieldKey.class, null).serialize(entry.getKey(), gen, context);
+            context.findValueSerializer(entry.getValue().getClass()).serialize(entry.getValue(), gen, context);
         }
 
         gen.writeEndObject();

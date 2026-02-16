@@ -1,8 +1,12 @@
 package io.github.raniagus.javalidation.jackson;
 
+import io.github.raniagus.javalidation.FieldKey;
 import io.github.raniagus.javalidation.Result;
 import io.github.raniagus.javalidation.ValidationErrors;
-import io.github.raniagus.javalidation.format.TemplateString;
+import io.github.raniagus.javalidation.TemplateString;
+import io.github.raniagus.javalidation.format.BracketNotationFormatter;
+import io.github.raniagus.javalidation.format.DotNotationFormatter;
+import io.github.raniagus.javalidation.format.FieldKeyFormatter;
 import io.github.raniagus.javalidation.format.TemplateStringFormatter;
 import org.jspecify.annotations.Nullable;
 import tools.jackson.databind.ValueSerializer;
@@ -49,11 +53,14 @@ public class JavalidationModule extends SimpleModule {
     private final boolean useDefaultErrorSerializer;
 
     private JavalidationModule(
+            ValueSerializer<FieldKey> fieldKeySerializer,
             @Nullable ValueSerializer<Result<?>> resultSerializer,
             ValueSerializer<TemplateString> templateStringSerializer,
             @Nullable ValueSerializer<ValidationErrors> validationErrorsSerializer
     ) {
         super(JavalidationModule.class.getSimpleName());
+
+        addKeySerializer(FieldKey.class, fieldKeySerializer);
 
         if (resultSerializer != null) {
             addSerializer(resultSerializer);
@@ -115,6 +122,7 @@ public class JavalidationModule extends SimpleModule {
      * @see #withFlattenedErrors()
      */
     public static class Builder {
+        private ValueSerializer<FieldKey> fieldKeySerializer = new FieldKeySerializer();
         private @Nullable ValueSerializer<Result<?>> resultSerializer;
         private ValueSerializer<TemplateString> templateStringSerializer = new TemplateStringSerializer();
         private @Nullable ValueSerializer<ValidationErrors> validationErrorsSerializer;
@@ -123,6 +131,69 @@ public class JavalidationModule extends SimpleModule {
          * Creates a new builder with default serializers.
          */
         public Builder() {
+        }
+
+        /**
+         * Configures the module to serialize {@link FieldKey} using dot notation.
+         * <p>
+         * By default, {@link FieldKey} is serialized using square brackets for numbers, and dots for strings:
+         * {@code users[0].name}. This method changes the serialization to dot notation: {@code users.0.name}.
+         *
+         * @return this builder for method chaining
+         * @see DotNotationFormatter
+         */
+        public Builder withDotNotation() {
+            return withFieldKeyFormatter(new DotNotationFormatter());
+        }
+
+        /**
+         * Configures the module to serialize {@link FieldKey} using bracket notation.
+         * <p>
+         * By default, {@link FieldKey} is serialized using square brackets for numbers, and dots for strings:
+         * {@code users[0].name}. This method changes the serialization to bracket notation: {@code users[0][name]}.
+         *
+         * @return this builder for method chaining
+         * @see BracketNotationFormatter
+         */
+        public Builder withBracketNotation() {
+            return withFieldKeyFormatter(new BracketNotationFormatter());
+        }
+
+        /**
+         * Configures the module to serialize {@link ValidationErrors} as a flat array of error strings.
+         * <p>
+         * By default, errors are serialized with nested structure: {@code {root: [...], fields: {...}}}.
+         * This method changes the serialization to a simple flat array: {@code ["error1", "error2", ...]}.
+         * <p>
+         * Example output:
+         * <pre>{@code
+         * ["Name is required", "Age must be positive"]
+         * }</pre>
+         *
+         * @return this builder for method chaining
+         * @see FlattenedErrorsSerializer
+         */
+        public Builder withFlattenedErrors() {
+            return withValidationErrorsSerializer(new FlattenedErrorsSerializer());
+        }
+
+        /**
+         * Configures a custom formatter for {@link FieldKey} serialization.
+         * <p>
+         * This is a convenience method that wraps the formatter in a {@link FieldKeySerializer}.
+         * Use this to customize how field keys are formatted in error messages (e.g., using dots or brackets).
+         * <p>
+         * Example:
+         * <pre>{@code
+         * builder.withTemplateStringFormatter(new MessageSourceTemplateStringFormatter(messageSource, locale))
+         * }</pre>
+         *
+         * @param formatter the formatter to use (must not be null)
+         * @return this builder for method chaining
+         * @see #withFieldKeyFormatter(FieldKeyFormatter)
+         */
+        public Builder withFieldKeyFormatter(FieldKeyFormatter formatter) {
+            return withFieldKeySerializer(new FieldKeySerializer(formatter));
         }
 
         /**
@@ -145,21 +216,17 @@ public class JavalidationModule extends SimpleModule {
         }
 
         /**
-         * Configures the module to serialize {@link ValidationErrors} as a flat array of error strings.
+         * Configures a custom serializer for {@link FieldKey}.
          * <p>
-         * By default, errors are serialized with nested structure: {@code {root: [...], fields: {...}}}.
-         * This method changes the serialization to a simple flat array: {@code ["error1", "error2", ...]}.
-         * <p>
-         * Example output:
-         * <pre>{@code
-         * ["Name is required", "Age must be positive"]
-         * }</pre>
+         * Use this for full control over error structure serialization. For most use cases,
+         * {@link #withFieldKeyFormatter(FieldKeyFormatter)} is simpler.
          *
+         * @param fieldKeySerializer the custom serializer (must not be null)
          * @return this builder for method chaining
-         * @see FlattenedErrorsSerializer
          */
-        public Builder withFlattenedErrors() {
-            return withValidationErrorsSerializer(new FlattenedErrorsSerializer());
+        public Builder withFieldKeySerializer(ValueSerializer<FieldKey> fieldKeySerializer) {
+            this.fieldKeySerializer = fieldKeySerializer;
+            return this;
         }
 
         /**
@@ -209,7 +276,12 @@ public class JavalidationModule extends SimpleModule {
          * @return a new module instance with the configured serializers
          */
         public JavalidationModule build() {
-            return new JavalidationModule(resultSerializer, templateStringSerializer, validationErrorsSerializer);
+            return new JavalidationModule(
+                    fieldKeySerializer,
+                    resultSerializer,
+                    templateStringSerializer,
+                    validationErrorsSerializer
+            );
         }
     }
 }

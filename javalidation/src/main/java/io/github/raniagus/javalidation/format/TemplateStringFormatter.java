@@ -1,5 +1,7 @@
 package io.github.raniagus.javalidation.format;
 
+import io.github.raniagus.javalidation.TemplateString;
+
 /**
  * Strategy interface for formatting {@link TemplateString} instances into plain strings.
  * <p>

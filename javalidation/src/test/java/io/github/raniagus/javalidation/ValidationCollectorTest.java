@@ -4,7 +4,6 @@ import static io.github.raniagus.javalidation.ResultCollector.into;
 import static io.github.raniagus.javalidation.ResultCollector.withPrefix;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.github.raniagus.javalidation.format.TemplateString;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -41,7 +40,7 @@ class ValidationCollectorTest {
 
             assertThat(validation.finish()).isEqualTo(new ValidationErrors(
                     List.of(TemplateString.of("root")),
-                    Map.of("field", List.of(TemplateString.of("error")))
+                    Map.of(FieldKey.of("field"), List.of(TemplateString.of("error")))
             ));
         }
     }
@@ -74,8 +73,8 @@ class ValidationCollectorTest {
 
             assertThat(validation.finish()).isEqualTo(new ValidationErrors(
                     List.of(),
-                    Map.of("items", List.of(TemplateString.of("root")),
-                            "items.field", List.of(TemplateString.of("error")))
+                    Map.of(FieldKey.of("items"), List.of(TemplateString.of("root")),
+                            FieldKey.of("items", "field"), List.of(TemplateString.of("error")))
             ));
         }
     }

@@ -2,9 +2,15 @@ package io.github.raniagus.javalidation.spring;
 
 import static io.github.raniagus.javalidation.spring.JavalidationProperties.PREFIX;
 
+import io.github.raniagus.javalidation.FieldKey;
 import io.github.raniagus.javalidation.ValidationErrors;
-import io.github.raniagus.javalidation.format.TemplateString;
+import io.github.raniagus.javalidation.TemplateString;
+import io.github.raniagus.javalidation.format.BracketNotationFormatter;
+import io.github.raniagus.javalidation.format.DefaultNotationFormatter;
+import io.github.raniagus.javalidation.format.DotNotationFormatter;
+import io.github.raniagus.javalidation.format.FieldKeyFormatter;
 import io.github.raniagus.javalidation.format.TemplateStringFormatter;
+import io.github.raniagus.javalidation.jackson.FieldKeySerializer;
 import io.github.raniagus.javalidation.jackson.FlattenedErrorsSerializer;
 import io.github.raniagus.javalidation.jackson.JavalidationModule;
 import io.github.raniagus.javalidation.jackson.TemplateStringSerializer;
@@ -23,6 +29,48 @@ import tools.jackson.databind.ValueSerializer;
 @ConditionalOnClass(name = "tools.jackson.databind.json.JsonMapper")
 @EnableConfigurationProperties(JavalidationProperties.class)
 public class JavalidationAutoConfiguration {
+    // -- JavalidationModule --
+
+    @Bean
+    public JavalidationModule javalidationModule(
+            ValueSerializer<FieldKey> fieldKeySerializer,
+            ValueSerializer<TemplateString> templateStringValueSerializer,
+            Optional<ValueSerializer<ValidationErrors>> validationErrorsValueSerializer
+    ) {
+        var builder = JavalidationModule.builder()
+                .withFieldKeySerializer(fieldKeySerializer)
+                .withTemplateStringSerializer(templateStringValueSerializer);
+        validationErrorsValueSerializer.ifPresent(builder::withValidationErrorsSerializer);
+        return builder.build();
+    }
+
+    @Bean
+    public ValueSerializer<FieldKey> fieldKeySerializer(FieldKeyFormatter formatter) {
+        return new FieldKeySerializer(formatter);
+    }
+
+    // -- FieldKey serialization --
+
+    @Bean
+    @ConditionalOnMissingBean(JavalidationProperties.class)
+    @ConditionalOnProperty(prefix = PREFIX, name = "key-notation", havingValue = "property_path", matchIfMissing = true)
+    public FieldKeyFormatter propertyPathNotationFieldKeyFormatter() {
+        return new DefaultNotationFormatter();
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = PREFIX, name = "key-notation", havingValue = "dot")
+    public FieldKeyFormatter dotNotationFieldKeyFormatter() {
+        return new DotNotationFormatter();
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = PREFIX, name = "key-notation", havingValue = "bracket")
+    public FieldKeyFormatter bracketNotationFieldKeyFormatter() {
+        return new BracketNotationFormatter();
+    }
+
+    // -- TemplateString serialization --
 
     @Bean
     @ConditionalOnMissingBean(JavalidationProperties.class)
@@ -40,23 +88,16 @@ public class JavalidationAutoConfiguration {
     }
 
     @Bean
+    public ValueSerializer<TemplateString> templateStringValueSerializer(TemplateStringFormatter formatter) {
+        return new TemplateStringSerializer(formatter);
+    }
+
+    // -- ValidationErrors serialization --
+
+    @Bean
     @ConditionalOnProperty(prefix = PREFIX, name = "flatten-errors", havingValue = "true")
     public ValueSerializer<ValidationErrors> flattenedErrorsSerializer() {
         return new FlattenedErrorsSerializer();
     }
 
-    @Bean
-    public ValueSerializer<TemplateString> templateStringValueSerializer(TemplateStringFormatter formatter) {
-        return new TemplateStringSerializer(formatter);
-    }
-
-    @Bean
-    public JavalidationModule javalidationModule(
-            Optional<ValueSerializer<ValidationErrors>> validationErrorsValueSerializer,
-            ValueSerializer<TemplateString> templateStringValueSerializer
-    ) {
-        var builder = JavalidationModule.builder().withTemplateStringSerializer(templateStringValueSerializer);
-        validationErrorsValueSerializer.ifPresent(builder::withValidationErrorsSerializer);
-        return builder.build();
-    }
 }

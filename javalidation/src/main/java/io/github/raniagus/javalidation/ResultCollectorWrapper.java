@@ -20,7 +20,7 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
     }
 
     @Override
-    public void add(Result<T> result, StringBuilder prefix) {
+    public void add(Result<T> result, Object[] prefix) {
         resultCollector.add(result, prefix);
     }
 
@@ -38,12 +38,15 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
 
         @Override
         public void add(Result<T> result) {
-            add(result, new StringBuilder());
+            add(result, new Object[]{});
         }
 
         @Override
-        public void add(Result<T> result, StringBuilder prefix) {
-            super.add(result, prefix.append('[').append(index++).append(']'));
+        public void add(Result<T> result, Object[] prefix) {
+            Object[] newPrefix = new Object[prefix.length + 1];
+            System.arraycopy(prefix, 0, newPrefix, 0, prefix.length);
+            newPrefix[prefix.length] = index++;
+            super.add(result, newPrefix);
         }
 
         @Override
@@ -67,12 +70,15 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
 
         @Override
         public void add(Result<T> result) {
-            super.add(result, new StringBuilder(prefix));
+            super.add(result, new Object[]{prefix});
         }
 
         @Override
-        public void add(Result<T> result, StringBuilder prefixSb) {
-            super.add(result, prefixSb.append(prefix));
+        public void add(Result<T> result, Object[] prefixArr) {
+            Object[] newPrefix = new Object[prefixArr.length + 1];
+            System.arraycopy(prefixArr, 0, newPrefix, 0, prefixArr.length);
+            newPrefix[prefixArr.length] = prefix;
+            super.add(result, newPrefix);
         }
 
         @Override

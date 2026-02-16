@@ -1,6 +1,6 @@
 package io.github.raniagus.javalidation.spring;
 
-import io.github.raniagus.javalidation.format.TemplateString;
+import io.github.raniagus.javalidation.TemplateString;
 import io.github.raniagus.javalidation.format.TemplateStringFormatter;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;

@@ -1,6 +1,6 @@
 package io.github.raniagus.javalidation.jackson;
 
-import io.github.raniagus.javalidation.format.TemplateString;
+import io.github.raniagus.javalidation.TemplateString;
 import io.github.raniagus.javalidation.format.TemplateStringFormatter;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.SerializationContext;

@@ -1,6 +1,5 @@
 package io.github.raniagus.javalidation;
 
-import io.github.raniagus.javalidation.format.TemplateString;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -67,7 +66,7 @@ import org.jspecify.annotations.Nullable;
  */
 public class Validation {
     private final List<TemplateString> rootErrors = new ArrayList<>();
-    private final Map<String, List<TemplateString>> fieldErrors = new HashMap<>();
+    private final Map<FieldKey, List<TemplateString>> fieldErrors = new HashMap<>();
 
     private Validation() {}
 
@@ -119,12 +118,12 @@ public class Validation {
     public Validation addFieldError(String field, String message, Object... args) {
         Objects.requireNonNull(field);
         Objects.requireNonNull(message);
-        fieldErrors.computeIfAbsent(field, k -> new ArrayList<>(1))
+        fieldErrors.computeIfAbsent(FieldKey.of(field), k -> new ArrayList<>(1))
                 .add(new TemplateString(message, args));
         return this;
     }
 
-    private void addFieldErrors(String field, List<TemplateString> messages) {
+    private void addFieldErrors(FieldKey field, List<TemplateString> messages) {
         Objects.requireNonNull(field);
         Objects.requireNonNull(messages);
         if (!messages.isEmpty()) {
@@ -133,7 +132,7 @@ public class Validation {
         }
     }
 
-    private void addFieldErrors(Map<String, List<TemplateString>> fieldErrors) {
+    private void addFieldErrors(Map<FieldKey, List<TemplateString>> fieldErrors) {
         Objects.requireNonNull(fieldErrors);
         fieldErrors.forEach(this::addFieldErrors);
     }
@@ -215,17 +214,15 @@ public class Validation {
      * @param prefix the prefix to add to all field paths (must not be null)
      * @return this validation for method chaining
      * @throws NullPointerException if prefix or errors is null
-     * @see ValidationErrors#withPrefix(String)
      */
-    public Validation addAll(ValidationErrors errors, StringBuilder prefix) {
+    public Validation addAll(ValidationErrors errors, Object[] prefix) {
         Objects.requireNonNull(prefix);
         Objects.requireNonNull(errors);
         if (!errors.rootErrors().isEmpty()) {
-            addFieldErrors(prefix.toString(), errors.rootErrors());
+            addFieldErrors(FieldKey.of(prefix), errors.rootErrors());
         }
-        StringBuilder prefixResult = prefix.append('.');
-        for (Map.Entry<String, List<TemplateString>> entry : errors.fieldErrors().entrySet()) {
-            addFieldErrors(prefixResult + entry.getKey(), entry.getValue());
+        for (Map.Entry<FieldKey, List<TemplateString>> entry : errors.fieldErrors().entrySet()) {
+            addFieldErrors(entry.getKey().withPrefix(prefix), entry.getValue());
         }
         return this;
     }

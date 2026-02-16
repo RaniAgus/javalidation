@@ -1,6 +1,5 @@
 package io.github.raniagus.javalidation;
 
-import io.github.raniagus.javalidation.format.TemplateString;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +58,7 @@ import java.util.stream.Collectors;
  */
 public record ValidationErrors(
         List<TemplateString> rootErrors,
-        Map<String, List<TemplateString>> fieldErrors
+        Map<FieldKey, List<TemplateString>> fieldErrors
 ) {
     /**
      * Compact constructor that ensures deep immutability through defensive copying.
@@ -118,7 +117,7 @@ public record ValidationErrors(
      * @return validation errors containing the single field error
      */
     public static ValidationErrors ofField(String field, String message, Object... args) {
-        return new ValidationErrors(List.of(), Map.of(field, List.of(new TemplateString(message, args))));
+        return new ValidationErrors(List.of(), Map.of(FieldKey.of(field), List.of(new TemplateString(message, args))));
     }
 
     /**
@@ -146,46 +145,6 @@ public record ValidationErrors(
     }
 
     /**
-     * Returns a new {@code ValidationErrors} with all field paths prefixed.
-     * <p>
-     * This is essential for validating nested objects and maintaining hierarchical error paths.
-     * Root errors are converted to field errors with the given prefix. Field errors have the
-     * prefix prepended with a dot separator.
-     * <p>
-     * Example:
-     * <pre>{@code
-     * // Original errors:
-     * // - rootErrors: ["Invalid address"]
-     * // - fieldErrors: {"street": ["Required"], "zipCode": ["Invalid"]}
-     *
-     * ValidationErrors prefixed = errors.withPrefix("user.address");
-     *
-     * // Result:
-     * // - rootErrors: []
-     * // - fieldErrors: {
-     * //     "user.address": ["Invalid address"],
-     * //     "user.address.street": ["Required"],
-     * //     "user.address.zipCode": ["Invalid"]
-     * //   }
-     * }</pre>
-     *
-     * @param prefix the prefix to add to all field paths
-     * @return a new {@code ValidationErrors} with prefixed field paths
-     * @see #withPrefix(Object, Object...)
-     */
-    public ValidationErrors withPrefix(String prefix) {
-        Map<String, List<TemplateString>> prefixedFieldErrors = new HashMap<>(fieldErrors.size() + 1);
-        if (!rootErrors.isEmpty()) {
-            prefixedFieldErrors.put(prefix, rootErrors);
-        }
-        String dotPrefix = prefix + '.';
-        for (Map.Entry<String, List<TemplateString>> entry : fieldErrors.entrySet()) {
-            prefixedFieldErrors.put(dotPrefix + entry.getKey(), entry.getValue());
-        }
-        return new ValidationErrors(List.of(), prefixedFieldErrors);
-    }
-
-    /**
      * Returns a new {@code ValidationErrors} with all field paths prefixed by concatenating the given objects.
      * <p>
      * This is a convenience method for building prefixes from multiple parts, particularly useful
@@ -203,16 +162,19 @@ public record ValidationErrors(
      * @param first the first part of the prefix
      * @param rest additional parts to concatenate
      * @return a new {@code ValidationErrors} with prefixed field paths
-     * @see #withPrefix(String)
      */
     public ValidationErrors withPrefix(Object first, Object... rest) {
-        // Pre-calculate prefix once
-        StringBuilder sb = new StringBuilder();
-        sb.append(first);
-        for (Object o : rest) {
-            sb.append(o);
+        Object[] prefix = new Object[rest.length + 1];
+        prefix[0] = first;
+        System.arraycopy(rest, 0, prefix, 1, rest.length);
+        Map<FieldKey, List<TemplateString>> prefixedFieldErrors = new HashMap<>(fieldErrors.size() + 1);
+        if (!rootErrors.isEmpty()) {
+            prefixedFieldErrors.put(FieldKey.of(prefix), rootErrors);
         }
-        return withPrefix(sb.toString());
+        for (Map.Entry<FieldKey, List<TemplateString>> entry : fieldErrors.entrySet()) {
+            prefixedFieldErrors.put(entry.getKey().withPrefix(prefix), entry.getValue());
+        }
+        return new ValidationErrors(List.of(), prefixedFieldErrors);
     }
 
     /**

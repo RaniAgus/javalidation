@@ -219,18 +219,12 @@ public sealed interface Result<T extends @Nullable Object> {
      * @param first the first part of the prefix
      * @param remaining additional parts to concatenate
      * @return a new result with prefixed errors if this is {@link Err}, or the same {@link Ok} instance
-     * @see #withPrefix(String)
      */
     default Result<T> withPrefix(Object first, Object... remaining) {
-        if (this instanceof Ok) {
-            return this;
-        }
-        StringBuilder sb = new StringBuilder();
-        sb.append(first);
-        for (Object o : remaining) {
-            sb.append(o);
-        }
-        return withPrefix(sb.toString());
+        return switch (this) {
+            case Ok<T> self -> self;
+            case Err<T>(ValidationErrors errors) -> new Err<>(errors.withPrefix(first, remaining));
+        };
     }
 
     /**

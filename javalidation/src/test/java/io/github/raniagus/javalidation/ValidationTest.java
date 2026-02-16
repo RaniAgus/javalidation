@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import io.github.raniagus.javalidation.format.TemplateString;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -50,8 +49,8 @@ class ValidationTest {
                 .addFieldError("field", "error message");
 
         var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsKey("field");
-        assertThat(errors.fieldErrors().get("field")).containsExactly(TemplateString.of("error message"));
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("field"));
+        assertThat(errors.fieldErrors().get(FieldKey.of("field"))).containsExactly(TemplateString.of("error message"));
     }
 
     @Test
@@ -61,7 +60,7 @@ class ValidationTest {
                 .addFieldError("field", "error 2");
 
         var errors = validation.finish();
-        assertThat(errors.fieldErrors().get("field")).containsExactly(
+        assertThat(errors.fieldErrors().get(FieldKey.of("field"))).containsExactly(
                 TemplateString.of("error 1"),
                 TemplateString.of("error 2")
         );
@@ -74,7 +73,7 @@ class ValidationTest {
                 .addFieldError("field2", "error 2");
 
         var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsOnlyKeys("field1", "field2");
+        assertThat(errors.fieldErrors()).containsOnlyKeys(FieldKey.of("field1"), FieldKey.of("field2"));
     }
 
     @Test
@@ -107,7 +106,7 @@ class ValidationTest {
                 .addAll(validation2);
 
         var errors = validation3.finish();
-        assertThat(errors.fieldErrors()).containsEntry("field", List.of(TemplateString.of("error")));
+        assertThat(errors.fieldErrors()).containsEntry(FieldKey.of("field"), List.of(TemplateString.of("error")));
         assertThat(errors.rootErrors()).containsExactly(TemplateString.of("root error"));
     }
 
@@ -120,7 +119,7 @@ class ValidationTest {
                 .addAll(validationErrors);
 
         var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsKey("field");
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("field"));
     }
 
     @Test
@@ -137,20 +136,20 @@ class ValidationTest {
     void givenFieldErrors_whenAddAllWithPrefix_thenPrefixesFieldNames() {
         var validationErrors = ValidationErrors.ofField("field", "error");
         var validation = Validation.create()
-                .addAll(validationErrors, new StringBuilder("root"));
+                .addAll(validationErrors, new Object[]{"root"});
 
         var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsKey("root.field");
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("root", "field"));
     }
 
     @Test
     void givenRootErrors_whenAddAllWithPrefix_thenConvertsToFieldErrors() {
         var validationErrors = ValidationErrors.ofRoot("root error");
         var validation = Validation.create()
-                .addAll(validationErrors, new StringBuilder("prefix"));
+                .addAll(validationErrors, new Object[]{"prefix"});
 
         var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsKey("prefix");
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("prefix"));
     }
 
     // -- finish --
@@ -162,7 +161,7 @@ class ValidationTest {
 
         var errors = validation.finish();
         assertThat(errors).isNotNull();
-        assertThat(errors.fieldErrors()).containsKey("field");
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("field"));
     }
 
     @Test
