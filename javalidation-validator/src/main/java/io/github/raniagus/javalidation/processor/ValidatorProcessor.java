@@ -103,16 +103,16 @@ public class ValidatorProcessor extends AbstractProcessor {
     private FieldWriter parseFieldWriter(RecordComponentElement component) {
         return new FieldWriter(
                 component.getSimpleName().toString(),
-                parseNullSafeWriters(component).filter(Objects::nonNull).toList(),
+                parseNullSafeWriters(component).filter(Objects::nonNull).findFirst().orElse(null),
                 parseNullUnsafeWriters(component).filter(Objects::nonNull).toList()
         );
     }
 
     private Stream<ValidationWriter.@Nullable NullSafeWriter> parseNullSafeWriters(RecordComponentElement component) {
         return Stream.<ValidationWriter.@Nullable NullSafeWriter>of(
-                parseNotNullAnnotation(component),
+                parseNotBlankAnnotation(component),
                 parseNotEmptyAnnotation(component),
-                parseNotBlankAnnotation(component)
+                parseNotNullAnnotation(component)
         );
     }
 
