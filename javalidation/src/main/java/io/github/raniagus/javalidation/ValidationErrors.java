@@ -154,19 +154,15 @@ public record ValidationErrors(
      * <pre>{@code
      * for (int i = 0; i < items.size(); i++) {
      *     ValidationErrors itemErrors = validateItem(items.get(i));
-     *     ValidationErrors prefixed = itemErrors.withPrefix("items[", i, "]");
+     *     ValidationErrors prefixed = itemErrors.withPrefix("items", i);
      *     // produces: "items[0]", "items[1]", etc.
      * }
      * }</pre>
      *
-     * @param first the first part of the prefix
-     * @param rest additional parts to concatenate
+     * @param prefix the parts to concatenate into a prefix (e.g. "items", i)
      * @return a new {@code ValidationErrors} with prefixed field paths
      */
-    public ValidationErrors withPrefix(Object first, Object... rest) {
-        Object[] prefix = new Object[rest.length + 1];
-        prefix[0] = first;
-        System.arraycopy(rest, 0, prefix, 1, rest.length);
+    public ValidationErrors withPrefix(Object... prefix) {
         Map<FieldKey, List<TemplateString>> prefixedFieldErrors = new HashMap<>(fieldErrors.size() + 1);
         if (!rootErrors.isEmpty()) {
             prefixedFieldErrors.put(FieldKey.of(prefix), rootErrors);

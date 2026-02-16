@@ -83,7 +83,7 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
      * @param <C>       the accumulator type
      * @return a collector that adds automatic index prefixes to errors
      * @see #withIndex(Collector)
-     * @see #withPrefix(String, Collector)
+     * @see #withPrefix(Object, Collector)
      */
     static <T extends @Nullable Object, R, C extends ListResultCollector<T, R, C>> Collector<Result<T>, ResultCollectorWrapper.WithIndex<T, R, C>, R> withIndex(
             Collector<Result<T>, C, R> collector
@@ -109,7 +109,7 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
      * <pre>{@code
      * Result<List<Item>> items = order.getItems().stream()
      *     .map(this::validateItem)
-     *     .collect(withPrefix("order.items", toResultList()));
+     *     .collect(withPrefix("order", withPrefix("items", toResultList())));
      * // Errors: "order.items.price": ["Must be positive"]
      *
      * try {
@@ -128,10 +128,10 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
      * @param <C>       the accumulator type
      * @return a collector that adds a prefix to all field errors
      * @see #withIndex(Collector)
-     * @see #withPrefix(String, Collector)
+     * @see #withPrefix(Object, Collector)
      */
     static <T extends @Nullable Object, R, C extends ResultCollector<T, R, C>> Collector<Result<T>, ResultCollectorWrapper.WithPrefix<T, R, C>, R> withPrefix(
-            String prefix,
+            Object prefix,
             Collector<Result<T>, C, R> collector
     ) {
         return Collector.of(
@@ -146,7 +146,7 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
      * Returns a {@link Collector} that accumulates errors into an existing {@link Validation} object.
      * <p>
      * Unlike other collectors that create new structures, this mutates and returns the provided
-     * {@link Validation}. Success values are discarded. Use {@link #withPrefix(String, Collector)}
+     * {@link Validation}. Success values are discarded. Use {@link #withPrefix(Object, Collector)}
      * to namespace errors.
      * <p>
      * <strong>Example - combining multiple validation steps:</strong>
@@ -167,7 +167,7 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
      * @param validation the validation object to accumulate errors into
      * @param <T>        the type of the success values (discarded)
      * @return a collector that accumulates errors into the provided validation
-     * @see #withPrefix(String, Collector)
+     * @see #withPrefix(Object, Collector)
      * @see Validation
      */
     static <T extends @Nullable Object> Collector<Result<T>, ValidationCollector<T>, Validation> into(Validation validation) {
@@ -220,7 +220,7 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
      * @throws JavalidationException if any result is {@link Result.Err}
      * @see #toListOrThrow(int)
      * @see #withIndex(Collector)
-     * @see #withPrefix(String, Collector)
+     * @see #withPrefix(Object, Collector)
      */
     static <T extends @Nullable Object> Collector<Result<T>, ListResultCollector.ToList<T>, List<T>> toListOrThrow() {
         return Collector.of(
@@ -264,7 +264,7 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
      * @throws JavalidationException if any result is {@link Result.Err}
      * @see #toListOrThrow()
      * @see #withIndex(Collector)
-     * @see #withPrefix(String, Collector)
+     * @see #withPrefix(Object, Collector)
      */
     static <T extends @Nullable Object> Collector<Result<T>, ListResultCollector.ToList<T>, List<T>> toListOrThrow(
             int initialCapacity
@@ -314,7 +314,7 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
      * @return a collector that produces a result containing a list
      * @see #toResultList(int)
      * @see #withIndex(Collector)
-     * @see #withPrefix(String, Collector)
+     * @see #withPrefix(Object, Collector)
      */
     static <T extends @Nullable Object> Collector<Result<T>, ListResultCollector.ToResultList<T>, Result<List<T>>> toResultList() {
         return Collector.of(
@@ -353,7 +353,7 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
      * @return a collector that produces a result containing a list
      * @see #toResultList()
      * @see #withIndex(Collector)
-     * @see #withPrefix(String, Collector)
+     * @see #withPrefix(Object, Collector)
      */
     static <T extends @Nullable Object> Collector<Result<T>, ListResultCollector.ToResultList<T>, Result<List<T>>> toResultList(
             int initialCapacity
@@ -411,7 +411,7 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
      * @return a collector that produces a partitioned result
      * @see #toPartitioned(int)
      * @see #withIndex(Collector)
-     * @see #withPrefix(String, Collector)
+     * @see #withPrefix(Object, Collector)
      * @see PartitionedResult
      */
     static <T extends @Nullable Object> Collector<Result<T>, ListResultCollector.ToPartitioned<T>, PartitionedResult<List<T>>> toPartitioned() {
@@ -459,7 +459,7 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
      * @return a collector that produces a partitioned result
      * @see #toPartitioned()
      * @see #withIndex(Collector)
-     * @see #withPrefix(String, Collector)
+     * @see #withPrefix(Object, Collector)
      * @see PartitionedResult
      */
     static <T extends @Nullable Object> Collector<Result<T>, ListResultCollector.ToPartitioned<T>, PartitionedResult<List<T>>> toPartitioned(

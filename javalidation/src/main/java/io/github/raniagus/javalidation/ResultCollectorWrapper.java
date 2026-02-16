@@ -1,5 +1,6 @@
 package io.github.raniagus.javalidation;
 
+import java.util.Arrays;
 import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
@@ -38,14 +39,13 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
 
         @Override
         public void add(Result<T> result) {
-            add(result, new Object[]{});
+            super.add(result, new Object[]{index++});
         }
 
         @Override
-        public void add(Result<T> result, Object[] prefix) {
-            Object[] newPrefix = new Object[prefix.length + 1];
-            System.arraycopy(prefix, 0, newPrefix, 0, prefix.length);
-            newPrefix[prefix.length] = index++;
+        public void add(Result<T> result, Object[] parts) {
+            Object[] newPrefix = Arrays.copyOf(parts, parts.length + 1);
+            newPrefix[parts.length] = index++;
             super.add(result, newPrefix);
         }
 
@@ -56,14 +56,14 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
     }
 
     public static class WithPrefix<T extends @Nullable Object, R, C extends ResultCollector<T, R, C>> extends ResultCollectorWrapper<T, R, C, WithPrefix<T, R, C>> {
-        private final String prefix;
+        private final Object prefix;
 
-        public WithPrefix(C collector, String prefix) {
+        public WithPrefix(C collector, Object prefix) {
             super(collector);
             this.prefix = prefix;
         }
 
-        public WithPrefix(Collector<Result<T>, C, R> collector, String prefix) {
+        public WithPrefix(Collector<Result<T>, C, R> collector, Object prefix) {
             super(collector);
             this.prefix = prefix;
         }
@@ -74,10 +74,9 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
         }
 
         @Override
-        public void add(Result<T> result, Object[] prefixArr) {
-            Object[] newPrefix = new Object[prefixArr.length + 1];
-            System.arraycopy(prefixArr, 0, newPrefix, 0, prefixArr.length);
-            newPrefix[prefixArr.length] = prefix;
+        public void add(Result<T> result, Object[] parts) {
+            Object[] newPrefix = Arrays.copyOf(parts, parts.length + 1);
+            newPrefix[parts.length] = prefix;
             super.add(result, newPrefix);
         }
 

@@ -172,37 +172,6 @@ public sealed interface Result<T extends @Nullable Object> {
     }
 
     /**
-     * Adds a prefix to all error field paths in this result, useful for validating nested objects.
-     * <p>
-     * Root errors are converted to field errors with the given prefix. Field errors have the
-     * prefix prepended to their field names with a dot separator.
-     * <p>
-     * This enables composing validators for nested structures:
-     * <pre>{@code
-     * // Validate nested address
-     * Result<Address> addressResult = validateAddress(person.getAddress())
-     *     .withPrefix("address");
-     * // Errors will be: "address.street", "address.zipCode", etc.
-     *
-     * // Validate list items
-     * for (int i = 0; i < items.size(); i++) {
-     *     Result<Item> itemResult = validateItem(items.get(i))
-     *         .withPrefix("items[", i, "]");
-     * }
-     * }</pre>
-     *
-     * @param prefix the prefix to add to all field paths
-     * @return a new result with prefixed errors if this is {@link Err}, or the same {@link Ok} instance
-     * @see #withPrefix(Object, Object...)
-     */
-    default Result<T> withPrefix(String prefix) {
-        return switch (this) {
-            case Ok<T> self -> self;
-            case Err<T>(ValidationErrors errors) -> new Err<>(errors.withPrefix(prefix));
-        };
-    }
-
-    /**
      * Adds a prefix to all error field paths by concatenating the given objects into a string.
      * <p>
      * This is a convenience method for building prefixes from multiple parts without manual string concatenation.
@@ -212,18 +181,17 @@ public sealed interface Result<T extends @Nullable Object> {
      * // Validate list items
      * for (int i = 0; i < items.size(); i++) {
      *     validateItem(items.get(i))
-     *         .withPrefix("items[", i, "]");  // produces "items[0]", "items[1]", etc.
+     *         .withPrefix("items", i);  // produces "items[0]", "items[1]", etc.
      * }
      * }</pre>
      *
-     * @param first the first part of the prefix
-     * @param remaining additional parts to concatenate
+     * @param prefix the parts to concatenate into a prefix (e.g. "items", i)
      * @return a new result with prefixed errors if this is {@link Err}, or the same {@link Ok} instance
      */
-    default Result<T> withPrefix(Object first, Object... remaining) {
+    default Result<T> withPrefix(Object... prefix) {
         return switch (this) {
             case Ok<T> self -> self;
-            case Err<T>(ValidationErrors errors) -> new Err<>(errors.withPrefix(first, remaining));
+            case Err<T>(ValidationErrors errors) -> new Err<>(errors.withPrefix(prefix));
         };
     }
 
