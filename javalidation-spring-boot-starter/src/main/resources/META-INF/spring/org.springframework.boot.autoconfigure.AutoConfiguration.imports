@@ -1,2 +1,3 @@
 io.github.raniagus.javalidation.spring.JavalidationAutoConfiguration
 io.github.raniagus.javalidation.spring.JavalidationJacksonAutoConfiguration
+io.github.raniagus.javalidation.spring.JavalidationValidatorAutoConfiguration
