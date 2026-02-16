@@ -75,7 +75,7 @@ public class ValidatorProcessor extends AbstractProcessor {
 
                     if (recordElement.getKind() != ElementKind.RECORD) {
                         processingEnv.getMessager().printMessage(
-                                Diagnostic.Kind.ERROR, "@Validator can only be applied to records");
+                                Diagnostic.Kind.ERROR, "@Validator can only be applied to records, but it was applied to " + recordElement);
                         return Stream.empty();
                     }
 
