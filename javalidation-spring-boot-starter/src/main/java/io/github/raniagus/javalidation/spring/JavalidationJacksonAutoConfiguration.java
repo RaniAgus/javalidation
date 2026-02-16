@@ -19,7 +19,10 @@ import org.springframework.context.annotation.Bean;
 import tools.jackson.databind.ValueSerializer;
 
 @AutoConfiguration
-@ConditionalOnClass(name = "tools.jackson.databind.json.JsonMapper")
+@ConditionalOnClass(name = {
+        "tools.jackson.databind.json.JsonMapper",
+        "io.github.raniagus.javalidation.jackson.JavalidationModule",
+})
 public class JavalidationJacksonAutoConfiguration {
 
     // -- JavalidationModule --
