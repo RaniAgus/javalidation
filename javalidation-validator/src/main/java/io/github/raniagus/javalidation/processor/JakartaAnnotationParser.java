@@ -49,7 +49,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        return new ValidationWriter.NotEmpty(resolveMessage(annotation.message()));
+        return new ValidationWriter.NullSafeCondition("isEmpty", resolveMessage(annotation.message()));
     }
 
     public static ValidationWriter.@Nullable NullSafeWriter parseNotBlankAnnotation(RecordComponentElement componentElement) {
@@ -58,7 +58,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        return new ValidationWriter.NotBlank(resolveMessage(annotation.message()));
+        return new ValidationWriter.NullSafeCondition("isBlank", resolveMessage(annotation.message()));
     }
 
     public static ValidationWriter.@Nullable NullUnsafeWriter parseSizeAnnotation(RecordComponentElement component) {

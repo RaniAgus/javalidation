@@ -30,27 +30,12 @@ public sealed interface ValidationWriter {
         }
     }
 
-    record NotEmpty(String message) implements NullSafeWriter {
+    record NullSafeCondition(String accessor, String message) implements NullSafeWriter {
         @Override
         public void writeBodyTo(ValidationOutput out, String field) {
             out.write("""
-                    if (%1$s.%2$s() == null || %1$s.%2$s().isEmpty()) {\
-                    """.formatted(out.getVariable(), field));
-            out.incrementIndentationLevel();
-            out.write("""
-                    validation.addFieldError("%s", "%s");\
-                    """.formatted(out.getFullKey(field), message));
-            out.decrementIndentationLevel();
-            out.write("}");
-        }
-    }
-
-    record NotBlank(String message) implements NullSafeWriter {
-        @Override
-        public void writeBodyTo(ValidationOutput out, String field) {
-            out.write("""
-                    if (%1$s.%2$s() == null || %1$s.%2$s().isBlank()) {\
-                    """.formatted(out.getVariable(), field));
+                    if (%1$s.%2$s() == null || %1$s.%2$s().%3$s()) {\
+                    """.formatted(out.getVariable(), field, accessor));
             out.incrementIndentationLevel();
             out.write("""
                     validation.addFieldError("%s", "%s");\
