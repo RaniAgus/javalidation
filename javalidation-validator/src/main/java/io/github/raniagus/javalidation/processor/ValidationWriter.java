@@ -167,7 +167,7 @@ public sealed interface ValidationWriter {
         @Override
         public void writeBodyTo(ValidationOutput out, String field) {
             out.write("""
-                    validation.addAll(%s.validate(%s.%s()), new Object[]{"%s"});
+                    validation.addAll(%s.validate(%s.%s()), new Object[]{"%s"});\
                     """.formatted(validatorProperty(field), out.getVariable(), field, out.getFullKey(field)));
         }
 
