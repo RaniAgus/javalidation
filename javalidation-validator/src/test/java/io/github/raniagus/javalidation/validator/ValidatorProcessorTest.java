@@ -80,6 +80,7 @@ class ValidatorProcessorTest {
                 .hasSourceEquivalentTo(JavaFileObjects.forSourceString("io.github.raniagus.javalidation.validator.Validators", """
                         package io.github.raniagus.javalidation.validator;
                         
+                        import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
                         import java.util.Map;
                         import test.SimpleRecord;
@@ -96,6 +97,12 @@ class ValidatorProcessorTest {
                                 );
                             }
                         
+                            @SuppressWarnings("unchecked")
+                            public static <T> ValidationErrors validate(T instance) {
+                                Validator<T> validator = getValidator((Class<T>) instance.getClass());
+                                return validator.validate(instance);
+                            }
+
                             @SuppressWarnings("unchecked")
                             public static <T> Validator<T> getValidator(Class<T> clazz) {
                                  Validator<?> validator = CACHE.get(clazz);
@@ -220,6 +227,7 @@ class ValidatorProcessorTest {
                 .hasSourceEquivalentTo(JavaFileObjects.forSourceString("io.github.raniagus.javalidation.validator.Validators", """
                         package io.github.raniagus.javalidation.validator;
                         
+                        import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
                         import java.util.Map;
                         import test.UserAddress;
@@ -237,6 +245,12 @@ class ValidatorProcessorTest {
                                         Map.entry(UserRequest.class, new UserRequestValidator())
                                       , Map.entry(UserAddress.class, new UserAddressValidator())
                                 );
+                            }
+
+                            @SuppressWarnings("unchecked")
+                            public static <T> ValidationErrors validate(T instance) {
+                                Validator<T> validator = getValidator((Class<T>) instance.getClass());
+                                return validator.validate(instance);
                             }
                         
                             @SuppressWarnings("unchecked")
@@ -357,6 +371,7 @@ class ValidatorProcessorTest {
                 .hasSourceEquivalentTo(JavaFileObjects.forSourceString("io.github.raniagus.javalidation.validator.Validators", """
                         package io.github.raniagus.javalidation.validator;
                         
+                        import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
                         import java.util.Map;
                         import test.UserRequest;
@@ -373,6 +388,12 @@ class ValidatorProcessorTest {
                                         Map.entry(UserRequest.class, new UserRequestValidator())
                                       , Map.entry(UserRequest.UserAddress.class, new UserRequest$UserAddressValidator())
                                 );
+                            }
+
+                            @SuppressWarnings("unchecked")
+                            public static <T> ValidationErrors validate(T instance) {
+                                Validator<T> validator = getValidator((Class<T>) instance.getClass());
+                                return validator.validate(instance);
                             }
                         
                             @SuppressWarnings("unchecked")

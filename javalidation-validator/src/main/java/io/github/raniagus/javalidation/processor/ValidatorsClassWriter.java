@@ -14,6 +14,7 @@ public record ValidatorsClassWriter(List<ValidatorClassWriter> classWriters) imp
         return Stream.concat(
                 Stream.of(
                         "java.util.Map",
+                        "io.github.raniagus.javalidation.ValidationErrors",
                         "io.github.raniagus.javalidation.validator.Validator"
                 ),
                 classWriters.stream().flatMap(writer -> Stream.concat(
@@ -49,7 +50,13 @@ public record ValidatorsClassWriter(List<ValidatorClassWriter> classWriters) imp
         out.write("""
                         );
                     }
-                
+
+                    @SuppressWarnings("unchecked")
+                    public static <T> ValidationErrors validate(T instance) {
+                        Validator<T> validator = getValidator((Class<T>) instance.getClass());
+                        return validator.validate(instance);
+                    }
+
                     @SuppressWarnings("unchecked")
                     public static <T> Validator<T> getValidator(Class<T> clazz) {
                          Validator<?> validator = CACHE.get(clazz);
