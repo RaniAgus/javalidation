@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import io.github.raniagus.javalidation.FieldKey;
-import io.github.raniagus.javalidation.TemplateString;
 import io.github.raniagus.javalidation.format.FieldKeyFormatter;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -43,7 +42,7 @@ class FieldKeyFormatterAutoConfigurationTest extends AutoConfigurationTest {
     static class KeyNotationDefaultSetTest extends KeyNotationUnsetTest {
     }
 
-    @TestPropertySource(properties = "io.github.raniagus.javalidation.key-notation=dot")
+    @TestPropertySource(properties = "io.github.raniagus.javalidation.key-notation=dots")
     static class KeyNotationDotSetTest extends ContextTest {
         @Autowired
         private JsonMapper jsonMapper;
@@ -58,7 +57,7 @@ class FieldKeyFormatterAutoConfigurationTest extends AutoConfigurationTest {
         }
     }
 
-    @TestPropertySource(properties = "io.github.raniagus.javalidation.key-notation=bracket")
+    @TestPropertySource(properties = "io.github.raniagus.javalidation.key-notation=brackets")
     static class KeyNotationBracketSetTest extends ContextTest {
         @Autowired
         private JsonMapper jsonMapper;

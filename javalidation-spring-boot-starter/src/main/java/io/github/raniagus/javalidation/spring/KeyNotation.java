@@ -1,5 +1,5 @@
 package io.github.raniagus.javalidation.spring;
 
 public enum KeyNotation {
-    PROPERTY_PATH, BRACKET, DOT
+    PROPERTY_PATH, BRACKETS, DOTS
 }

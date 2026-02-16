@@ -52,7 +52,13 @@ public record ValidatorsClassWriter(List<ValidatorClassWriter> classWriters) imp
                 
                     @SuppressWarnings("unchecked")
                     public static <T> Validator<T> getValidator(Class<T> clazz) {
-                        return (Validator<T>) CACHE.get(clazz);
+                         Validator<?> validator = CACHE.get(clazz);
+                         if (validator == null) {
+                             throw new IllegalArgumentException(
+                                 "No validator registered for " + clazz.getName()
+                             );
+                         }
+                         return (Validator<T>) validator;
                     }
                 }
                 """);

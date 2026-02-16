@@ -1,6 +1,9 @@
 package io.github.raniagus.javalidation.spring;
 
 import io.github.raniagus.javalidation.ValidationErrors;
+import io.github.raniagus.javalidation.format.BracketNotationFormatter;
+import io.github.raniagus.javalidation.format.DotNotationFormatter;
+import io.github.raniagus.javalidation.format.PropertyPathNotationFormatter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = JavalidationProperties.PREFIX)
@@ -10,9 +13,10 @@ public class JavalidationProperties {
     /**
      * The formatter to use for serializing field keys. This can be set to one of the following values:
      * <ul>
-     *     <li>{@code default} (default): Uses the default formatter with {@link io.github.raniagus.javalidation.format.DefaultNotationFormatter}</li>
-     *     <li>{@code dot}: Uses the formatter with dots as separators ({@link io.github.raniagus.javalidation.format.DotNotationFormatter})</li>
-     *     <li>{@code bracket}: Uses the formatter with square brackets as separators ({@link io.github.raniagus.javalidation.format.BracketNotationFormatter})</li>
+     *     <li>{@code property_path} (default): uses dots for properties and square brackets for indices
+     *         ({@link PropertyPathNotationFormatter})</li>
+     *     <li>{@code dots}: uses dots as separators ({@link DotNotationFormatter})</li>
+     *     <li>{@code brackets}: uses square brackets as separators ({@link BracketNotationFormatter})</li>
      * </ul>
      */
     private KeyNotation keyNotation = KeyNotation.PROPERTY_PATH;

@@ -5,8 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.github.raniagus.javalidation.FieldKey;
 import org.junit.jupiter.api.Test;
 
-public class DefaultNotationFormatterTest {
-    FieldKeyFormatter formatter = new DefaultNotationFormatter();
+public class PropertyPathNotationFormatterTest {
+    FieldKeyFormatter formatter = new PropertyPathNotationFormatter();
 
     @Test
     void givenSimpleString_whenFormat_thenReturnSameString() {

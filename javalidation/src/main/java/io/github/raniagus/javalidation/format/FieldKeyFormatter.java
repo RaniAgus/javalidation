@@ -7,6 +7,6 @@ public interface FieldKeyFormatter {
     String format(FieldKey fieldKey);
 
     static FieldKeyFormatter getDefault() {
-        return new DefaultNotationFormatter();
+        return new PropertyPathNotationFormatter();
     }
 }

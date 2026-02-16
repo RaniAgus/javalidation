@@ -3,6 +3,9 @@ package io.github.raniagus.javalidation.processor;
 import static io.github.raniagus.javalidation.processor.JakartaAnnotationParser.*;
 
 import io.github.raniagus.javalidation.annotation.Validator;
+import io.github.raniagus.javalidation.format.BracketNotationFormatter;
+import io.github.raniagus.javalidation.format.PropertyPathNotationFormatter;
+import io.github.raniagus.javalidation.format.DotNotationFormatter;
 import io.github.raniagus.javalidation.format.FieldKeyFormatter;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -28,20 +31,30 @@ import org.jspecify.annotations.Nullable;
 @SupportedAnnotationTypes("io.github.raniagus.javalidation.annotation.Validator")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class ValidatorProcessor extends AbstractProcessor {
+    private static final String OPTIONS_PREFIX = "io.github.raniagus.javalidation.";
+
     private final List<ValidatorClassWriter> WRITERS = Collections.synchronizedList(new ArrayList<>());
     private boolean generated = false;
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        String keyNotation = processingEnv.getOptions().getOrDefault(OPTIONS_PREFIX + "key-notation", "property_path");
+        FieldKeyFormatter fieldKeyFormatter = switch (keyNotation) {
+            case "property_path" -> new PropertyPathNotationFormatter();
+            case "brackets" -> new BracketNotationFormatter();
+            case "dots" -> new DotNotationFormatter();
+            default -> throw new IllegalArgumentException("Invalid key notation: " + keyNotation);
+        };
+
         List<ValidatorClassWriter> classWriters = parseClassWriters(roundEnv);
 
         for (ValidatorClassWriter classWriter : classWriters) {
-            writeClass(classWriter);
+            writeClass(classWriter, fieldKeyFormatter);
             WRITERS.add(classWriter);
         }
 
         if (roundEnv.processingOver() && !generated) {
-            writeClass(new ValidatorsClassWriter(WRITERS));
+            writeClass(new ValidatorsClassWriter(WRITERS), fieldKeyFormatter);
             generated = true;
         }
 
@@ -50,11 +63,11 @@ public class ValidatorProcessor extends AbstractProcessor {
 
     // -- Writing --
 
-    private void writeClass(ClassWriter classWriter) {
+    private void writeClass(ClassWriter classWriter, FieldKeyFormatter formatter) {
         try {
             JavaFileObject file = processingEnv.getFiler().createSourceFile(classWriter.fullName());
             try (Writer writer = file.openWriter()) {
-                classWriter.write(new ValidationOutput(writer, FieldKeyFormatter.getDefault()));
+                classWriter.write(new ValidationOutput(writer, formatter));
             }
         } catch (Exception e) {
             processingEnv.getMessager().printMessage(

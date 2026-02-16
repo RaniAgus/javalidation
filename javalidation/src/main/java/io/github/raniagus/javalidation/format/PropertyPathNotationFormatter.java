@@ -2,7 +2,7 @@ package io.github.raniagus.javalidation.format;
 
 import io.github.raniagus.javalidation.FieldKey;
 
-public class DefaultNotationFormatter implements FieldKeyFormatter {
+public class PropertyPathNotationFormatter implements FieldKeyFormatter {
     @Override
     public String format(FieldKey fieldKey) {
         StringBuilder builder = new StringBuilder();

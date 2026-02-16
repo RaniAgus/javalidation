@@ -6,7 +6,7 @@ import io.github.raniagus.javalidation.FieldKey;
 import io.github.raniagus.javalidation.ValidationErrors;
 import io.github.raniagus.javalidation.TemplateString;
 import io.github.raniagus.javalidation.format.BracketNotationFormatter;
-import io.github.raniagus.javalidation.format.DefaultNotationFormatter;
+import io.github.raniagus.javalidation.format.PropertyPathNotationFormatter;
 import io.github.raniagus.javalidation.format.DotNotationFormatter;
 import io.github.raniagus.javalidation.format.FieldKeyFormatter;
 import io.github.raniagus.javalidation.format.TemplateStringFormatter;
@@ -55,17 +55,17 @@ public class JavalidationAutoConfiguration {
     @ConditionalOnMissingBean(JavalidationProperties.class)
     @ConditionalOnProperty(prefix = PREFIX, name = "key-notation", havingValue = "property_path", matchIfMissing = true)
     public FieldKeyFormatter propertyPathNotationFieldKeyFormatter() {
-        return new DefaultNotationFormatter();
+        return new PropertyPathNotationFormatter();
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = PREFIX, name = "key-notation", havingValue = "dot")
+    @ConditionalOnProperty(prefix = PREFIX, name = "key-notation", havingValue = "dots")
     public FieldKeyFormatter dotNotationFieldKeyFormatter() {
         return new DotNotationFormatter();
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = PREFIX, name = "key-notation", havingValue = "bracket")
+    @ConditionalOnProperty(prefix = PREFIX, name = "key-notation", havingValue = "brackets")
     public FieldKeyFormatter bracketNotationFieldKeyFormatter() {
         return new BracketNotationFormatter();
     }

@@ -565,7 +565,7 @@ Result<User> failure = Result.err("email", "Invalid format");
 ```yaml
 # application.yml
 io.github.raniagus.javalidation:
-  key-notation: property_path # Choose how to serialize field keys (property_path, dot or brackets) 
+  key-notation: property_path # Choose how to serialize field keys (property_path, dots or brackets) 
   use-message-source: true    # Use Spring MessageSource for i18n (default: true)
   flatten-errors: false       # Flatten JSON error structure (default: false)
   
