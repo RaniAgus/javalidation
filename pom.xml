@@ -68,6 +68,16 @@
                 <artifactId>javalidation-jackson</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.github.raniagus</groupId>
+                <artifactId>javalidation-validator</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.raniagus</groupId>
+                <artifactId>javalidation-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- JSpecify -->
             <dependency>
