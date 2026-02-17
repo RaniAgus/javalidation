@@ -56,7 +56,7 @@ For Jackson 3.x serialization support:
 </dependency>
 ```
 
-### Jakarta validation annotation processor (Optional)
+### Jakarta validation annotation processor (Optional - Beta)
 
 For Bean validation processing support:
 

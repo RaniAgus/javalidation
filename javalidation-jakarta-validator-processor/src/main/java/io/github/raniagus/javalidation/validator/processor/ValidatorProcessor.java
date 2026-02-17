@@ -216,19 +216,26 @@ public class ValidatorProcessor extends AbstractProcessor {
     // -- Field writers --
 
     private FieldWriter parseFieldWriter(RecordComponentElement component) {
-        return new FieldWriter(
+        if (component.asType().getKind().isPrimitive()) {
+            return new PrimitiveValidationWriter(
+                    component.getSimpleName().toString(),
+                    parseNullUnsafeWriters(component.asType())
+            );
+        }
+
+        return new ObjectValidationWriter(
                 component.getSimpleName().toString(),
                 parseNullSafeWriter(component.asType()),
                 parseNullUnsafeWriters(component.asType())
         );
     }
 
-    private ValidationWriter.@Nullable NullUnsafeWriter parseValidateAnnotation(@Nullable Element referredType) {
+    private @Nullable NullUnsafeWriter parseValidateAnnotation(@Nullable Element referredType) {
         if (referredType == null || referredType.getAnnotation(Validate.class) == null) {
             return null;
         }
 
-        return new ValidationWriter.Validate(
+        return new NullUnsafeWriter.Validate(
                 getRecordImportName(referredType),
                 getEnclosingClassPrefix(referredType, "."),
                 getRecordName(referredType),
@@ -237,7 +244,7 @@ public class ValidatorProcessor extends AbstractProcessor {
         );
     }
 
-    private ValidationWriter.@Nullable NullUnsafeWriter parseIterable(TypeMirror fieldType) {
+    private @Nullable NullUnsafeWriter parseIterable(TypeMirror fieldType) {
         if (!isIterable(fieldType)) {
             return null;
         }
@@ -254,15 +261,15 @@ public class ValidatorProcessor extends AbstractProcessor {
             return null;
         }
 
-        return new ValidationWriter.IterableWriter(nullSafeWriter, nullUnsafeWriters);
+        return new NullUnsafeWriter.IterableWriter(nullSafeWriter, nullUnsafeWriters);
     }
 
-    private ValidationWriter.@Nullable NullSafeWriter parseNullSafeWriter(TypeMirror type) {
+    private @Nullable NullSafeWriter parseNullSafeWriter(TypeMirror type) {
         return JakartaAnnotationParser.parseNullSafeWriter(new TypeAdapter(type, processingEnv));
     }
 
-    private List<ValidationWriter.NullUnsafeWriter> parseNullUnsafeWriters(TypeMirror type) {
-        return Stream.<ValidationWriter.NullUnsafeWriter>concat(
+    private List<NullUnsafeWriter> parseNullUnsafeWriters(TypeMirror type) {
+        return Stream.<NullUnsafeWriter>concat(
                 JakartaAnnotationParser.parseNullUnsafeWriters(new TypeAdapter(type, processingEnv)),
                 Stream.of(
                         parseValidateAnnotation(getReferredType(type)),

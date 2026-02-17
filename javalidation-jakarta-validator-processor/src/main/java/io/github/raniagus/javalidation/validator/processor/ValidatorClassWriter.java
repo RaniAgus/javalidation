@@ -10,7 +10,7 @@ public record ValidatorClassWriter(
         String recordName, // "RecordName"
         String recordFullName, // "EnclosingClass.RecordName"
         String recordImportName, // "com.example.RecordName" or "com.example.EnclosingClass"
-        List<FieldWriter> fieldWriters
+        List<FieldWriter> objectValidationWriters
 ) implements ClassWriter {
     @Override
     public Stream<String> imports() {
@@ -21,7 +21,7 @@ public record ValidatorClassWriter(
                         "io.github.raniagus.javalidation.validator.Validator",
                         "org.jspecify.annotations.Nullable"
                 ),
-                fieldWriters.stream().flatMap(FieldWriter::imports)
+                objectValidationWriters.stream().flatMap(ValidationWriter::imports)
         );
     }
 
@@ -32,7 +32,7 @@ public record ValidatorClassWriter(
                 public class %s implements Validator<%s%s> {\
                 """.formatted(className, enclosingClassPrefix, recordName));
         out.incrementIndentationLevel();
-        for (FieldWriter writer : fieldWriters) {
+        for (FieldWriter writer : objectValidationWriters) {
             writer.writePropertiesTo(out);
         }
         out.write("");
@@ -44,7 +44,7 @@ public record ValidatorClassWriter(
         out.incrementIndentationLevel();
         out.write("Validation %sValidation = Validation.create();".formatted(out.getVariable()));
         out.write("");
-        for (FieldWriter writer : fieldWriters) {
+        for (ValidationWriter writer : objectValidationWriters) {
             writer.writeBodyTo(out);
         }
         out.write("return %sValidation.finish();".formatted(out.getVariable()));

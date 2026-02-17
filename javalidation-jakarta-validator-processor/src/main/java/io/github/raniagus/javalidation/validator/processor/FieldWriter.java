@@ -4,39 +4,31 @@ import java.util.List;
 import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
 
-public record FieldWriter(
-        String field,
-        ValidationWriter.@Nullable NullSafeWriter nullSafeWriter,
-        List<ValidationWriter.NullUnsafeWriter> nullUnsafeWriters
-) implements WithFieldWriters {
-
-    public Stream<String> imports() {
+public interface FieldWriter extends ValidationWriter {
+    @Override
+    default Stream<String> imports() {
         return Stream.concat(
-                Stream.ofNullable(nullSafeWriter).flatMap(ValidationWriter::imports),
-                nullUnsafeWriters.stream().flatMap(ValidationWriter::imports)
+                Stream.ofNullable(nullSafeWriter()).flatMap(ValidationWriter::imports),
+                nullUnsafeWriters().stream().flatMap(ValidationWriter::imports)
         );
     }
 
-    public void writePropertiesTo(ValidationOutput out) {
+    default void writePropertiesTo(ValidationOutput out) {
+        NullSafeWriter nullSafeWriter = nullSafeWriter();
         if (nullSafeWriter != null) {
-            nullSafeWriter.writePropertiesTo(out, field);
-        }
-        nullUnsafeWriters.forEach(writer -> writer.writePropertiesTo(out, field));
-    }
-
-    public void writeBodyTo(ValidationOutput out) {
-        if (nullSafeWriter == null && nullUnsafeWriters.isEmpty()) {
-            return;
+            nullSafeWriter.writePropertiesTo(out, field());
         }
 
-        out.write("var %s = %s.%s();".formatted(field, out.getVariable(), field));
-        out.registerVariable(field);
-        out.write("var %sValidation = Validation.create();".formatted(out.getVariable()));
-
-        writeNestedFieldsTo(field, nullSafeWriter, nullUnsafeWriters, out);
-
-        out.removeVariable();
-        out.write("%1sValidation.addAll(%2$sValidation.finish(), new Object[]{\"%2$s\"});".formatted(out.getVariable(), field));
-        out.write("");
+        for (NullUnsafeWriter writer : nullUnsafeWriters()) {
+            writer.writePropertiesTo(out, field());
+        }
     }
+
+    String field();
+
+    default @Nullable NullSafeWriter nullSafeWriter() {
+        return null;
+    }
+
+    List<NullUnsafeWriter> nullUnsafeWriters();
 }

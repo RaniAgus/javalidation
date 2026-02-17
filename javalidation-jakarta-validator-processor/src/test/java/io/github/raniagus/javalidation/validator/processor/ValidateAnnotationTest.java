@@ -186,7 +186,7 @@ class ValidateAnnotationTest {
 
                                 var address = root.address();
                                 var addressValidation = Validation.create();
-                                if (java.util.Objects.nonNull(address)) {
+                                if (address != null) {
                                     addressValidation.addAll(addressValidator.validate(address));
                                 }
                                 rootValidation.addAll(addressValidation.finish(), new Object[]{"address"});
@@ -326,7 +326,7 @@ class ValidateAnnotationTest {
 
                                 var address = root.address();
                                 var addressValidation = Validation.create();
-                                if (java.util.Objects.nonNull(address)) {
+                                if (address != null) {
                                     addressValidation.addAll(addressValidator.validate(address));
                                 }
                                 rootValidation.addAll(addressValidation.finish(), new Object[]{"address"});

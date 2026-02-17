@@ -5,10 +5,25 @@ import static com.google.testing.compile.Compiler.javac;
 
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
+import java.util.Set;
 import javax.tools.JavaFileObject;
 import org.junit.jupiter.api.Test;
 
 public class JakartaValidationsTest {
+    enum Imports {
+        OBJECTS("import java.util.Objects;\n"),
+        VALIDATION_UTILS("import io.github.raniagus.javalidation.validator.ValidatorUtils;\n");
+
+        final String value;
+
+        Imports(String value) {
+            this.value = value;
+        }
+
+        public String getValue(Imports... imports) {
+            return Set.of(imports).contains(this) ? value : "";
+        }
+    }
 
     // ─── helpers ────────────────────────────────────────────────────────────
 
@@ -32,18 +47,14 @@ public class JakartaValidationsTest {
                 .compile(source);
     }
 
-    private static JavaFileObject expectedValidator(String body) {
-        return expectedValidator(body, false);
-    }
-
-    private static JavaFileObject expectedValidator(String body, boolean withValidatorUtils) {
+    private static JavaFileObject expectedValidator(String body, Imports... imports) {
         return JavaFileObjects.forSourceString("test.TestRecordValidator", """
                 package test;
                 
                 import io.github.raniagus.javalidation.Validation;
                 import io.github.raniagus.javalidation.ValidationErrors;
                 import io.github.raniagus.javalidation.validator.Validator;
-                %simport javax.annotation.processing.Generated;
+                %s%simport javax.annotation.processing.Generated;
                 import org.jspecify.annotations.Nullable;
                 
                 @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
@@ -55,9 +66,11 @@ public class JakartaValidationsTest {
                         return rootValidation.finish();
                     }
                 }
-                """.formatted(withValidatorUtils ? """
-                import io.github.raniagus.javalidation.validator.ValidatorUtils;
-                """ : "", body));
+                """.formatted(
+                Imports.OBJECTS.getValue(imports),
+                Imports.VALIDATION_UTILS.getValue(imports),
+                body
+        ));
     }
 
     // ─── @NotNull ────────────────────────────────────────────────────────────
@@ -69,7 +82,7 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                         var value = root.value();
                         var valueValidation = Validation.create();
-                        if (java.util.Objects.isNull(value)) {
+                        if (value == null) {
                             valueValidation.addRootError("must not be null");
                         }
                         rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
@@ -85,7 +98,7 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                         var value = root.value();
                         var valueValidation = Validation.create();
-                        if (java.util.Objects.isNull(value) || value.isEmpty()) {
+                        if (value == null || value.isEmpty()) {
                             valueValidation.addRootError("must not be empty");
                         }
                         rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
@@ -101,7 +114,7 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                         var value = root.value();
                         var valueValidation = Validation.create();
-                        if (java.util.Objects.isNull(value) || value.isBlank()) {
+                        if (value == null || value.isBlank()) {
                             valueValidation.addRootError("must not be blank");
                         }
                         rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
@@ -117,7 +130,7 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                         var value = root.value();
                         var valueValidation = Validation.create();
-                        if (java.util.Objects.nonNull(value)) {
+                        if (value != null) {
                             if (value.length() < 1 || value.length() > 10) {
                                 valueValidation.addRootError("size must be between {0} and {1}", 1, 10);
                             }
@@ -133,7 +146,7 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                         var value = root.value();
                         var valueValidation = Validation.create();
-                        if (java.util.Objects.nonNull(value)) {
+                        if (value != null) {
                             if (value.length() < 1 || value.length() > 2147483647) {
                                 valueValidation.addRootError("size must be between {0} and {1}", 1, 2147483647);
                             }
@@ -149,7 +162,7 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                         var value = root.value();
                         var valueValidation = Validation.create();
-                        if (java.util.Objects.nonNull(value)) {
+                        if (value != null) {
                             if (value.length() < 0 || value.length() > 10) {
                                 valueValidation.addRootError("size must be between {0} and {1}", 0, 10);
                             }
@@ -165,7 +178,7 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                     var value = root.value();
                     var valueValidation = Validation.create();
-                    if (java.util.Objects.nonNull(value)) {
+                    if (value != null) {
                         if (value.size() < 1 || value.size() > 10) {
                             valueValidation.addRootError("size must be between {0} and {1}", 1, 10);
                         }
@@ -181,7 +194,7 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                     var value = root.value();
                     var valueValidation = Validation.create();
-                    if (java.util.Objects.nonNull(value)) {
+                    if (value != null) {
                         if (value.size() < 1 || value.size() > 10) {
                             valueValidation.addRootError("size must be between {0} and {1}", 1, 10);
                         }
@@ -199,13 +212,13 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                         var value = root.value();
                         var valueValidation = Validation.create();
-                        if (java.util.Objects.nonNull(value)) {
-                            if (!java.util.Objects.toString(value).matches("^[^@]+@[^@]+\\\\.[^@]+$")) {
+                        if (value != null) {
+                            if (!Objects.toString(value).matches("^[^@]+@[^@]+\\\\.[^@]+$")) {
                                 valueValidation.addRootError("must be a well-formed email address");
                             }
                         }
                         rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """));
+                        """, Imports.OBJECTS));
     }
 
     // ─── @Min / @Max ─────────────────────────────────────────────────────────
@@ -217,10 +230,8 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                         var value = root.value();
                         var valueValidation = Validation.create();
-                        if (java.util.Objects.nonNull(value)) {
-                            if (!(value >= 10)) {
-                                valueValidation.addRootError("must be greater than or equal to {0}", 10);
-                            }
+                        if (!(value >= 10)) {
+                            valueValidation.addRootError("must be greater than or equal to {0}", 10);
                         }
                         rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
                         """));
@@ -233,7 +244,7 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                         var value = root.value();
                         var valueValidation = Validation.create();
-                        if (java.util.Objects.nonNull(value)) {
+                        if (value != null) {
                             if (!(value <= 100)) {
                                 valueValidation.addRootError("must be less than or equal to {0}", 100);
                             }
@@ -249,10 +260,8 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                         var value = root.value();
                         var valueValidation = Validation.create();
-                        if (java.util.Objects.nonNull(value)) {
-                            if (!(value <= 100)) {
-                                valueValidation.addRootError("must be less than or equal to {0}", 100);
-                            }
+                        if (!(value <= 100)) {
+                            valueValidation.addRootError("must be less than or equal to {0}", 100);
                         }
                         rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
                         """));
@@ -267,7 +276,7 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                         var value = root.value();
                         var valueValidation = Validation.create();
-                        if (java.util.Objects.nonNull(value)) {
+                        if (value != null) {
                             if (!(value > 0)) {
                                 valueValidation.addRootError("must be greater than 0");
                             }
@@ -283,10 +292,8 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                         var value = root.value();
                         var valueValidation = Validation.create();
-                        if (java.util.Objects.nonNull(value)) {
-                            if (!(value > 0)) {
-                                valueValidation.addRootError("must be greater than 0");
-                            }
+                        if (!(value > 0)) {
+                            valueValidation.addRootError("must be greater than 0");
                         }
                         rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
                         """));
@@ -299,7 +306,7 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                         var value = root.value();
                         var valueValidation = Validation.create();
-                        if (java.util.Objects.nonNull(value)) {
+                        if (value != null) {
                             if (!(value >= 0)) {
                                 valueValidation.addRootError("must be greater than or equal to 0");
                             }
@@ -315,10 +322,8 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                         var value = root.value();
                         var valueValidation = Validation.create();
-                        if (java.util.Objects.nonNull(value)) {
-                            if (!(value >= 0)) {
-                                valueValidation.addRootError("must be greater than or equal to 0");
-                            }
+                        if (!(value >= 0)) {
+                            valueValidation.addRootError("must be greater than or equal to 0");
                         }
                         rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
                         """));
@@ -333,7 +338,7 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                         var value = root.value();
                         var valueValidation = Validation.create();
-                        if (java.util.Objects.nonNull(value)) {
+                        if (value != null) {
                             if (!(value < 0)) {
                                 valueValidation.addRootError("must be less than 0");
                             }
@@ -349,10 +354,8 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                         var value = root.value();
                         var valueValidation = Validation.create();
-                        if (java.util.Objects.nonNull(value)) {
-                            if (!(value < 0)) {
-                                valueValidation.addRootError("must be less than 0");
-                            }
+                        if (!(value < 0)) {
+                            valueValidation.addRootError("must be less than 0");
                         }
                         rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
                         """));
@@ -365,7 +368,7 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                         var value = root.value();
                         var valueValidation = Validation.create();
-                        if (java.util.Objects.nonNull(value)) {
+                        if (value != null) {
                             if (!(value <= 0)) {
                                 valueValidation.addRootError("must be less than or equal to 0");
                             }
@@ -381,10 +384,8 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                         var value = root.value();
                         var valueValidation = Validation.create();
-                        if (java.util.Objects.nonNull(value)) {
-                            if (!(value <= 0)) {
-                                valueValidation.addRootError("must be less than or equal to 0");
-                            }
+                        if (!(value <= 0)) {
+                            valueValidation.addRootError("must be less than or equal to 0");
                         }
                         rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
                         """));
@@ -397,13 +398,13 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                     var value = root.value();
                     var valueValidation = Validation.create();
-                    if (java.util.Objects.nonNull(value)) {
+                    if (value != null) {
                         if (!(ValidatorUtils.toInstant(value).isBefore(java.time.Instant.now()) == true)) {
                             valueValidation.addRootError("must be a past date");
                         }
                     }
                     rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """, true));
+                    """, Imports.VALIDATION_UTILS));
     }
 
     @Test
@@ -413,13 +414,13 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                     var value = root.value();
                     var valueValidation = Validation.create();
-                    if (java.util.Objects.nonNull(value)) {
+                    if (value != null) {
                         if (!(ValidatorUtils.toInstant(value).isAfter(java.time.Instant.now()) == false)) {
                             valueValidation.addRootError("must be a date in the past or in the present");
                         }
                     }
                     rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """, true));
+                    """, Imports.VALIDATION_UTILS));
     }
 
     @Test
@@ -429,13 +430,13 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                     var value = root.value();
                     var valueValidation = Validation.create();
-                    if (java.util.Objects.nonNull(value)) {
+                    if (value != null) {
                         if (!(ValidatorUtils.toInstant(value).isAfter(java.time.Instant.now()) == true)) {
                             valueValidation.addRootError("must be a future date");
                         }
                     }
                     rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """, true));
+                    """, Imports.VALIDATION_UTILS));
     }
 
     @Test
@@ -445,13 +446,13 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                     var value = root.value();
                     var valueValidation = Validation.create();
-                    if (java.util.Objects.nonNull(value)) {
+                    if (value != null) {
                         if (!(ValidatorUtils.toInstant(value).isBefore(java.time.Instant.now()) == false)) {
                             valueValidation.addRootError("must be a date in the present or in the future");
                         }
                     }
                     rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """, true));
+                    """, Imports.VALIDATION_UTILS));
     }
 
 // ─── @Pattern ─────────────────────────────────────────────────────────────
@@ -463,13 +464,13 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                     var value = root.value();
                     var valueValidation = Validation.create();
-                    if (java.util.Objects.nonNull(value)) {
-                        if (!java.util.Objects.toString(value).matches("^[a-z]+$")) {
+                    if (value != null) {
+                        if (!Objects.toString(value).matches("^[a-z]+$")) {
                             valueValidation.addRootError("must match \\"{0}\\"", "^[a-z]+$");
                         }
                     }
                     rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """));
+                    """, Imports.OBJECTS));
     }
 
     // ─── @DecimalMin / @DecimalMax ────────────────────────────────────────────
@@ -481,13 +482,13 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                     var value = root.value();
                     var valueValidation = Validation.create();
-                    if (java.util.Objects.nonNull(value)) {
+                    if (value != null) {
                         if (!(ValidatorUtils.compare(value, "10.5") >= 0)) {
                             valueValidation.addRootError("must be greater than or equal to {0}", "10.5");
                         }
                     }
                     rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """, true));
+                    """, Imports.VALIDATION_UTILS));
     }
 
     @Test
@@ -497,13 +498,13 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                     var value = root.value();
                     var valueValidation = Validation.create();
-                    if (java.util.Objects.nonNull(value)) {
+                    if (value != null) {
                         if (!(ValidatorUtils.compare(value, "10.5") > 0)) {
                             valueValidation.addRootError("must be greater than {0}", "10.5");
                         }
                     }
                     rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """, true));
+                    """, Imports.VALIDATION_UTILS));
     }
 
     @Test
@@ -513,13 +514,13 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                     var value = root.value();
                     var valueValidation = Validation.create();
-                    if (java.util.Objects.nonNull(value)) {
+                    if (value != null) {
                         if (!(ValidatorUtils.compare(value, "10.5") <= 0)) {
                             valueValidation.addRootError("must be less than or equal to {0}", "10.5");
                         }
                     }
                     rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """, true));
+                    """, Imports.VALIDATION_UTILS));
     }
 
     @Test
@@ -529,13 +530,13 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                     var value = root.value();
                     var valueValidation = Validation.create();
-                    if (java.util.Objects.nonNull(value)) {
+                    if (value != null) {
                         if (!(ValidatorUtils.compare(value, "10.5") < 0)) {
                             valueValidation.addRootError("must be less than {0}", "10.5");
                         }
                     }
                     rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """, true));
+                    """, Imports.VALIDATION_UTILS));
     }
 
     // ─── @Digits ──────────────────────────────────────────────────────────────
@@ -547,13 +548,13 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                     var value = root.value();
                     var valueValidation = Validation.create();
-                    if (java.util.Objects.nonNull(value)) {
-                        if (!java.util.Objects.toString(value).matches("^-?\\\\d{0,5}(\\\\.\\\\d{0,2})?$")) {
+                    if (value != null) {
+                        if (!Objects.toString(value).matches("^-?\\\\d{0,5}(\\\\.\\\\d{0,2})?$")) {
                             valueValidation.addRootError("numeric value out of bounds ({0} digits, {1} decimal digits expected)", 5, 2);
                         }
                     }
                     rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """));
+                    """, Imports.OBJECTS));
     }
 
     // ─── combinations ────────────────────────────────────────────────────────
@@ -565,10 +566,10 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                     var value = root.value();
                     var valueValidation = Validation.create();
-                    if (java.util.Objects.isNull(value)) {
+                    if (value == null) {
                         valueValidation.addRootError("must not be null");
                     }
-                    if (java.util.Objects.nonNull(value)) {
+                    if (value != null) {
                         if (value.length() < 3 || value.length() > 10) {
                             valueValidation.addRootError("size must be between {0} and {1}", 3, 10);
                         }
@@ -584,10 +585,10 @@ public class JakartaValidationsTest {
                 .hasSourceEquivalentTo(expectedValidator("""
                     var value = root.value();
                     var valueValidation = Validation.create();
-                    if (java.util.Objects.isNull(value)) {
+                    if (value == null) {
                         valueValidation.addRootError("must not be null");
                     }
-                    if (java.util.Objects.nonNull(value)) {
+                    if (value != null) {
                         if (!(value >= 10)) {
                             valueValidation.addRootError("must be greater than or equal to {0}", 10);
                         }

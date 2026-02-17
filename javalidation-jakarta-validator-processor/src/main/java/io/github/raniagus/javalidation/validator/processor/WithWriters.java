@@ -3,12 +3,11 @@ package io.github.raniagus.javalidation.validator.processor;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-public interface WithFieldWriters {
+public interface WithWriters {
 
     default void writeNestedFieldsTo(
-            String field,
-            ValidationWriter.@Nullable NullSafeWriter nullSafeWriter,
-            List<ValidationWriter.NullUnsafeWriter> nullUnsafeWriters,
+            @Nullable NullSafeWriter nullSafeWriter,
+            List<NullUnsafeWriter> nullUnsafeWriters,
             ValidationOutput out
     ) {
         if (nullSafeWriter != null) {
@@ -16,7 +15,7 @@ public interface WithFieldWriters {
         }
         if (!nullUnsafeWriters.isEmpty()) {
             out.write("""
-                if (java.util.Objects.nonNull(%s)) {\
+                if (%s != null) {\
                 """.formatted(out.getVariable()));
 
             out.incrementIndentationLevel();
