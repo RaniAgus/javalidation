@@ -1,6 +1,8 @@
 package io.github.raniagus.javalidation.processor;
 
+import java.util.List;
 import java.util.stream.Stream;
+import org.jspecify.annotations.Nullable;
 
 public sealed interface ValidationWriter {
     default Stream<String> imports() {
@@ -155,7 +157,7 @@ public sealed interface ValidationWriter {
         @Override
         public void writePropertiesTo(ValidationOutput out, String field) {
             out.write("""
-                    private final Validator<%s%s> %s = new %s();
+                    private final Validator<%s%s> %s = new %s();\
                     """.formatted(
                             referredTypeEnclosingClassPrefix,
                             referredTypeName,
@@ -173,6 +175,51 @@ public sealed interface ValidationWriter {
 
         private String validatorProperty(String field) {
             return field + "Validator";
+        }
+    }
+
+    record IterableWriter(
+            ValidationWriter.@Nullable NullSafeWriter nullSafeWriter,
+            List<NullUnsafeWriter> nullUnsafeWriters
+    ) implements NullUnsafeWriter, WithFieldWriters {
+
+        public Stream<String> imports() {
+            return Stream.concat(
+                    Stream.ofNullable(nullSafeWriter).flatMap(ValidationWriter::imports),
+                    nullUnsafeWriters.stream().flatMap(ValidationWriter::imports)
+            );
+        }
+
+        @Override
+        public void writePropertiesTo(ValidationOutput out, String field) {
+            if (nullSafeWriter != null) {
+                nullSafeWriter.writePropertiesTo(out, field + "Item");
+            }
+            nullUnsafeWriters.forEach(writer -> writer.writePropertiesTo(out, field + "Item"));
+        }
+
+        @Override
+        public void writeBodyTo(ValidationOutput out) {
+            if (nullSafeWriter == null && nullUnsafeWriters.isEmpty()) {
+                return;
+            }
+
+            out.write("int %sIndex = 0;".formatted(out.getVariable()));
+            out.write("for (var %sItem : %s) {".formatted(out.getVariable(), out.getVariable()));
+            out.incrementIndentationLevel();
+
+            out.write("var %sItemValidation = Validation.create();".formatted(out.getVariable()));
+
+            String field = out.getVariable();
+            out.registerVariable(field + "Item");
+            writeNestedFieldsTo(field, nullSafeWriter, nullUnsafeWriters, out);
+            out.removeVariable();
+
+            out.write("%sValidation.addAll(%sItemValidation.finish(), new Object[]{%sIndex++});".formatted(field, out.getVariable(), field));
+
+            out.decrementIndentationLevel();
+            out.write("}");
+            out.write("");
         }
     }
 }

@@ -38,8 +38,7 @@ public class JavalidationProperties {
 
     /**
      * Whether to use compile-time-generated {@link io.github.raniagus.javalidation.validator.Validators} when using
-     * {@link jakarta.validation.Valid} annotation. When true, make sure that {@code key-notation} is set to the same
-     * value as the one passed to the compiler argument {@code -Aio.github.raniagus.javalidation.key-notation}.
+     * {@link jakarta.validation.Valid} annotation.
      * This feature is disabled by default.
      */
     private boolean useStaticValidators = false;

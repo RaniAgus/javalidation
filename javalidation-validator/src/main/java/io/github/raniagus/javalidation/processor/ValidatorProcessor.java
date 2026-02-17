@@ -1,12 +1,6 @@
 package io.github.raniagus.javalidation.processor;
 
-import static io.github.raniagus.javalidation.processor.JakartaAnnotationParser.*;
-
 import io.github.raniagus.javalidation.annotation.Validate;
-import io.github.raniagus.javalidation.format.BracketNotationFormatter;
-import io.github.raniagus.javalidation.format.PropertyPathNotationFormatter;
-import io.github.raniagus.javalidation.format.DotNotationFormatter;
-import io.github.raniagus.javalidation.format.FieldKeyFormatter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,6 +18,9 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import org.jspecify.annotations.Nullable;
@@ -31,30 +28,20 @@ import org.jspecify.annotations.Nullable;
 @SupportedAnnotationTypes("io.github.raniagus.javalidation.annotation.Validate")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class ValidatorProcessor extends AbstractProcessor {
-    private static final String OPTIONS_PREFIX = "io.github.raniagus.javalidation.";
-
     private final List<ValidatorClassWriter> WRITERS = Collections.synchronizedList(new ArrayList<>());
     private boolean generated = false;
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        String keyNotation = processingEnv.getOptions().getOrDefault(OPTIONS_PREFIX + "key-notation", "property_path");
-        FieldKeyFormatter fieldKeyFormatter = switch (keyNotation) {
-            case "property_path" -> new PropertyPathNotationFormatter();
-            case "brackets" -> new BracketNotationFormatter();
-            case "dots" -> new DotNotationFormatter();
-            default -> throw new IllegalArgumentException("Invalid key notation: " + keyNotation);
-        };
-
         List<ValidatorClassWriter> classWriters = parseClassWriters(roundEnv);
 
         for (ValidatorClassWriter classWriter : classWriters) {
-            writeClass(classWriter, fieldKeyFormatter);
+            writeClass(classWriter);
             WRITERS.add(classWriter);
         }
 
         if (roundEnv.processingOver() && !generated) {
-            writeClass(new ValidatorsClassWriter(WRITERS), fieldKeyFormatter);
+            writeClass(new ValidatorsClassWriter(WRITERS));
             generated = true;
         }
 
@@ -63,11 +50,11 @@ public class ValidatorProcessor extends AbstractProcessor {
 
     // -- Writing --
 
-    private void writeClass(ClassWriter classWriter, FieldKeyFormatter formatter) {
+    private void writeClass(ClassWriter classWriter) {
         try {
             JavaFileObject file = processingEnv.getFiler().createSourceFile(classWriter.fullName());
             try (Writer writer = file.openWriter()) {
-                classWriter.write(new ValidationOutput(writer, formatter));
+                classWriter.write(new ValidationOutput(writer));
             }
         } catch (Exception e) {
             processingEnv.getMessager().printMessage(
@@ -125,46 +112,64 @@ public class ValidatorProcessor extends AbstractProcessor {
     private FieldWriter parseFieldWriter(RecordComponentElement component) {
         return new FieldWriter(
                 component.getSimpleName().toString(),
-                parseNullSafeWriters(component).filter(Objects::nonNull).findFirst().orElse(null),
-                parseNullUnsafeWriters(component).filter(Objects::nonNull).toList()
+                parseNullSafeWriters(component),
+                parseNullUnsafeWriters(component)
         );
     }
 
-    private Stream<ValidationWriter.@Nullable NullSafeWriter> parseNullSafeWriters(RecordComponentElement component) {
-        return Stream.<ValidationWriter.@Nullable NullSafeWriter>of(
-                parseNotBlankAnnotation(component),
-                parseNotEmptyAnnotation(component),
-                parseNotNullAnnotation(component)
-        );
+    private ValidationWriter.@Nullable NullSafeWriter parseNullSafeWriters(RecordComponentElement component) {
+        return JakartaAnnotationParser.parseNullSafeWriters(component.getAccessor());
     }
 
-    private Stream<ValidationWriter.@Nullable NullUnsafeWriter> parseNullUnsafeWriters(RecordComponentElement component) {
-        return Stream.<ValidationWriter.@Nullable NullUnsafeWriter>of(
-                parseSizeAnnotation(component),
-                parseMinAnnotation(component),
-                parseMaxAnnotation(component),
-                parsePositiveAnnotation(component),
-                parsePositiveOrZeroAnnotation(component),
-                parseNegativeAnnotation(component),
-                parseNegativeOrZeroAnnotation(component),
-                parseEmailAnnotation(component),
-                parsePatternAnnotation(component),
-                parseValidatorAnnotation(component)
-        );
+    private List<ValidationWriter.NullUnsafeWriter> parseNullUnsafeWriters(RecordComponentElement component) {
+        return Stream.<ValidationWriter.NullUnsafeWriter>concat(
+                JakartaAnnotationParser.parseNullUnsafeWriters(component.getAccessor()),
+                Stream.of(
+                        parseValidateAnnotation(getReferredType(component)),
+                        parseIterable(component.getAccessor().getReturnType())
+                ).filter(Objects::nonNull)
+        ).toList();
     }
 
-    private ValidationWriter.@Nullable NullUnsafeWriter parseValidatorAnnotation(RecordComponentElement component) {
-        TypeElement referredType = getReferredType(component);
+    private ValidationWriter.@Nullable NullUnsafeWriter parseValidateAnnotation(@Nullable Element referredType) {
         if (referredType == null || referredType.getAnnotation(Validate.class) == null) {
             return null;
         }
 
-        return new ValidationWriter.Validator(
+        return new ValidationWriter.Validate(
                 getRecordImportName(referredType),
                 getEnclosingClassPrefix(referredType, "."),
                 getRecordName(referredType),
                 getValidatorName(referredType),
                 getValidatorFullName(referredType)
+        );
+    }
+
+    private ValidationWriter.@Nullable NullUnsafeWriter parseIterable(TypeMirror fieldType) {
+        if (!isIterable(fieldType)) {
+            return null;
+        }
+
+        var elementType = getIterableElementType(fieldType);
+        if (elementType == null) {
+            return null;
+        }
+
+        // Parse type-use annotations directly from the DeclaredType (which implements AnnotatedConstruct)
+        var nullSafeWriters = JakartaAnnotationParser.parseNullSafeWriters(elementType);
+
+        // For @Validate annotation, we need the TypeElement since it's a declaration annotation
+        TypeElement elementTypeElement = asTypeElement(elementType);
+
+        return new ValidationWriter.IterableWriter(
+                nullSafeWriters,
+                Stream.concat(
+                    JakartaAnnotationParser.parseNullUnsafeWriters(elementType),
+                    Stream.of(
+                            parseValidateAnnotation(elementTypeElement),
+                            parseIterable(elementType)
+                    ).filter(Objects::nonNull)
+                ).toList()
         );
     }
 
@@ -180,11 +185,11 @@ public class ValidatorProcessor extends AbstractProcessor {
 
     // -- Utility functions --
 
-    private static String getValidatorName(TypeElement recordElement) {
+    private static String getValidatorName(Element recordElement) {
         return getEnclosingClassPrefix(recordElement, "$") + getRecordName(recordElement) + "Validator";
     }
 
-    private static String getEnclosingClassPrefix(TypeElement recordElement, String prefix) {
+    private static String getEnclosingClassPrefix(Element recordElement, String prefix) {
         Element enclosingElement = recordElement.getEnclosingElement();
         if (isEnclosingClass(enclosingElement)) {
             return enclosingElement.getSimpleName() + prefix;
@@ -192,7 +197,7 @@ public class ValidatorProcessor extends AbstractProcessor {
         return "";
     }
 
-    private static String getValidatorFullName(TypeElement recordElement) {
+    private static String getValidatorFullName(Element recordElement) {
         Element enclosingElement = recordElement.getEnclosingElement();
         if (isEnclosingClass(enclosingElement)) {
             return enclosingElement + "$" + getRecordName(recordElement) + "Validator";
@@ -201,7 +206,7 @@ public class ValidatorProcessor extends AbstractProcessor {
         return recordElement + "Validator";
     }
 
-    private static String getRecordName(TypeElement recordElement) {
+    private static String getRecordName(Element recordElement) {
         return recordElement.getSimpleName().toString();
     }
 
@@ -209,12 +214,12 @@ public class ValidatorProcessor extends AbstractProcessor {
         return recordElement.getQualifiedName().toString();
     }
 
-    private static String getRecordImportName(TypeElement recordElement) {
+    private static String getRecordImportName(Element recordElement) {
         Element enclosingElement = recordElement.getEnclosingElement();
         if (isEnclosingClass(enclosingElement)) {
             return enclosingElement.toString();
         }
-        return recordElement.getQualifiedName().toString();
+        return recordElement.toString();
     }
 
     private static boolean isEnclosingClass(Element enclosingElement) {
@@ -222,6 +227,46 @@ public class ValidatorProcessor extends AbstractProcessor {
                || enclosingElement.getKind() == ElementKind.RECORD
                || enclosingElement.getKind() == ElementKind.INTERFACE
                || enclosingElement.getKind() == ElementKind.ENUM;
+    }
+
+    private boolean isIterable(TypeMirror type) {
+        Types types = processingEnv.getTypeUtils();
+        Elements elements = processingEnv.getElementUtils();
+
+        TypeElement iterableElement = elements.getTypeElement("java.lang.Iterable");
+        TypeMirror iterableType = types.erasure(iterableElement.asType());
+
+        return types.isAssignable(types.erasure(type), iterableType);
+    }
+
+    private @Nullable DeclaredType getIterableElementType(TypeMirror type) {
+        if (!(type instanceof DeclaredType declared)) {
+            return null;
+        }
+
+        List<? extends TypeMirror> args = declared.getTypeArguments();
+        if (args.isEmpty()) {
+            return null;
+        }
+
+        if (!(args.getFirst() instanceof DeclaredType first)) {
+            return null;
+        }
+
+        return first;
+    }
+
+    private @Nullable TypeElement asTypeElement(TypeMirror mirror) {
+        if (!(mirror instanceof DeclaredType declared)) {
+            return null;
+        }
+
+        Element el = declared.asElement();
+        if (!(el instanceof TypeElement te)) {
+            return null;
+        }
+
+        return te;
     }
 
 }

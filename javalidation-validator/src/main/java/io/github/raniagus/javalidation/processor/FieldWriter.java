@@ -8,7 +8,7 @@ public record FieldWriter(
         String field,
         ValidationWriter.@Nullable NullSafeWriter nullSafeWriter,
         List<ValidationWriter.NullUnsafeWriter> nullUnsafeWriters
-) {
+) implements WithFieldWriters {
 
     public Stream<String> imports() {
         return Stream.concat(
@@ -28,23 +28,13 @@ public record FieldWriter(
         if (nullSafeWriter == null && nullUnsafeWriters.isEmpty()) {
             return;
         }
+
         out.write("var %s = %s.%s();".formatted(field, out.getVariable(), field));
-        out.write("var %sValidation = Validation.create();".formatted(field));
         out.registerVariable(field);
-        if (nullSafeWriter != null) {
-            nullSafeWriter.writeBodyTo(out);
-        }
-        if (!nullUnsafeWriters.isEmpty()) {
-            out.write("""
-                if (%s != null) {\
-                """.formatted(out.getVariable()));
+        out.write("var %sValidation = Validation.create();".formatted(out.getVariable()));
 
-            out.incrementIndentationLevel();
-            nullUnsafeWriters.forEach(writer -> writer.writeBodyTo(out));
-            out.decrementIndentationLevel();
+        writeNestedFieldsTo(field, nullSafeWriter, nullUnsafeWriters, out);
 
-            out.write("}");
-        }
         out.removeVariable();
         out.write("%1sValidation.addAll(%2$sValidation.finish(), new Object[]{\"%2$s\"});".formatted(out.getVariable(), field));
         out.write("");

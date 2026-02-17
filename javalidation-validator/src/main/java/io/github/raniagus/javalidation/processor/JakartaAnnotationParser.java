@@ -12,8 +12,11 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
+import java.lang.annotation.Annotation;
 import java.util.Map;
-import javax.lang.model.element.RecordComponentElement;
+import java.util.Objects;
+import java.util.stream.Stream;
+import javax.lang.model.AnnotatedConstruct;
 import org.jspecify.annotations.Nullable;
 
 public final class JakartaAnnotationParser {
@@ -34,128 +37,171 @@ public final class JakartaAnnotationParser {
 
     private JakartaAnnotationParser() {}
 
-    public static ValidationWriter.@Nullable NullSafeWriter parseNotNullAnnotation(RecordComponentElement component) {
-        NotNull annotation = component.getAccessor().getAnnotation(NotNull.class);
-        if (annotation == null) {
-            return null;
-        }
-
-        return new ValidationWriter.NotNull(resolveMessage(annotation.message()));
+    public static ValidationWriter.@Nullable NullSafeWriter parseNullSafeWriters(AnnotatedConstruct annotated) {
+        return Stream.of(
+                parseNotBlankAnnotation(annotated),
+                parseNotEmptyAnnotation(annotated),
+                parseNotNullAnnotation(annotated)
+        ).filter(Objects::nonNull).findFirst().orElse(null);
     }
 
-    public static ValidationWriter.@Nullable NullSafeWriter parseNotEmptyAnnotation(RecordComponentElement component) {
-        NotEmpty annotation = component.getAccessor().getAnnotation(NotEmpty.class);
-        if (annotation == null) {
-            return null;
-        }
-
-        return new ValidationWriter.NullSafeCondition("isEmpty", resolveMessage(annotation.message()));
+    public static Stream<ValidationWriter.NullUnsafeWriter> parseNullUnsafeWriters(AnnotatedConstruct annotated) {
+        return Stream.<ValidationWriter.NullUnsafeWriter>of(
+                parseSizeAnnotation(annotated),
+                parseMinAnnotation(annotated),
+                parseMaxAnnotation(annotated),
+                parsePositiveAnnotation(annotated),
+                parsePositiveOrZeroAnnotation(annotated),
+                parseNegativeAnnotation(annotated),
+                parseNegativeOrZeroAnnotation(annotated),
+                parseEmailAnnotation(annotated),
+                parsePatternAnnotation(annotated)
+        ).filter(Objects::nonNull);
     }
 
-    public static ValidationWriter.@Nullable NullSafeWriter parseNotBlankAnnotation(RecordComponentElement componentElement) {
-        NotBlank annotation = componentElement.getAccessor().getAnnotation(NotBlank.class);
-        if (annotation == null) {
+    public static ValidationWriter.@Nullable NullSafeWriter parseNotNullAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, NotNull.class);
+        if (annotationMirror == null) {
             return null;
         }
 
-        return new ValidationWriter.NullSafeCondition("isBlank", resolveMessage(annotation.message()));
+        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.NotNull.message}");
+        return new ValidationWriter.NotNull(resolveMessage(message));
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseSizeAnnotation(RecordComponentElement component) {
-        Size annotation = component.getAccessor().getAnnotation(Size.class);
-        if (annotation == null) {
+    public static ValidationWriter.@Nullable NullSafeWriter parseNotEmptyAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, NotEmpty.class);
+        if (annotationMirror == null) {
             return null;
         }
+
+        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.NotEmpty.message}");
+        return new ValidationWriter.NullSafeCondition("isEmpty", resolveMessage(message));
+    }
+
+    public static ValidationWriter.@Nullable NullSafeWriter parseNotBlankAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, NotBlank.class);
+        if (annotationMirror == null) {
+            return null;
+        }
+
+        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.NotBlank.message}");
+        return new ValidationWriter.NullSafeCondition("isBlank", resolveMessage(message));
+    }
+
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseSizeAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, Size.class);
+        if (annotationMirror == null) {
+            return null;
+        }
+
+        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.Size.message}");
+        int min = getAnnotationIntValue(annotationMirror, "min", 0);
+        int max = getAnnotationIntValue(annotationMirror, "max", Integer.MAX_VALUE);
 
         return new ValidationWriter.Size(
                 "length", // TODO: Add iterables support
-                resolveMessage(annotation.message(), "{min}", "{max}"),
-                annotation.min(),
-                annotation.max()
+                resolveMessage(message, "{min}", "{max}"),
+                min,
+                max
         );
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseMinAnnotation(RecordComponentElement component) {
-        Min annotation = component.getAccessor().getAnnotation(Min.class);
-        if (annotation == null) {
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseMinAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, Min.class);
+        if (annotationMirror == null) {
             return null;
         }
+
+        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.Min.message}");
+        long value = getAnnotationLongValue(annotationMirror, "value", 0);
 
         return new ValidationWriter.MoreThanOrEqual(
-                resolveMessage(annotation.message(), "{value}"),
-                annotation.value()
+                resolveMessage(message, "{value}"),
+                value
         );
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseMaxAnnotation(RecordComponentElement component) {
-        Max annotation = component.getAccessor().getAnnotation(Max.class);
-        if (annotation == null) {
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseMaxAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, Max.class);
+        if (annotationMirror == null) {
             return null;
         }
+
+        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.Max.message}");
+        long value = getAnnotationLongValue(annotationMirror, "value", 0);
 
         return new ValidationWriter.LessThanOrEqual(
-                resolveMessage(annotation.message(), "{value}"),
-                annotation.value()
+                resolveMessage(message, "{value}"),
+                value
         );
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parsePositiveAnnotation(RecordComponentElement component) {
-        Positive annotation = component.getAccessor().getAnnotation(Positive.class);
-        if (annotation == null) {
+    public static ValidationWriter.@Nullable NullUnsafeWriter parsePositiveAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, Positive.class);
+        if (annotationMirror == null) {
             return null;
         }
 
-        return new ValidationWriter.MoreThan(resolveMessage(annotation.message()), 0);
+        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.Positive.message}");
+        return new ValidationWriter.MoreThan(resolveMessage(message), 0);
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parsePositiveOrZeroAnnotation(RecordComponentElement component) {
-        PositiveOrZero annotation = component.getAccessor().getAnnotation(PositiveOrZero.class);
-        if (annotation == null) {
+    public static ValidationWriter.@Nullable NullUnsafeWriter parsePositiveOrZeroAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, PositiveOrZero.class);
+        if (annotationMirror == null) {
             return null;
         }
 
-        return new ValidationWriter.MoreThanOrEqual(resolveMessage(annotation.message()), 0);
+        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.PositiveOrZero.message}");
+        return new ValidationWriter.MoreThanOrEqual(resolveMessage(message), 0);
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseNegativeAnnotation(RecordComponentElement component) {
-        Negative annotation = component.getAccessor().getAnnotation(Negative.class);
-        if (annotation == null) {
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseNegativeAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, Negative.class);
+        if (annotationMirror == null) {
             return null;
         }
 
-        return new ValidationWriter.LessThan(resolveMessage(annotation.message()), 0);
+        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.Negative.message}");
+        return new ValidationWriter.LessThan(resolveMessage(message), 0);
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseNegativeOrZeroAnnotation(RecordComponentElement component) {
-        NegativeOrZero annotation = component.getAccessor().getAnnotation(NegativeOrZero.class);
-        if (annotation == null) {
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseNegativeOrZeroAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, NegativeOrZero.class);
+        if (annotationMirror == null) {
             return null;
         }
 
-        return new ValidationWriter.LessThanOrEqual(resolveMessage(annotation.message()), 0);
+        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.NegativeOrZero.message}");
+        return new ValidationWriter.LessThanOrEqual(resolveMessage(message), 0);
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseEmailAnnotation(RecordComponentElement component) {
-        Email annotation = component.getAccessor().getAnnotation(Email.class);
-        if (annotation == null) {
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseEmailAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, Email.class);
+        if (annotationMirror == null) {
             return null;
         }
 
+        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.Email.message}");
         return new ValidationWriter.Pattern(
                 "^[^@]+@[^@]+\\\\.[^@]+$", // TODO: check email validation regex
-                resolveMessage(annotation.message())
+                resolveMessage(message)
         );
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parsePatternAnnotation(RecordComponentElement component) {
-        Pattern annotation = component.getAccessor().getAnnotation(Pattern.class);
-        if (annotation == null) {
+    public static ValidationWriter.@Nullable NullUnsafeWriter parsePatternAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, Pattern.class);
+        if (annotationMirror == null) {
             return null;
         }
 
+        String regexp = getAnnotationStringValue(annotationMirror, "regexp", "");
+        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.Pattern.message}");
+
         return new ValidationWriter.Pattern(
-                annotation.regexp().replace("\\", "\\\\"), // TODO: Check how to prevent escaping
-                resolveMessage(annotation.message(), "{regexp}")
+                regexp.replace("\\", "\\\\"), // TODO: Check how to prevent escaping
+                resolveMessage(message, "{regexp}")
         );
     }
 
@@ -170,4 +216,69 @@ public final class JakartaAnnotationParser {
 
         return resolved;
     }
+
+    /**
+     * Get an AnnotationMirror for the specified annotation class.
+     * This works for both declaration annotations and type-use annotations (TypeCompound).
+     */
+    private static javax.lang.model.element.@Nullable AnnotationMirror getAnnotationMirror(
+            AnnotatedConstruct annotated, Class<? extends Annotation> annotationClass) {
+        String annotationName = annotationClass.getName();
+        for (var annotationMirror : annotated.getAnnotationMirrors()) {
+            var annotationType = annotationMirror.getAnnotationType();
+            if (annotationType.toString().equals(annotationName)) {
+                return annotationMirror;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Extract a string value from an annotation mirror.
+     */
+    private static String getAnnotationStringValue(javax.lang.model.element.AnnotationMirror mirror, String attributeName, String defaultValue) {
+        for (var entry : mirror.getElementValues().entrySet()) {
+            if (entry.getKey().getSimpleName().toString().equals(attributeName)) {
+                Object value = entry.getValue().getValue();
+                // Remove quotes from string literals
+                String strValue = value.toString();
+                if (strValue.startsWith("\"") && strValue.endsWith("\"")) {
+                    return strValue.substring(1, strValue.length() - 1);
+                }
+                return strValue;
+            }
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Extract a long value from an annotation mirror.
+     */
+    private static long getAnnotationLongValue(javax.lang.model.element.AnnotationMirror mirror, String attributeName, long defaultValue) {
+        for (var entry : mirror.getElementValues().entrySet()) {
+            if (entry.getKey().getSimpleName().toString().equals(attributeName)) {
+                Object value = entry.getValue().getValue();
+                if (value instanceof Number number) {
+                    return number.longValue();
+                }
+            }
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Extract an int value from an annotation mirror.
+     */
+    private static int getAnnotationIntValue(javax.lang.model.element.AnnotationMirror mirror, String attributeName, int defaultValue) {
+        for (var entry : mirror.getElementValues().entrySet()) {
+            if (entry.getKey().getSimpleName().toString().equals(attributeName)) {
+                Object value = entry.getValue().getValue();
+                if (value instanceof Number number) {
+                    return number.intValue();
+                }
+            }
+        }
+        return defaultValue;
+    }
+
 }

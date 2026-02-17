@@ -300,16 +300,22 @@ class ValidatorProcessorTest {
                 
                 import io.github.raniagus.javalidation.annotation.*;
                 import jakarta.validation.constraints.*;
+                import java.util.List;
                 
                 @Validate
                 public record UserRequest(
                     @NotNull @Size(min = 3, max = 50) String username,
                     @Email String email,
                     @Min(18) Integer age,
-                    @NotNull UserAddress address
+                    @NotNull UserAddress address,
+                    @NotNull List<@Size(min = 3, max = 10) String> tags,
+                    @NotNull List<@NotNull Person> friends
                 ) {
                     @Validate
                     public record UserAddress(String street, String city) {}
+
+                    @Validate
+                    public record Person(String name) {}
                 }
                 """
         );
@@ -333,10 +339,12 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.validator.Validator;
                         import org.jspecify.annotations.Nullable;
                         import test.UserRequest;
+                        import test.UserRequest$PersonValidator;
                         import test.UserRequest$UserAddressValidator;
                         
                         public class UserRequestValidator implements Validator<UserRequest> {
                             private final Validator<UserRequest.UserAddress> addressValidator = new UserRequest$UserAddressValidator();
+                            private final Validator<UserRequest.Person> friendsItemValidator = new UserRequest$PersonValidator();
 
                             @Override
                             public ValidationErrors validate(@Nullable UserRequest root) {
@@ -382,6 +390,47 @@ class ValidatorProcessorTest {
                                 }
                                 rootValidation.addAll(addressValidation.finish(), new Object[]{"address"});
                         
+                                var tags = root.tags();
+                                var tagsValidation = Validation.create();
+                                if (tags == null) {
+                                    tagsValidation.addRootError("must not be null");
+                                }
+                                if (tags != null) {
+                                    int tagsIndex = 0;
+                                    for (var tagsItem : tags) {
+                                        var tagsItemValidation = Validation.create();
+                                        if (tagsItem != null) {
+                                            if (tagsItem.length() < 3 || tagsItem.length() > 10) {
+                                                tagsItemValidation.addRootError("size must be between {0} and {1}", 3, 10);
+                                            }
+                                        }
+                                        tagsValidation.addAll(tagsItemValidation.finish(), new Object[]{tagsIndex++});
+                                    }
+                    
+                                }
+                                rootValidation.addAll(tagsValidation.finish(), new Object[]{"tags"});
+                    
+                                var friends = root.friends();
+                                var friendsValidation = Validation.create();
+                                if (friends == null) {
+                                    friendsValidation.addRootError("must not be null");
+                                }
+                                if (friends != null) {
+                                    int friendsIndex = 0;
+                                    for (var friendsItem : friends) {
+                                        var friendsItemValidation = Validation.create();
+                                        if (friendsItem == null) {
+                                            friendsItemValidation.addRootError("must not be null");
+                                        }
+                                        if (friendsItem != null) {
+                                            friendsItemValidation.addAll(friendsItemValidator.validate(friendsItem));
+                                        }
+                                        friendsValidation.addAll(friendsItemValidation.finish(), new Object[]{friendsIndex++});
+                                    }
+                    
+                                }
+                                rootValidation.addAll(friendsValidation.finish(), new Object[]{"friends"});
+                        
                                 return rootValidation.finish();
                             }
                         }
@@ -417,6 +466,7 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.validator.Validator;
                         import java.util.Map;
                         import test.UserRequest;
+                        import test.UserRequest$PersonValidator;
                         import test.UserRequest$UserAddressValidator;
                         import test.UserRequestValidator;
                         
@@ -429,6 +479,7 @@ class ValidatorProcessorTest {
                                 CACHE = Map.ofEntries(
                                         Map.entry(UserRequest.class, new UserRequestValidator())
                                       , Map.entry(UserRequest.UserAddress.class, new UserRequest$UserAddressValidator())
+                                      , Map.entry(UserRequest.Person.class, new UserRequest$PersonValidator())
                                 );
                             }
 

@@ -1,6 +1,5 @@
 package io.github.raniagus.javalidation.processor;
 
-import io.github.raniagus.javalidation.format.FieldKeyFormatter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.Writer;
@@ -18,7 +17,7 @@ public class ValidationOutput {
     private String indent = "";
 
 
-    public ValidationOutput(Writer writer, FieldKeyFormatter fieldKeyFormatter) {
+    public ValidationOutput(Writer writer) {
         this.writer = writer;
     }
 
