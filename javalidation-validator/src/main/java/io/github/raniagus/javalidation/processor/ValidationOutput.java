@@ -22,13 +22,11 @@ public class ValidationOutput {
         this.writer = writer;
     }
 
-    public void write(String... lines) {
+    public void write(String line) {
         try {
-            for (var line : lines) {
-                writer.write(indent);
-                writer.write(line);
-                writer.write('\n');
-            }
+            writer.write(indent);
+            writer.write(line);
+            writer.write('\n');
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -49,6 +47,9 @@ public class ValidationOutput {
     }
 
     public String getVariable() {
+        if (variableNames.isEmpty()) {
+            return "root";
+        }
         return variableNames.getLast();
     }
 

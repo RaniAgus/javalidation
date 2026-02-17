@@ -45,8 +45,8 @@ public record FieldWriter(
 
             out.write("}");
         }
-        out.write("validation.addAll(%1$sValidation.finish(), new Object[]{\"%1$s\"});".formatted(field));
         out.removeVariable();
+        out.write("%1sValidation.addAll(%2$sValidation.finish(), new Object[]{\"%2$s\"});".formatted(out.getVariable(), field));
         out.write("");
     }
 }

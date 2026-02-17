@@ -35,18 +35,18 @@ public record ValidatorClassWriter(
         for (FieldWriter writer : fieldWriters) {
             writer.writePropertiesTo(out);
         }
-        out.registerVariable("obj");
+        out.registerVariable("root");
         out.write("@Override");
         out.write("""
                 public ValidationErrors validate(%s@Nullable %s %s) {\
                 """.formatted(enclosingClassPrefix, recordName, out.getVariable()));
         out.incrementIndentationLevel();
-        out.write("Validation validation = Validation.create();");
+        out.write("Validation %sValidation = Validation.create();".formatted(out.getVariable()));
         out.write("");
         for (FieldWriter writer : fieldWriters) {
             writer.writeBodyTo(out);
         }
-        out.write("return validation.finish();");
+        out.write("return %sValidation.finish();".formatted(out.getVariable()));
         out.decrementIndentationLevel();
         out.write("}");
         out.decrementIndentationLevel();
