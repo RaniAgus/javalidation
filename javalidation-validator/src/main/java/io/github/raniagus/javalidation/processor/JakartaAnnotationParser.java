@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 import javax.lang.model.AnnotatedConstruct;
+import javax.lang.model.element.AnnotationMirror;
 import org.jspecify.annotations.Nullable;
 
 public final class JakartaAnnotationParser {
@@ -65,7 +66,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.NotNull.message}");
+        String message = getAnnotationMessage(annotationMirror);
         return new ValidationWriter.NotNull(resolveMessage(message));
     }
 
@@ -75,7 +76,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.NotEmpty.message}");
+        String message = getAnnotationMessage(annotationMirror);
         return new ValidationWriter.NullSafeCondition("isEmpty", resolveMessage(message));
     }
 
@@ -85,7 +86,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.NotBlank.message}");
+        String message = getAnnotationMessage(annotationMirror);
         return new ValidationWriter.NullSafeCondition("isBlank", resolveMessage(message));
     }
 
@@ -95,7 +96,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.Size.message}");
+        String message = getAnnotationMessage(annotationMirror);
         int min = getAnnotationIntValue(annotationMirror, "min", 0);
         int max = getAnnotationIntValue(annotationMirror, "max", Integer.MAX_VALUE);
 
@@ -113,7 +114,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.Min.message}");
+        String message = getAnnotationMessage(annotationMirror);
         long value = getAnnotationLongValue(annotationMirror, "value", 0);
 
         return new ValidationWriter.MoreThanOrEqual(
@@ -128,7 +129,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.Max.message}");
+        String message = getAnnotationMessage(annotationMirror);
         long value = getAnnotationLongValue(annotationMirror, "value", 0);
 
         return new ValidationWriter.LessThanOrEqual(
@@ -143,7 +144,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.Positive.message}");
+        String message = getAnnotationMessage(annotationMirror);
         return new ValidationWriter.MoreThan(resolveMessage(message), 0);
     }
 
@@ -153,7 +154,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.PositiveOrZero.message}");
+        String message = getAnnotationMessage(annotationMirror);
         return new ValidationWriter.MoreThanOrEqual(resolveMessage(message), 0);
     }
 
@@ -163,7 +164,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.Negative.message}");
+        String message = getAnnotationMessage(annotationMirror);
         return new ValidationWriter.LessThan(resolveMessage(message), 0);
     }
 
@@ -173,7 +174,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.NegativeOrZero.message}");
+        String message = getAnnotationMessage(annotationMirror);
         return new ValidationWriter.LessThanOrEqual(resolveMessage(message), 0);
     }
 
@@ -183,7 +184,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.Email.message}");
+        String message = getAnnotationMessage(annotationMirror);
         return new ValidationWriter.Pattern(
                 "^[^@]+@[^@]+\\\\.[^@]+$", // TODO: check email validation regex
                 resolveMessage(message)
@@ -197,7 +198,7 @@ public final class JakartaAnnotationParser {
         }
 
         String regexp = getAnnotationStringValue(annotationMirror, "regexp", "");
-        String message = getAnnotationStringValue(annotationMirror, "message", "{jakarta.validation.constraints.Pattern.message}");
+        String message = getAnnotationMessage(annotationMirror);
 
         return new ValidationWriter.Pattern(
                 regexp.replace("\\", "\\\\"), // TODO: Check how to prevent escaping
@@ -221,8 +222,10 @@ public final class JakartaAnnotationParser {
      * Get an AnnotationMirror for the specified annotation class.
      * This works for both declaration annotations and type-use annotations (TypeCompound).
      */
-    private static javax.lang.model.element.@Nullable AnnotationMirror getAnnotationMirror(
-            AnnotatedConstruct annotated, Class<? extends Annotation> annotationClass) {
+    private static @Nullable AnnotationMirror getAnnotationMirror(
+            AnnotatedConstruct annotated,
+            Class<? extends Annotation> annotationClass
+    ) {
         String annotationName = annotationClass.getName();
         for (var annotationMirror : annotated.getAnnotationMirrors()) {
             var annotationType = annotationMirror.getAnnotationType();
@@ -234,34 +237,34 @@ public final class JakartaAnnotationParser {
     }
 
     /**
+     * Extract the message from an annotation mirror.
+     */
+    private static String getAnnotationMessage(AnnotationMirror mirror) {
+        return getAnnotationStringValue(mirror, "message", "{" + mirror.getAnnotationType() + ".message}");
+    }
+
+    /**
      * Extract a string value from an annotation mirror.
      */
-    private static String getAnnotationStringValue(javax.lang.model.element.AnnotationMirror mirror, String attributeName, String defaultValue) {
-        for (var entry : mirror.getElementValues().entrySet()) {
-            if (entry.getKey().getSimpleName().toString().equals(attributeName)) {
-                Object value = entry.getValue().getValue();
-                // Remove quotes from string literals
-                String strValue = value.toString();
-                if (strValue.startsWith("\"") && strValue.endsWith("\"")) {
-                    return strValue.substring(1, strValue.length() - 1);
-                }
-                return strValue;
+    private static String getAnnotationStringValue(AnnotationMirror mirror, String attributeName, String defaultValue) {
+        Object value = getAnnotationValue(mirror, attributeName);
+        if (value instanceof String string) {
+            if (string.startsWith("\"") && string.endsWith("\"")) {
+                return string.substring(1, string.length() - 1);
             }
+            return string;
         }
+
         return defaultValue;
     }
 
     /**
      * Extract a long value from an annotation mirror.
      */
-    private static long getAnnotationLongValue(javax.lang.model.element.AnnotationMirror mirror, String attributeName, long defaultValue) {
-        for (var entry : mirror.getElementValues().entrySet()) {
-            if (entry.getKey().getSimpleName().toString().equals(attributeName)) {
-                Object value = entry.getValue().getValue();
-                if (value instanceof Number number) {
-                    return number.longValue();
-                }
-            }
+    private static long getAnnotationLongValue(AnnotationMirror mirror, String attributeName, long defaultValue) {
+        Object value = getAnnotationValue(mirror, attributeName);
+        if (value instanceof Number number) {
+            return number.longValue();
         }
         return defaultValue;
     }
@@ -269,16 +272,21 @@ public final class JakartaAnnotationParser {
     /**
      * Extract an int value from an annotation mirror.
      */
-    private static int getAnnotationIntValue(javax.lang.model.element.AnnotationMirror mirror, String attributeName, int defaultValue) {
-        for (var entry : mirror.getElementValues().entrySet()) {
-            if (entry.getKey().getSimpleName().toString().equals(attributeName)) {
-                Object value = entry.getValue().getValue();
-                if (value instanceof Number number) {
-                    return number.intValue();
-                }
-            }
+    private static int getAnnotationIntValue(AnnotationMirror mirror, String attributeName, int defaultValue) {
+        Object value = getAnnotationValue(mirror, attributeName);
+        if (value instanceof Number number) {
+            return number.intValue();
         }
         return defaultValue;
+    }
+
+    private static @Nullable Object getAnnotationValue(AnnotationMirror mirror, String attributeName) {
+        for (var entry : mirror.getElementValues().entrySet()) {
+            if (entry.getKey().getSimpleName().toString().equals(attributeName)) {
+                return entry.getValue().getValue();
+            }
+        }
+        return null;
     }
 
 }

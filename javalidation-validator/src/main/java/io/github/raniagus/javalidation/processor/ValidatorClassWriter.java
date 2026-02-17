@@ -29,12 +29,13 @@ public record ValidatorClassWriter(
     public void writeBody(ValidationOutput out) {
         out.write(
                 """
-                public class %s implements Validator<%s%s> {
+                public class %s implements Validator<%s%s> {\
                 """.formatted(className, enclosingClassPrefix, recordName));
         out.incrementIndentationLevel();
         for (FieldWriter writer : fieldWriters) {
             writer.writePropertiesTo(out);
         }
+        out.write("");
         out.registerVariable("root");
         out.write("@Override");
         out.write("""

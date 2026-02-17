@@ -150,27 +150,29 @@ public class ValidatorProcessor extends AbstractProcessor {
             return null;
         }
 
-        var elementType = getIterableElementType(fieldType);
-        if (elementType == null) {
+        DeclaredType itemType = getIterableItemType(fieldType);
+        if (itemType == null) {
             return null;
         }
 
-        // Parse type-use annotations directly from the DeclaredType (which implements AnnotatedConstruct)
-        var nullSafeWriters = JakartaAnnotationParser.parseNullSafeWriters(elementType);
-
-        // For @Validate annotation, we need the TypeElement since it's a declaration annotation
-        TypeElement elementTypeElement = asTypeElement(elementType);
-
         return new ValidationWriter.IterableWriter(
-                nullSafeWriters,
-                Stream.concat(
-                    JakartaAnnotationParser.parseNullUnsafeWriters(elementType),
-                    Stream.of(
-                            parseValidateAnnotation(elementTypeElement),
-                            parseIterable(elementType)
-                    ).filter(Objects::nonNull)
-                ).toList()
+                parseNullSafeWriters(itemType),
+                parseNullUnsafeWriters(itemType)
         );
+    }
+
+    private ValidationWriter.@Nullable NullSafeWriter parseNullSafeWriters(DeclaredType elementType) {
+        return JakartaAnnotationParser.parseNullSafeWriters(elementType);
+    }
+
+    private List<ValidationWriter.NullUnsafeWriter> parseNullUnsafeWriters(DeclaredType itemType) {
+        return Stream.<ValidationWriter.NullUnsafeWriter>concat(
+                JakartaAnnotationParser.parseNullUnsafeWriters(itemType),
+                Stream.of(
+                        parseValidateAnnotation(getReferredType(itemType)),
+                        parseIterable(itemType)
+                ).filter(Objects::nonNull)
+        ).toList();
     }
 
     private static @Nullable TypeElement getReferredType(RecordComponentElement component) {
@@ -239,7 +241,7 @@ public class ValidatorProcessor extends AbstractProcessor {
         return types.isAssignable(types.erasure(type), iterableType);
     }
 
-    private @Nullable DeclaredType getIterableElementType(TypeMirror type) {
+    private @Nullable DeclaredType getIterableItemType(TypeMirror type) {
         if (!(type instanceof DeclaredType declared)) {
             return null;
         }
@@ -256,7 +258,7 @@ public class ValidatorProcessor extends AbstractProcessor {
         return first;
     }
 
-    private @Nullable TypeElement asTypeElement(TypeMirror mirror) {
+    private @Nullable TypeElement getReferredType(TypeMirror mirror) {
         if (!(mirror instanceof DeclaredType declared)) {
             return null;
         }
