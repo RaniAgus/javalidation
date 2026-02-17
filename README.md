@@ -97,7 +97,8 @@ For Spring Boot 4.x autoconfiguration with Jackson and MessageSource integration
 </dependency>
 ```
 
-The Spring Boot starter includes both the core and Jackson modules automatically.
+The Spring Boot starter includes the core module automatically, you can opt in to include the Jackson and Jakarta
+validation modules to perform their corresponding auto configurations.
 
 ## Quick Start
 
