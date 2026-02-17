@@ -1,4 +1,4 @@
-package io.github.raniagus.javalidation.processor;
+package io.github.raniagus.javalidation.validator.processor;
 
 import java.math.BigDecimal;
 import java.util.List;

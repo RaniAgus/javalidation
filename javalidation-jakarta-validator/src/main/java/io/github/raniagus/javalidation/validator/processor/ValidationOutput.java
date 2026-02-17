@@ -1,4 +1,4 @@
-package io.github.raniagus.javalidation.processor;
+package io.github.raniagus.javalidation.validator.processor;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

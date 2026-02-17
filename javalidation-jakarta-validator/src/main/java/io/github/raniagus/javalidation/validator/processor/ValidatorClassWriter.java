@@ -1,4 +1,4 @@
-package io.github.raniagus.javalidation.processor;
+package io.github.raniagus.javalidation.validator.processor;
 
 import java.util.List;
 import java.util.stream.Stream;

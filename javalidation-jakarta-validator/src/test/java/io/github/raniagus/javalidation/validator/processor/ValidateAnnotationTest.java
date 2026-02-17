@@ -1,8 +1,7 @@
-package io.github.raniagus.javalidation.validator;
+package io.github.raniagus.javalidation.validator.processor;
 
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
-import io.github.raniagus.javalidation.processor.ValidatorProcessor;
 import javax.tools.JavaFileObject;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +15,7 @@ class ValidateAnnotationTest {
         JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.InvalidClass", """
                 package test;
                 
-                import io.github.raniagus.javalidation.annotation.*;
+                import io.github.raniagus.javalidation.validator.*;
                 
                 @Validate
                 public class InvalidClass {
@@ -40,7 +39,7 @@ class ValidateAnnotationTest {
         JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.SimpleRecord", """
                 package test;
                 
-                import io.github.raniagus.javalidation.annotation.*;
+                import io.github.raniagus.javalidation.validator.*;
                 
                 @Validate
                 public record SimpleRecord(String name, int age) {}
@@ -131,7 +130,7 @@ class ValidateAnnotationTest {
         JavaFileObject sourceFile1 = JavaFileObjects.forSourceString("test.UserRequest", """
                 package test;
                 
-                import io.github.raniagus.javalidation.annotation.*;
+                import io.github.raniagus.javalidation.validator.*;
                 import jakarta.validation.constraints.*;
                 
                 @Validate
@@ -147,7 +146,7 @@ class ValidateAnnotationTest {
         JavaFileObject sourceFile2 = JavaFileObjects.forSourceString("test.UserAddress", """
                 package test;
                 
-                import io.github.raniagus.javalidation.annotation.*;
+                import io.github.raniagus.javalidation.validator.*;
                 import jakarta.validation.constraints.*;
                 
                 @Validate
@@ -275,7 +274,7 @@ class ValidateAnnotationTest {
         JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.UserRequest", """
                 package test;
                 
-                import io.github.raniagus.javalidation.annotation.*;
+                import io.github.raniagus.javalidation.validator.*;
                 import jakarta.validation.constraints.*;
                 import java.util.List;
                 

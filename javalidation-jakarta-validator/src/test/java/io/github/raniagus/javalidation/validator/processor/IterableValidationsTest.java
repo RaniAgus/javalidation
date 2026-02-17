@@ -1,11 +1,10 @@
-package io.github.raniagus.javalidation.validator;
+package io.github.raniagus.javalidation.validator.processor;
 
 import static com.google.testing.compile.CompilationSubject.assertThat;
 import static com.google.testing.compile.Compiler.javac;
 
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
-import io.github.raniagus.javalidation.processor.ValidatorProcessor;
 import javax.tools.JavaFileObject;
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +16,7 @@ public class IterableValidationsTest {
         JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.UserRequest", """
                 package test;
                 
-                import io.github.raniagus.javalidation.annotation.*;
+                import io.github.raniagus.javalidation.validator.*;
                 import jakarta.validation.constraints.*;
                 import java.util.List;
                 
@@ -88,7 +87,7 @@ public class IterableValidationsTest {
         JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.UserRequest", """
                 package test;
                 
-                import io.github.raniagus.javalidation.annotation.*;
+                import io.github.raniagus.javalidation.validator.*;
                 import jakarta.validation.constraints.*;
                 import java.util.List;
                 
@@ -167,7 +166,7 @@ public class IterableValidationsTest {
         JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.UserRequest", """
                 package test;
                 
-                import io.github.raniagus.javalidation.annotation.*;
+                import io.github.raniagus.javalidation.validator.*;
                 import jakarta.validation.constraints.*;
                 import java.util.List;
                 

@@ -1,4 +1,4 @@
-package io.github.raniagus.javalidation.processor;
+package io.github.raniagus.javalidation.validator.processor;
 
 import java.lang.annotation.Annotation;
 import java.util.Set;

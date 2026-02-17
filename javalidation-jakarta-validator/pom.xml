@@ -12,7 +12,7 @@
 
     <artifactId>javalidation-jakarta-validator</artifactId>
 
-    <name>Javalidation Validator</name>
+    <name>Javalidation Jakarta Validator</name>
     <description>Validator generation support for Javalidation</description>
 
     <dependencies>

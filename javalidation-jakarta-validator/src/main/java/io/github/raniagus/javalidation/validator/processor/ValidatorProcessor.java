@@ -1,6 +1,6 @@
-package io.github.raniagus.javalidation.processor;
+package io.github.raniagus.javalidation.validator.processor;
 
-import io.github.raniagus.javalidation.annotation.Validate;
+import io.github.raniagus.javalidation.validator.Validate;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -30,7 +30,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 import org.jspecify.annotations.Nullable;
 
-@SupportedAnnotationTypes("io.github.raniagus.javalidation.annotation.Validate")
+@SupportedAnnotationTypes("io.github.raniagus.javalidation.validator.Validate")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class ValidatorProcessor extends AbstractProcessor {
     private static final String REGISTRY_RESOURCE = "META-INF/io/github/raniagus/javalidation/validator/validators.list";

@@ -1,4 +1,4 @@
-package io.github.raniagus.javalidation.annotation;
+package io.github.raniagus.javalidation.validator;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

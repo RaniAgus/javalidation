@@ -12,7 +12,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @AutoConfiguration
 @ConditionalOnClass(name = {
-        "io.github.raniagus.javalidation.annotation.Validate",
+        "io.github.raniagus.javalidation.validator.Validate",
         "org.springframework.web.servlet.config.annotation.WebMvcConfigurer",
 })
 public class JavalidationValidatorAutoConfiguration {
