@@ -9,7 +9,7 @@ import io.github.raniagus.javalidation.processor.ValidatorProcessor;
 import javax.tools.JavaFileObject;
 import org.junit.jupiter.api.Test;
 
-public class ValidationWriterTest {
+public class JakartaValidationsTest {
 
     // ─── helpers ────────────────────────────────────────────────────────────
 
