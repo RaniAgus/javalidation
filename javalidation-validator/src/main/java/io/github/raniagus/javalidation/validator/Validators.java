@@ -5,6 +5,10 @@ import io.github.raniagus.javalidation.ValidationErrors;
 public final class Validators {
     private Validators() {}
 
+    public static boolean hasValidator(Class<?> clazz) {
+        return false;
+    }
+
     @SuppressWarnings("unchecked")
     public static <T> ValidationErrors validate(T instance) {
         Validator<T> validator = getValidator((Class<T>) instance.getClass());

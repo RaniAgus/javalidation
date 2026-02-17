@@ -1,38 +1,22 @@
 package io.github.raniagus.javalidation.spring;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import io.github.raniagus.javalidation.FieldKey;
-import io.github.raniagus.javalidation.format.FieldKeyFormatter;
-import io.github.raniagus.javalidation.validator.JakartaValidatorAdapter;
-import jakarta.validation.Validator;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
-import tools.jackson.databind.json.JsonMapper;
+import org.springframework.validation.Validator;
 
 class JakartaValidationAutoConfigurationTest extends AutoConfigurationTest {
     @SpringBootTest(classes = TestApplication.class)
-    static class ContextTest {
+    static class ValidatorUnsetTest {
         @Autowired(required = false)
         private Validator validator;
 
         @Test
-        void givenAutoConfiguration_whenStartup_thenConfiguresValidator() {
-            assertNotNull(validator);
-        }
-    }
-
-    static class ValidatorUnsetTest extends ContextTest {
-        @Autowired
-        private Validator validator;
-
-        @Test
-        void givenNotationUnset_whenSerialize_thenUsesDefault() {
-            assertThat(validator).isNotExactlyInstanceOf(JakartaValidatorAdapter.class);
+        void givenAutoConfiguration_whenStartup_thenConfiguresOtherValidator() {
+            assertThat(validator).isNotExactlyInstanceOf(JavalidationSpringValidator.class);
         }
     }
 
@@ -40,14 +24,16 @@ class JakartaValidationAutoConfigurationTest extends AutoConfigurationTest {
     static class ValidatorFalseTest extends ValidatorUnsetTest {
     }
 
+    @SpringBootTest(classes = TestApplication.class)
     @TestPropertySource(properties = "io.github.raniagus.javalidation.use-static-validators=true")
-    static class ValidatorTrueTest extends ContextTest {
-        @Autowired
+    static class ValidatorTrueTest {
+        @Autowired(required = false)
         private Validator validator;
 
         @Test
-        void givenNotationUnset_whenSerialize_thenUsesJavalidationAdapter() {
-            assertThat(validator).isExactlyInstanceOf(JakartaValidatorAdapter.class);
+        void givenAutoConfiguration_whenStartup_thenConfiguresJavalidationAdapter() {
+            assertThat(validator).isNotNull()
+                    .isExactlyInstanceOf(JavalidationSpringValidator.class);
         }
     }
 }

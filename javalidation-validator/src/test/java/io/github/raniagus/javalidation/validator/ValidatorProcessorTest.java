@@ -96,6 +96,10 @@ class ValidatorProcessorTest {
                                     Map.entry(SimpleRecord.class, new SimpleRecordValidator())
                                 );
                             }
+
+                            public static boolean hasValidator(Class<?> clazz) {
+                                return CACHE.containsKey(clazz);
+                            }
                         
                             @SuppressWarnings("unchecked")
                             public static <T> ValidationErrors validate(T instance) {
@@ -247,6 +251,10 @@ class ValidatorProcessorTest {
                                 );
                             }
 
+                            public static boolean hasValidator(Class<?> clazz) {
+                                return CACHE.containsKey(clazz);
+                            }
+
                             @SuppressWarnings("unchecked")
                             public static <T> ValidationErrors validate(T instance) {
                                 Validator<T> validator = getValidator((Class<T>) instance.getClass());
@@ -388,6 +396,10 @@ class ValidatorProcessorTest {
                                         Map.entry(UserRequest.class, new UserRequestValidator())
                                       , Map.entry(UserRequest.UserAddress.class, new UserRequest$UserAddressValidator())
                                 );
+                            }
+
+                            public static boolean hasValidator(Class<?> clazz) {
+                                return CACHE.containsKey(clazz);
                             }
 
                             @SuppressWarnings("unchecked")

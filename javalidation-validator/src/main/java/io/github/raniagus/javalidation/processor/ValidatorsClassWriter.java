@@ -51,6 +51,10 @@ public record ValidatorsClassWriter(List<ValidatorClassWriter> classWriters) imp
                         );
                     }
 
+                    public static boolean hasValidator(Class<?> clazz) {
+                        return CACHE.containsKey(clazz);
+                    }
+
                     @SuppressWarnings("unchecked")
                     public static <T> ValidationErrors validate(T instance) {
                         Validator<T> validator = getValidator((Class<T>) instance.getClass());
