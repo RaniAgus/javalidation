@@ -32,6 +32,21 @@ public sealed interface ValidationWriter {
         }
     }
 
+    record Null(String message) implements NullSafeWriter {
+        @Override
+        public void writeBodyTo(ValidationOutput out) {
+            out.write("""
+                    if (%s != null) {\
+                    """.formatted(out.getVariable()));
+            out.incrementIndentationLevel();
+            out.write("""
+                    %sValidation.addRootError("%s");\
+                    """.formatted(out.getVariable(), message));
+            out.decrementIndentationLevel();
+            out.write("}");
+        }
+    }
+
     record NullSafeCondition(String accessor, String message) implements NullSafeWriter {
         @Override
         public void writeBodyTo(ValidationOutput out) {
@@ -62,6 +77,21 @@ public sealed interface ValidationWriter {
             out.write("""
                     %sValidation.addRootError("%s", %d, %d);\
                     """.formatted(out.getVariable(), message, min, max));
+            out.decrementIndentationLevel();
+            out.write("}");
+        }
+    }
+
+    record EqualTo(String value, String message) implements NullUnsafeWriter {
+        @Override
+        public void writeBodyTo(ValidationOutput out) {
+            out.write("""
+                    if (!%s.equals(%s)) {\
+                    """.formatted(out.getVariable(), value));
+            out.incrementIndentationLevel();
+            out.write("""
+                    %sValidation.addRootError("%s");\
+                    """.formatted(out.getVariable(), message));
             out.decrementIndentationLevel();
             out.write("}");
         }

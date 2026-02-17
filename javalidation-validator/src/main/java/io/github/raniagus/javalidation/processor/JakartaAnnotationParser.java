@@ -1,17 +1,6 @@
 package io.github.raniagus.javalidation.processor;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Negative;
-import jakarta.validation.constraints.NegativeOrZero;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import java.lang.annotation.Annotation;
 import java.util.Map;
 import java.util.Objects;
@@ -33,13 +22,23 @@ public final class JakartaAnnotationParser {
             Map.entry("{jakarta.validation.constraints.Positive.message}", "must be greater than 0"),
             Map.entry("{jakarta.validation.constraints.PositiveOrZero.message}", "must be greater than or equal to 0"),
             Map.entry("{jakarta.validation.constraints.Negative.message}", "must be less than 0"),
-            Map.entry("{jakarta.validation.constraints.NegativeOrZero.message}", "must be less than or equal to 0")
+            Map.entry("{jakarta.validation.constraints.NegativeOrZero.message}", "must be less than or equal to 0"),
+            Map.entry("{jakarta.validation.constraints.AssertTrue.message}", "must be true"),
+            Map.entry("{jakarta.validation.constraints.AssertFalse.message}", "must be false"),
+            Map.entry("{jakarta.validation.constraints.DecimalMax.message}", "must be less than or equal to {value}"),
+            Map.entry("{jakarta.validation.constraints.DecimalMin.message}", "must be greater than or equal to {value}"),
+            Map.entry("{jakarta.validation.constraints.Digits.message}", "numeric value out of bounds (<{integer} digits>.<{fraction} digits> expected)"),
+            Map.entry("{jakarta.validation.constraints.Future.message}", "must be a future date"),
+            Map.entry("{jakarta.validation.constraints.FutureOrPresent.message}", "must be a date in the present or in the future"),
+            Map.entry("{jakarta.validation.constraints.Past.message}", "must be a past date"),
+            Map.entry("{jakarta.validation.constraints.PastOrPresent.message}", "must be a date in the past or in the present")
     );
 
     private JakartaAnnotationParser() {}
 
     public static ValidationWriter.@Nullable NullSafeWriter parseNullSafeWriters(AnnotatedConstruct annotated) {
         return Stream.of(
+                parseNullAnnotation(annotated),
                 parseNotBlankAnnotation(annotated),
                 parseNotEmptyAnnotation(annotated),
                 parseNotNullAnnotation(annotated)
@@ -56,7 +55,16 @@ public final class JakartaAnnotationParser {
                 parseNegativeAnnotation(annotated),
                 parseNegativeOrZeroAnnotation(annotated),
                 parseEmailAnnotation(annotated),
-                parsePatternAnnotation(annotated)
+                parsePatternAnnotation(annotated),
+                parseAssertTrueAnnotation(annotated),
+                parseAssertFalseAnnotation(annotated),
+                parseDecimalMaxAnnotation(annotated),
+                parseDecimalMinAnnotation(annotated),
+                parseDigitsAnnotation(annotated),
+                parseFutureAnnotation(annotated),
+                parseFutureOrPresentAnnotation(annotated),
+                paresPastAnnotation(annotated),
+                parsePastOrPresentAnnotation(annotated)
         ).filter(Objects::nonNull);
     }
 
@@ -80,6 +88,16 @@ public final class JakartaAnnotationParser {
         return new ValidationWriter.NullSafeCondition("isEmpty", resolveMessage(message));
     }
 
+    public static ValidationWriter.@Nullable NullSafeWriter parseNullAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, Null.class);
+        if (annotationMirror == null) {
+            return null;
+        }
+
+        String message = getAnnotationMessage(annotationMirror);
+        return new ValidationWriter.Null(resolveMessage(message));
+    }
+
     public static ValidationWriter.@Nullable NullSafeWriter parseNotBlankAnnotation(AnnotatedConstruct annotated) {
         var annotationMirror = getAnnotationMirror(annotated, NotBlank.class);
         if (annotationMirror == null) {
@@ -101,7 +119,7 @@ public final class JakartaAnnotationParser {
         int max = getAnnotationIntValue(annotationMirror, "max", Integer.MAX_VALUE);
 
         return new ValidationWriter.Size(
-                "length", // TODO: Add iterables support
+                "length", // TODO: Add Collection support
                 resolveMessage(message, "{min}", "{max}"),
                 min,
                 max
@@ -204,6 +222,131 @@ public final class JakartaAnnotationParser {
                 regexp.replace("\\", "\\\\"), // TODO: Check how to prevent escaping
                 resolveMessage(message, "{regexp}")
         );
+    }
+
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseAssertTrueAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, AssertTrue.class);
+        if (annotationMirror == null) {
+            return null;
+        }
+
+        String message = getAnnotationMessage(annotationMirror);
+        return new ValidationWriter.EqualTo("true", resolveMessage(message));
+    }
+
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseAssertFalseAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, AssertFalse.class);
+        if (annotationMirror == null) {
+            return null;
+        }
+
+        String message = getAnnotationMessage(annotationMirror);
+        return new ValidationWriter.EqualTo("false", resolveMessage(message));
+    }
+
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseDecimalMaxAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, DecimalMax.class);
+        if (annotationMirror == null) {
+            return null;
+        }
+
+        String message = getAnnotationMessage(annotationMirror);
+        String valueStr = getAnnotationStringValue(annotationMirror, "value", "0");
+
+        try {
+            long value = Long.parseLong(valueStr);
+            return new ValidationWriter.LessThanOrEqual(
+                    resolveMessage(message, "{value}"),
+                    value
+            );
+        } catch (NumberFormatException e) {
+            // TODO: For non-integer decimals, return null (not supported yet)
+            return null;
+        }
+    }
+
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseDecimalMinAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, DecimalMin.class);
+        if (annotationMirror == null) {
+            return null;
+        }
+
+        String message = getAnnotationMessage(annotationMirror);
+        String valueStr = getAnnotationStringValue(annotationMirror, "value", "0");
+
+        try {
+            long value = Long.parseLong(valueStr);
+            return new ValidationWriter.MoreThanOrEqual(
+                    resolveMessage(message, "{value}"),
+                    value
+            );
+        } catch (NumberFormatException e) {
+            // TODO: For non-integer decimals, return null (not supported yet)
+            return null;
+        }
+    }
+
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseDigitsAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, Digits.class);
+        if (annotationMirror == null) {
+            return null;
+        }
+
+        String message = getAnnotationMessage(annotationMirror);
+        int integer = getAnnotationIntValue(annotationMirror, "integer", 0);
+        int fraction = getAnnotationIntValue(annotationMirror, "fraction", 0);
+
+        // Build regex pattern: optional minus, up to 'integer' digits, optional decimal point and up to 'fraction' digits
+        String pattern = "^-?\\\\d{0," + integer + "}(\\\\.\\\\d{0," + fraction + "})?$";
+
+        return new ValidationWriter.Pattern(
+                pattern,
+                resolveMessage(message, "{integer}", "{fraction}")
+        );
+    }
+
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseFutureAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, Future.class);
+        if (annotationMirror == null) {
+            return null;
+        }
+
+        String message = getAnnotationMessage(annotationMirror);
+        // TODO: Return null for now - temporal validation requires more complex logic
+        return null;
+    }
+
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseFutureOrPresentAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, FutureOrPresent.class);
+        if (annotationMirror == null) {
+            return null;
+        }
+
+        String message = getAnnotationMessage(annotationMirror);
+        // TODO: Return null for now - temporal validation requires more complex logic
+        return null;
+    }
+
+    public static ValidationWriter.@Nullable NullUnsafeWriter paresPastAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, Past.class);
+        if (annotationMirror == null) {
+            return null;
+        }
+
+        String message = getAnnotationMessage(annotationMirror);
+        // TODO: Return null for now - temporal validation requires more complex logic
+        return null;
+    }
+
+    public static ValidationWriter.@Nullable NullUnsafeWriter parsePastOrPresentAnnotation(AnnotatedConstruct annotated) {
+        var annotationMirror = getAnnotationMirror(annotated, PastOrPresent.class);
+        if (annotationMirror == null) {
+            return null;
+        }
+
+        String message = getAnnotationMessage(annotationMirror);
+        // TODO: Return null for now - temporal validation requires more complex logic
+        return null;
     }
 
     private static String resolveMessage(String message, String... params) {
