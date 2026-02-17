@@ -39,6 +39,7 @@
         <module>javalidation</module>
         <module>javalidation-jackson</module>
         <module>javalidation-jakarta-validator</module>
+        <module>javalidation-jakarta-validator-processor</module>
         <module>javalidation-spring-boot-starter</module>
     </modules>
 
@@ -71,6 +72,11 @@
             <dependency>
                 <groupId>io.github.raniagus</groupId>
                 <artifactId>javalidation-jakarta-validator</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.raniagus</groupId>
+                <artifactId>javalidation-jakarta-validator-processor</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

@@ -77,7 +77,7 @@ And in Maven plugin configuration:
         <annotationProcessorPaths>
             <path>
                 <groupId>io.github.raniagus</groupId>
-                <artifactId>javalidation-jakarta-validator</artifactId>
+                <artifactId>javalidation-jakarta-validator-processor</artifactId>
                 <version>0.16.1</version>
             </path>
         </annotationProcessorPaths>
