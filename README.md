@@ -40,7 +40,7 @@ The core validation library with zero dependencies:
 <dependency>
   <groupId>io.github.raniagus</groupId>
   <artifactId>javalidation</artifactId>
-  <version>0.16.1</version>
+  <version>0.17.0</version>
 </dependency>
 ```
 
@@ -52,7 +52,7 @@ For Jackson 3.x serialization support:
 <dependency>
   <groupId>io.github.raniagus</groupId>
   <artifactId>javalidation-jackson</artifactId>
-  <version>0.16.1</version>
+  <version>0.17.0</version>
 </dependency>
 ```
 
@@ -64,7 +64,7 @@ For Bean validation processing support:
 <dependency>
   <groupId>io.github.raniagus</groupId>
   <artifactId>javalidation-jakarta-validator</artifactId>
-  <version>0.16.1</version>
+  <version>0.17.0</version>
 </dependency>
 ```
 
@@ -78,7 +78,7 @@ And in Maven plugin configuration:
             <path>
                 <groupId>io.github.raniagus</groupId>
                 <artifactId>javalidation-jakarta-validator-processor</artifactId>
-                <version>0.16.1</version>
+                <version>0.17.0</version>
             </path>
         </annotationProcessorPaths>
     </configuration>
@@ -93,7 +93,7 @@ For Spring Boot 4.x autoconfiguration with Jackson and MessageSource integration
 <dependency>
   <groupId>io.github.raniagus</groupId>
   <artifactId>javalidation-spring-boot-starter</artifactId>
-  <version>0.16.1</version>
+  <version>0.17.0</version>
 </dependency>
 ```
 
