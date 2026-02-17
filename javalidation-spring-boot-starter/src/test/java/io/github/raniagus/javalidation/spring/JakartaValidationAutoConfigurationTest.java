@@ -16,24 +16,7 @@ class JakartaValidationAutoConfigurationTest extends AutoConfigurationTest {
 
         @Test
         void givenAutoConfiguration_whenStartup_thenConfiguresOtherValidator() {
-            assertThat(validator).isNotExactlyInstanceOf(JavalidationSpringValidator.class);
-        }
-    }
-
-    @TestPropertySource(properties = "io.github.raniagus.javalidation.use-static-validators=false")
-    static class ValidatorFalseTest extends ValidatorUnsetTest {
-    }
-
-    @SpringBootTest(classes = TestApplication.class)
-    @TestPropertySource(properties = "io.github.raniagus.javalidation.use-static-validators=true")
-    static class ValidatorTrueTest {
-        @Autowired(required = false)
-        private Validator validator;
-
-        @Test
-        void givenAutoConfiguration_whenStartup_thenConfiguresJavalidationAdapter() {
-            assertThat(validator).isNotNull()
-                    .isExactlyInstanceOf(JavalidationSpringValidator.class);
+            assertThat(validator).isExactlyInstanceOf(JavalidationSpringValidator.class);
         }
     }
 }
