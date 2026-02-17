@@ -1,11 +1,15 @@
 package io.github.raniagus.javalidation.spring;
 
 import io.github.raniagus.javalidation.TemplateString;
+import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.ValidationErrors;
 import io.github.raniagus.javalidation.format.FieldKeyFormatter;
 import io.github.raniagus.javalidation.format.TemplateStringFormatter;
 import io.github.raniagus.javalidation.validator.Validators;
+import java.util.Objects;
 import org.springframework.validation.Errors;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 import org.springframework.validation.Validator;
 
 public class JavalidationSpringValidator implements Validator {
@@ -17,6 +21,10 @@ public class JavalidationSpringValidator implements Validator {
         this.templateStringFormatter = templateStringFormatter;
     }
 
+    public JavalidationSpringValidator() {
+        this(FieldKeyFormatter.getDefault(), TemplateStringFormatter.getDefault());
+    }
+
     @Override
     public boolean supports(Class<?> clazz) {
         return Validators.hasValidator(clazz);
@@ -25,6 +33,15 @@ public class JavalidationSpringValidator implements Validator {
     @Override
     public void validate(Object target, Errors errors) {
         ValidationErrors validationErrors = Validators.validate(target);
+        toErrors(validationErrors, errors);
+    }
+
+    @Override
+    public Errors validateObject(Object target) {
+        return Validator.super.validateObject(target);
+    }
+
+    public void toErrors(ValidationErrors validationErrors, Errors errors) {
         for (TemplateString rootError : validationErrors.rootErrors()) {
             errors.reject("", templateStringFormatter.format(rootError));
         }
@@ -36,8 +53,14 @@ public class JavalidationSpringValidator implements Validator {
         }
     }
 
-    @Override
-    public Errors validateObject(Object target) {
-        return Validator.super.validateObject(target);
+    public static ValidationErrors toValidationErrors(Errors errors) {
+        Validation validation = Validation.create();
+        for (ObjectError error : errors.getGlobalErrors()) {
+            validation.addRootError(Objects.toString(error.getDefaultMessage()));
+        }
+        for (FieldError error : errors.getFieldErrors()) {
+            validation.addFieldError(error.getField(), Objects.toString(error.getDefaultMessage()));
+        }
+        return validation.finish();
     }
 }
