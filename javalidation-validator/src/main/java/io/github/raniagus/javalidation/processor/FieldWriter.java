@@ -29,8 +29,8 @@ public record FieldWriter(
             return;
         }
         out.write("var %s = %s.%s();".formatted(field, out.getVariable(), field));
-        out.createVariable(field);
-        out.addKey(field);
+        out.write("var %sValidation = Validation.create();".formatted(field));
+        out.registerVariable(field);
         if (nullSafeWriter != null) {
             nullSafeWriter.writeBodyTo(out);
         }
@@ -45,7 +45,8 @@ public record FieldWriter(
 
             out.write("}");
         }
+        out.write("validation.addAll(%1$sValidation.finish(), new Object[]{\"%1$s\"});".formatted(field));
         out.removeVariable();
-        out.removeKey();
+        out.write("");
     }
 }

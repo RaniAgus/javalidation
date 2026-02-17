@@ -178,34 +178,47 @@ class ValidatorProcessorTest {
                             @Override
                             public ValidationErrors validate(@Nullable UserRequest obj) {
                                 Validation validation = Validation.create();
+
                                 var username = obj.username();
+                                var usernameValidation = Validation.create();
                                 if (username == null) {
-                                    validation.addFieldError("username", "must not be null");
+                                    usernameValidation.addRootError("must not be null");
                                 }
                                 if (username != null) {
                                     if (username.length() < 3 || username.length() > 50) {
-                                        validation.addFieldError("username", "size must be between {0} and {1}", 3, 50);
+                                        usernameValidation.addRootError("size must be between {0} and {1}", 3, 50);
                                     }
                                 }
+                                validation.addAll(usernameValidation.finish(), new Object[]{"username"});
+
                                 var email = obj.email();
+                                var emailValidation = Validation.create();
                                 if (email != null) {
                                     if (!email.matches("^[^@]+@[^@]+\\\\.[^@]+$")) {
-                                        validation.addFieldError("email", "must be a well-formed email address");
+                                        emailValidation.addRootError("must be a well-formed email address");
                                     }
                                 }
+                                validation.addAll(emailValidation.finish(), new Object[]{"email"});
+
                                 var age = obj.age();
+                                var ageValidation = Validation.create();
                                 if (age != null) {
                                     if (age < 18) {
-                                        validation.addFieldError("age", "must be greater than or equal to {0}", 18);
+                                        ageValidation.addRootError("must be greater than or equal to {0}", 18);
                                     }
                                 }
+                                validation.addAll(ageValidation.finish(), new Object[]{"age"});
+
                                 var address = obj.address();
+                                var addressValidation = Validation.create();
                                 if (address == null) {
-                                    validation.addFieldError("address", "must not be null");
+                                    addressValidation.addRootError("must not be null");
                                 }
                                 if (address != null) {
-                                    validation.addAll(addressValidator.validate(address), new Object[]{"address"});
+                                    addressValidation.addAll(addressValidator.validate(address));
                                 }
+                                validation.addAll(addressValidation.finish(), new Object[]{"address"});
+
                                 return validation.finish();
                             }
                         }
@@ -328,34 +341,47 @@ class ValidatorProcessorTest {
                             @Override
                             public ValidationErrors validate(@Nullable UserRequest obj) {
                                 Validation validation = Validation.create();
+                        
                                 var username = obj.username();
+                                var usernameValidation = Validation.create();
                                 if (username == null) {
-                                    validation.addFieldError("username", "must not be null");
+                                    usernameValidation.addRootError("must not be null");
                                 }
                                 if (username != null) {
                                     if (username.length() < 3 || username.length() > 50) {
-                                        validation.addFieldError("username", "size must be between {0} and {1}", 3, 50);
+                                        usernameValidation.addRootError("size must be between {0} and {1}", 3, 50);
                                     }
                                 }
+                                validation.addAll(usernameValidation.finish(), new Object[]{"username"});
+                        
                                 var email = obj.email();
+                                var emailValidation = Validation.create();
                                 if (email != null) {
                                     if (!email.matches("^[^@]+@[^@]+\\\\.[^@]+$")) {
-                                        validation.addFieldError("email", "must be a well-formed email address");
+                                        emailValidation.addRootError("must be a well-formed email address");
                                     }
                                 }
+                                validation.addAll(emailValidation.finish(), new Object[]{"email"});
+                        
                                 var age = obj.age();
+                                var ageValidation = Validation.create();
                                 if (age != null) {
                                     if (age < 18) {
-                                        validation.addFieldError("age", "must be greater than or equal to {0}", 18);
+                                        ageValidation.addRootError("must be greater than or equal to {0}", 18);
                                     }
                                 }
+                                validation.addAll(ageValidation.finish(), new Object[]{"age"});
+                        
                                 var address = obj.address();
+                                var addressValidation = Validation.create();
                                 if (address == null) {
-                                    validation.addFieldError("address", "must not be null");
+                                    addressValidation.addRootError("must not be null");
                                 }
                                 if (address != null) {
-                                    validation.addAll(addressValidator.validate(address), new Object[]{"address"});
+                                    addressValidation.addAll(addressValidator.validate(address));
                                 }
+                                validation.addAll(addressValidation.finish(), new Object[]{"address"});
+                        
                                 return validation.finish();
                             }
                         }

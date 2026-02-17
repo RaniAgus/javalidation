@@ -23,8 +23,8 @@ public sealed interface ValidationWriter {
                     """.formatted(out.getVariable()));
             out.incrementIndentationLevel();
             out.write("""
-                    validation.addFieldError("%s", "%s");\
-                    """.formatted(out.getFullKey(), message));
+                    %sValidation.addRootError("%s");\
+                    """.formatted(out.getVariable(), message));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -38,8 +38,8 @@ public sealed interface ValidationWriter {
                     """.formatted(out.getVariable(), accessor));
             out.incrementIndentationLevel();
             out.write("""
-                    validation.addFieldError("%s", "%s");\
-                    """.formatted(out.getFullKey(), message));
+                    %sValidation.addRootError("%s");\
+                    """.formatted(out.getVariable(), message));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -58,8 +58,8 @@ public sealed interface ValidationWriter {
                     """.formatted(out.getVariable(), accessor, min, max));
             out.incrementIndentationLevel();
             out.write("""
-                    validation.addFieldError("%s", "%s", %d, %d);\
-                    """.formatted(out.getFullKey(), message, min, max));
+                    %sValidation.addRootError("%s", %d, %d);\
+                    """.formatted(out.getVariable(), message, min, max));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -73,8 +73,8 @@ public sealed interface ValidationWriter {
                     """.formatted(out.getVariable(), value));
             out.incrementIndentationLevel();
             out.write("""
-                    validation.addFieldError("%s", "%s", %d);\
-                    """.formatted(out.getFullKey(), message, value));
+                    %sValidation.addRootError("%s", %d);\
+                    """.formatted(out.getVariable(), message, value));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -88,8 +88,8 @@ public sealed interface ValidationWriter {
                     """.formatted(out.getVariable(), value));
             out.incrementIndentationLevel();
             out.write("""
-                    validation.addFieldError("%s", "%s", %d);\
-                    """.formatted(out.getFullKey(), message, value));
+                    %sValidation.addRootError("%s", %d);\
+                    """.formatted(out.getVariable(), message, value));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -103,8 +103,8 @@ public sealed interface ValidationWriter {
                     """.formatted(out.getVariable(), value));
             out.incrementIndentationLevel();
             out.write("""
-                    validation.addFieldError("%s", "%s", %d);\
-                    """.formatted(out.getFullKey(), message, value));
+                    %sValidation.addRootError("%s", %d);\
+                    """.formatted(out.getVariable(), message, value));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -118,8 +118,8 @@ public sealed interface ValidationWriter {
                     """.formatted(out.getVariable(), value));
             out.incrementIndentationLevel();
             out.write("""
-                    validation.addFieldError("%s", "%s", %d);\
-                    """.formatted(out.getFullKey(), message, value));
+                    %sValidation.addRootError("%s", %d);\
+                    """.formatted(out.getVariable(), message, value));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -133,8 +133,8 @@ public sealed interface ValidationWriter {
                     """.formatted(out.getVariable(), regex));
             out.incrementIndentationLevel();
             out.write("""
-                    validation.addFieldError("%s", "%s");\
-                    """.formatted(out.getFullKey(), message));
+                    %sValidation.addRootError("%s");\
+                    """.formatted(out.getVariable(), message));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -167,8 +167,8 @@ public sealed interface ValidationWriter {
         @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    validation.addAll(%s.validate(%s), new Object[]{"%s"});\
-                    """.formatted(validatorProperty(out.getVariable()), out.getVariable(), out.getFullKey()));
+                    %sValidation.addAll(%s.validate(%s));\
+                    """.formatted(out.getVariable(), validatorProperty(out.getVariable()), out.getVariable()));
         }
 
         private String validatorProperty(String field) {
