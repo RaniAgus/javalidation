@@ -1,9 +1,12 @@
 package io.github.raniagus.javalidation.processor;
 
 import io.github.raniagus.javalidation.annotation.Validate;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.nio.file.NoSuchFileException;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -22,31 +25,134 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
+import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardLocation;
 import org.jspecify.annotations.Nullable;
 
 @SupportedAnnotationTypes("io.github.raniagus.javalidation.annotation.Validate")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class ValidatorProcessor extends AbstractProcessor {
-    private final List<ValidatorClassWriter> WRITERS = Collections.synchronizedList(new ArrayList<>());
+    private static final String REGISTRY_RESOURCE = "META-INF/io/github/raniagus/javalidation/validator/validators.list";
+
+    private final Set<String> discoveredClassNames = new LinkedHashSet<>();
     private boolean generated = false;
+    private boolean loaded = false;
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        if (!generated && !loaded) {
+            loadPersistedClassNames();
+            loaded = true;
+        }
+
         List<ValidatorClassWriter> classWriters = parseClassWriters(roundEnv);
 
         for (ValidatorClassWriter classWriter : classWriters) {
             writeClass(classWriter);
-            WRITERS.add(classWriter);
+            discoveredClassNames.add(classWriter.fullName());
         }
 
         if (roundEnv.processingOver() && !generated) {
-            writeClass(new ValidatorsClassWriter(WRITERS));
+            persistClassNames();
+            writeClass(new ValidatorsClassWriter(reconstructWriters()));
             generated = true;
         }
 
         return true;
     }
+
+    // -- Persistence --
+
+    private void loadPersistedClassNames() {
+        try {
+            FileObject resource = processingEnv.getFiler().getResource(
+                    StandardLocation.CLASS_OUTPUT, "", REGISTRY_RESOURCE);
+            try (BufferedReader reader = new BufferedReader(resource.openReader(true))) {
+                reader.lines()
+                        .map(String::trim)
+                        .filter(line -> !line.isBlank())
+                        .forEach(discoveredClassNames::add);
+            }
+        } catch (FileNotFoundException | NoSuchFileException e) {
+            // First compilation — no registry yet, that's fine
+        } catch (IOException e) {
+            processingEnv.getMessager().printMessage(
+                    Diagnostic.Kind.WARNING,
+                    "Could not read validator registry: " + e.getMessage()
+            );
+        }
+    }
+
+    private void persistClassNames() {
+        try {
+            FileObject resource = processingEnv.getFiler().createResource(
+                    StandardLocation.CLASS_OUTPUT, "", REGISTRY_RESOURCE);
+            try (Writer writer = resource.openWriter()) {
+                for (String name : discoveredClassNames) {
+                    writer.write(name);
+                    writer.write("\n");
+                }
+            }
+        } catch (IOException e) {
+            processingEnv.getMessager().printMessage(
+                    Diagnostic.Kind.WARNING,
+                    "Could not write validator registry: " + e.getMessage()
+            );
+        }
+    }
+
+    // -- Reconstruction --
+
+    /**
+     * Turns the persisted fully qualified validator class names back into
+     * ValidatorClassWriter instances so ValidatorsClassWriter can use them.
+     * ValidatorClassWriter must be reconstructable from its fullName() alone.
+     */
+    private List<ValidatorClassWriter> reconstructWriters() {
+        return discoveredClassNames.stream()
+                .map(ValidatorProcessor::fromFullName)
+                .toList();
+    }
+
+
+    /**
+     * Reconstruct a ValidatorClassWriter from its persisted fullName() for use
+     * in ValidatorsClassWriter only — fieldWriters will be empty since they are
+     * not needed there (only name-related fields are used).
+     * fullName() format: "{packageName}.{className}"
+     * className is either "FooValidator" or "EnclosingClass$FooValidator"
+     */
+    public static ValidatorClassWriter fromFullName(String fullName) {
+        int lastDot = fullName.lastIndexOf('.');
+        String packageName = fullName.substring(0, lastDot);
+        String className = fullName.substring(lastDot + 1); // e.g. "FooValidator" or "Bar$FooValidator"
+
+        int dollarSign = className.indexOf('$');
+        boolean isNested = dollarSign != -1;
+
+        String enclosingClassPrefix = isNested
+                ? className.substring(0, dollarSign) + "."      // "Bar."
+                : "";
+        String recordName = (isNested
+                ? className.substring(dollarSign + 1) // "Foo" from "Bar$FooValidator"
+                : className)                                    // "Foo" from "FooValidator"
+                .replace("Validator", "");
+        String recordFullName = isNested
+                ? enclosingClassPrefix + recordName             // "Bar.Foo"
+                : recordName;                                   // "Foo"
+
+        String recordImportName = isNested
+                ? packageName + "." + className.substring(0, dollarSign)  // "com.example.Bar"
+                : packageName + "." + recordName;                         // "com.example.Foo"
+
+        return new ValidatorClassWriter(
+                packageName, className, enclosingClassPrefix,
+                recordName, recordFullName, recordImportName,
+                List.of()
+        );
+    }
+
 
     // -- Writing --
 
@@ -101,7 +207,7 @@ public class ValidatorProcessor extends AbstractProcessor {
         return recordElement.getEnclosedElements().stream()
                 .filter(enclosed -> enclosed.getKind() == ElementKind.RECORD_COMPONENT)
                 .flatMap(enclosed -> enclosed instanceof RecordComponentElement component ?
-                          Stream.of(component)
+                        Stream.of(component)
                         : Stream.empty())
                 .map(this::parseFieldWriter)
                 .toList();

@@ -64,8 +64,10 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.Validation;
                         import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
+                        import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.Nullable;
                         
+                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
                         public class SimpleRecordValidator implements Validator<SimpleRecord> {
                            @Override
                            public ValidationErrors validate(@Nullable SimpleRecord root) {
@@ -83,9 +85,11 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
                         import java.util.Map;
+                        import javax.annotation.processing.Generated;
                         import test.SimpleRecord;
                         import test.SimpleRecordValidator;
                         
+                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
                         public final class Validators {
                             private static final Map<Class<?>, Validator<?>> CACHE;
                         
@@ -168,10 +172,12 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.Validation;
                         import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
+                        import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.Nullable;
                         import test.UserAddress;
                         import test.UserAddressValidator;
-                        
+
+                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
                         public class UserRequestValidator implements Validator<UserRequest> {
                             private final Validator<UserAddress> addressValidator = new UserAddressValidator();
 
@@ -232,8 +238,10 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.Validation;
                         import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
+                        import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.Nullable;
-                        
+
+                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
                         public class UserAddressValidator implements Validator<UserAddress> {
                             @Override
                             public ValidationErrors validate(@Nullable UserAddress root) {
@@ -251,11 +259,13 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
                         import java.util.Map;
+                        import javax.annotation.processing.Generated;
                         import test.UserAddress;
                         import test.UserAddressValidator;
                         import test.UserRequest;
                         import test.UserRequestValidator;
-                        
+
+                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
                         public final class Validators {
                             private static final Map<Class<?>, Validator<?>> CACHE;
                         
@@ -335,10 +345,12 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.Validation;
                         import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
+                        import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.Nullable;
                         import test.UserRequest;
                         import test.UserRequest$UserAddressValidator;
-                        
+
+                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
                         public class UserRequestValidator implements Validator<UserRequest> {
                             private final Validator<UserRequest.UserAddress> addressValidator = new UserRequest$UserAddressValidator();
 
@@ -401,8 +413,10 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.Validation;
                         import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
+                        import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.Nullable;
-                        
+
+                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
                         public class UserRequest$UserAddressValidator implements Validator<UserRequest.UserAddress> {
                             @Override
                             public ValidationErrors validate(UserRequest.@Nullable UserAddress root) {
@@ -420,11 +434,13 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
                         import java.util.Map;
+                        import javax.annotation.processing.Generated;
                         import test.UserRequest;
                         import test.UserRequest$PersonValidator;
                         import test.UserRequest$UserAddressValidator;
                         import test.UserRequestValidator;
-                        
+
+                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
                         public final class Validators {
                             private static final Map<Class<?>, Validator<?>> CACHE;
                         
@@ -496,8 +512,10 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.Validation;
                         import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
+                        import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.Nullable;
-                        
+
+                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
                         public class UserRequestValidator implements Validator<UserRequest> {
 
                             @Override
@@ -537,9 +555,11 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
                         import java.util.Map;
+                        import javax.annotation.processing.Generated;
                         import test.UserRequest;
                         import test.UserRequestValidator;
-                        
+
+                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
                         public final class Validators {
                             private static final Map<Class<?>, Validator<?>> CACHE;
                         
@@ -612,10 +632,12 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.Validation;
                         import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
+                        import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.Nullable;
                         import test.UserRequest;
                         import test.UserRequest$PersonValidator;
-                        
+
+                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
                         public class UserRequestValidator implements Validator<UserRequest> {
                             private final Validator<UserRequest.Person> friendsItemValidator = new UserRequest$PersonValidator();
 
@@ -659,8 +681,10 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.Validation;
                         import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
+                        import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.Nullable;
-                        
+
+                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
                         public class UserRequest$PersonValidator implements Validator<UserRequest.Person> {
                             @Override
                             public ValidationErrors validate(UserRequest.@Nullable Person root) {
@@ -678,10 +702,12 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
                         import java.util.Map;
+                        import javax.annotation.processing.Generated;
                         import test.UserRequest;
                         import test.UserRequest$PersonValidator;
                         import test.UserRequestValidator;
-                        
+
+                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
                         public final class Validators {
                             private static final Map<Class<?>, Validator<?>> CACHE;
                         
@@ -753,8 +779,10 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.Validation;
                         import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
+                        import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.Nullable;
-                        
+
+                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
                         public class UserRequestValidator implements Validator<UserRequest> {
                             @Override
                             public ValidationErrors validate(@Nullable UserRequest root) {
@@ -799,9 +827,11 @@ class ValidatorProcessorTest {
                         import io.github.raniagus.javalidation.ValidationErrors;
                         import io.github.raniagus.javalidation.validator.Validator;
                         import java.util.Map;
+                        import javax.annotation.processing.Generated;
                         import test.UserRequest;
                         import test.UserRequestValidator;
-                        
+
+                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
                         public final class Validators {
                             private static final Map<Class<?>, Validator<?>> CACHE;
                         
