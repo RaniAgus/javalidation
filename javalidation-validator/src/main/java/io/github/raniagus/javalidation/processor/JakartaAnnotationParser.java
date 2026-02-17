@@ -1,11 +1,10 @@
 package io.github.raniagus.javalidation.processor;
 
 import jakarta.validation.constraints.*;
-import java.lang.annotation.Annotation;
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
-import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.element.AnnotationMirror;
 import org.jspecify.annotations.Nullable;
 
@@ -36,40 +35,40 @@ public final class JakartaAnnotationParser {
 
     private JakartaAnnotationParser() {}
 
-    public static ValidationWriter.@Nullable NullSafeWriter parseNullSafeWriters(AnnotatedConstruct annotated) {
+    public static ValidationWriter.@Nullable NullSafeWriter parseNullSafeWriters(TypeAdapter type) {
         return Stream.of(
-                parseNullAnnotation(annotated),
-                parseNotBlankAnnotation(annotated),
-                parseNotEmptyAnnotation(annotated),
-                parseNotNullAnnotation(annotated)
+                parseNullAnnotation(type),
+                parseNotBlankAnnotation(type),
+                parseNotEmptyAnnotation(type),
+                parseNotNullAnnotation(type)
         ).filter(Objects::nonNull).findFirst().orElse(null);
     }
 
-    public static Stream<ValidationWriter.NullUnsafeWriter> parseNullUnsafeWriters(AnnotatedConstruct annotated) {
+    public static Stream<ValidationWriter.NullUnsafeWriter> parseNullUnsafeWriters(TypeAdapter type) {
         return Stream.<ValidationWriter.NullUnsafeWriter>of(
-                parseSizeAnnotation(annotated),
-                parseMinAnnotation(annotated),
-                parseMaxAnnotation(annotated),
-                parsePositiveAnnotation(annotated),
-                parsePositiveOrZeroAnnotation(annotated),
-                parseNegativeAnnotation(annotated),
-                parseNegativeOrZeroAnnotation(annotated),
-                parseEmailAnnotation(annotated),
-                parsePatternAnnotation(annotated),
-                parseAssertTrueAnnotation(annotated),
-                parseAssertFalseAnnotation(annotated),
-                parseDecimalMaxAnnotation(annotated),
-                parseDecimalMinAnnotation(annotated),
-                parseDigitsAnnotation(annotated),
-                parseFutureAnnotation(annotated),
-                parseFutureOrPresentAnnotation(annotated),
-                paresPastAnnotation(annotated),
-                parsePastOrPresentAnnotation(annotated)
+                parseSizeAnnotation(type),
+                parseMinAnnotation(type),
+                parseMaxAnnotation(type),
+                parsePositiveAnnotation(type),
+                parsePositiveOrZeroAnnotation(type),
+                parseNegativeAnnotation(type),
+                parseNegativeOrZeroAnnotation(type),
+                parseEmailAnnotation(type),
+                parsePatternAnnotation(type),
+                parseAssertTrueAnnotation(type),
+                parseAssertFalseAnnotation(type),
+                parseDecimalMaxAnnotation(type),
+                parseDecimalMinAnnotation(type),
+                parseDigitsAnnotation(type),
+                parseFutureAnnotation(type),
+                parseFutureOrPresentAnnotation(type),
+                paresPastAnnotation(type),
+                parsePastOrPresentAnnotation(type)
         ).filter(Objects::nonNull);
     }
 
-    public static ValidationWriter.@Nullable NullSafeWriter parseNotNullAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, NotNull.class);
+    public static ValidationWriter.@Nullable NullSafeWriter parseNotNullAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(NotNull.class);
         if (annotationMirror == null) {
             return null;
         }
@@ -78,18 +77,18 @@ public final class JakartaAnnotationParser {
         return new ValidationWriter.NotNull(resolveMessage(message));
     }
 
-    public static ValidationWriter.@Nullable NullSafeWriter parseNotEmptyAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, NotEmpty.class);
+    public static ValidationWriter.@Nullable NullSafeWriter parseNotEmptyAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(NotEmpty.class);
         if (annotationMirror == null) {
             return null;
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        return new ValidationWriter.NullSafeCondition("isEmpty", resolveMessage(message));
+        return new ValidationWriter.NullSafeAccessor("isEmpty", resolveMessage(message));
     }
 
-    public static ValidationWriter.@Nullable NullSafeWriter parseNullAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, Null.class);
+    public static ValidationWriter.@Nullable NullSafeWriter parseNullAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(Null.class);
         if (annotationMirror == null) {
             return null;
         }
@@ -98,18 +97,18 @@ public final class JakartaAnnotationParser {
         return new ValidationWriter.Null(resolveMessage(message));
     }
 
-    public static ValidationWriter.@Nullable NullSafeWriter parseNotBlankAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, NotBlank.class);
+    public static ValidationWriter.@Nullable NullSafeWriter parseNotBlankAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(NotBlank.class);
         if (annotationMirror == null) {
             return null;
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        return new ValidationWriter.NullSafeCondition("isBlank", resolveMessage(message));
+        return new ValidationWriter.NullSafeAccessor("isBlank", resolveMessage(message));
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseSizeAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, Size.class);
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseSizeAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(Size.class);
         if (annotationMirror == null) {
             return null;
         }
@@ -126,8 +125,8 @@ public final class JakartaAnnotationParser {
         );
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseMinAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, Min.class);
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseMinAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(Min.class);
         if (annotationMirror == null) {
             return null;
         }
@@ -135,14 +134,15 @@ public final class JakartaAnnotationParser {
         String message = getAnnotationMessage(annotationMirror);
         long value = getAnnotationLongValue(annotationMirror, "value", 0);
 
-        return new ValidationWriter.MoreThanOrEqual(
-                resolveMessage(message, "{value}"),
-                value
+        return new ValidationWriter.RawCompare(
+                ">=",
+                value,
+                resolveMessage(message, "{value}")
         );
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseMaxAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, Max.class);
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseMaxAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(Max.class);
         if (annotationMirror == null) {
             return null;
         }
@@ -150,54 +150,55 @@ public final class JakartaAnnotationParser {
         String message = getAnnotationMessage(annotationMirror);
         long value = getAnnotationLongValue(annotationMirror, "value", 0);
 
-        return new ValidationWriter.LessThanOrEqual(
-                resolveMessage(message, "{value}"),
-                value
+        return new ValidationWriter.RawCompare(
+                "<=",
+                value,
+                resolveMessage(message, "{value}")
         );
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parsePositiveAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, Positive.class);
+    public static ValidationWriter.@Nullable NullUnsafeWriter parsePositiveAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(Positive.class);
         if (annotationMirror == null) {
             return null;
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        return new ValidationWriter.MoreThan(resolveMessage(message), 0);
+        return new ValidationWriter.RawCompare(">", 0, resolveMessage(message));
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parsePositiveOrZeroAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, PositiveOrZero.class);
+    public static ValidationWriter.@Nullable NullUnsafeWriter parsePositiveOrZeroAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(PositiveOrZero.class);
         if (annotationMirror == null) {
             return null;
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        return new ValidationWriter.MoreThanOrEqual(resolveMessage(message), 0);
+        return new ValidationWriter.RawCompare(">=", 0, resolveMessage(message));
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseNegativeAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, Negative.class);
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseNegativeAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(Negative.class);
         if (annotationMirror == null) {
             return null;
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        return new ValidationWriter.LessThan(resolveMessage(message), 0);
+        return new ValidationWriter.RawCompare("<", 0, resolveMessage(message));
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseNegativeOrZeroAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, NegativeOrZero.class);
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseNegativeOrZeroAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(NegativeOrZero.class);
         if (annotationMirror == null) {
             return null;
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        return new ValidationWriter.LessThanOrEqual(resolveMessage(message), 0);
+        return new ValidationWriter.RawCompare("<=", 0, resolveMessage(message));
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseEmailAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, Email.class);
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseEmailAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(Email.class);
         if (annotationMirror == null) {
             return null;
         }
@@ -209,8 +210,8 @@ public final class JakartaAnnotationParser {
         );
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parsePatternAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, Pattern.class);
+    public static ValidationWriter.@Nullable NullUnsafeWriter parsePatternAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(Pattern.class);
         if (annotationMirror == null) {
             return null;
         }
@@ -224,8 +225,8 @@ public final class JakartaAnnotationParser {
         );
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseAssertTrueAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, AssertTrue.class);
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseAssertTrueAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(AssertTrue.class);
         if (annotationMirror == null) {
             return null;
         }
@@ -234,8 +235,8 @@ public final class JakartaAnnotationParser {
         return new ValidationWriter.EqualTo("true", resolveMessage(message));
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseAssertFalseAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, AssertFalse.class);
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseAssertFalseAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(AssertFalse.class);
         if (annotationMirror == null) {
             return null;
         }
@@ -244,50 +245,48 @@ public final class JakartaAnnotationParser {
         return new ValidationWriter.EqualTo("false", resolveMessage(message));
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseDecimalMaxAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, DecimalMax.class);
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseDecimalMaxAnnotation(TypeAdapter type) {
+        if (!type.isDecimalType()) {
+            return null;
+        }
+
+        var annotationMirror = type.getAnnotationMirror(DecimalMax.class);
         if (annotationMirror == null) {
             return null;
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        String valueStr = getAnnotationStringValue(annotationMirror, "value", "0");
+        String value = getAnnotationStringValue(annotationMirror, "value", "0");
 
         try {
-            long value = Long.parseLong(valueStr);
-            return new ValidationWriter.LessThanOrEqual(
-                    resolveMessage(message, "{value}"),
-                    value
-            );
+            return new ValidationWriter.DecimalCompare("<=", new BigDecimal(value), resolveMessage(message));
         } catch (NumberFormatException e) {
-            // TODO: For non-integer decimals, return null (not supported yet)
             return null;
         }
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseDecimalMinAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, DecimalMin.class);
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseDecimalMinAnnotation(TypeAdapter type) {
+        if (!type.isDecimalType()) {
+            return null;
+        }
+
+        var annotationMirror = type.getAnnotationMirror(DecimalMin.class);
         if (annotationMirror == null) {
             return null;
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        String valueStr = getAnnotationStringValue(annotationMirror, "value", "0");
+        String value = getAnnotationStringValue(annotationMirror, "value", "0");
 
         try {
-            long value = Long.parseLong(valueStr);
-            return new ValidationWriter.MoreThanOrEqual(
-                    resolveMessage(message, "{value}"),
-                    value
-            );
+            return new ValidationWriter.DecimalCompare(">=", new BigDecimal(value), resolveMessage(message));
         } catch (NumberFormatException e) {
-            // TODO: For non-integer decimals, return null (not supported yet)
             return null;
         }
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseDigitsAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, Digits.class);
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseDigitsAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(Digits.class);
         if (annotationMirror == null) {
             return null;
         }
@@ -305,8 +304,8 @@ public final class JakartaAnnotationParser {
         );
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseFutureAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, Future.class);
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseFutureAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(Future.class);
         if (annotationMirror == null) {
             return null;
         }
@@ -316,8 +315,8 @@ public final class JakartaAnnotationParser {
         return null;
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parseFutureOrPresentAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, FutureOrPresent.class);
+    public static ValidationWriter.@Nullable NullUnsafeWriter parseFutureOrPresentAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(FutureOrPresent.class);
         if (annotationMirror == null) {
             return null;
         }
@@ -327,8 +326,8 @@ public final class JakartaAnnotationParser {
         return null;
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter paresPastAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, Past.class);
+    public static ValidationWriter.@Nullable NullUnsafeWriter paresPastAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(Past.class);
         if (annotationMirror == null) {
             return null;
         }
@@ -338,8 +337,8 @@ public final class JakartaAnnotationParser {
         return null;
     }
 
-    public static ValidationWriter.@Nullable NullUnsafeWriter parsePastOrPresentAnnotation(AnnotatedConstruct annotated) {
-        var annotationMirror = getAnnotationMirror(annotated, PastOrPresent.class);
+    public static ValidationWriter.@Nullable NullUnsafeWriter parsePastOrPresentAnnotation(TypeAdapter type) {
+        var annotationMirror = type.getAnnotationMirror(PastOrPresent.class);
         if (annotationMirror == null) {
             return null;
         }
@@ -359,24 +358,6 @@ public final class JakartaAnnotationParser {
         }
 
         return resolved;
-    }
-
-    /**
-     * Get an AnnotationMirror for the specified annotation class.
-     * This works for both declaration annotations and type-use annotations (TypeCompound).
-     */
-    private static @Nullable AnnotationMirror getAnnotationMirror(
-            AnnotatedConstruct annotated,
-            Class<? extends Annotation> annotationClass
-    ) {
-        String annotationName = annotationClass.getName();
-        for (var annotationMirror : annotated.getAnnotationMirrors()) {
-            var annotationType = annotationMirror.getAnnotationType();
-            if (annotationType.toString().equals(annotationName)) {
-                return annotationMirror;
-            }
-        }
-        return null;
     }
 
     /**

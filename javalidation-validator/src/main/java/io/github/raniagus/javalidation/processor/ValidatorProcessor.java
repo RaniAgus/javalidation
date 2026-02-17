@@ -218,23 +218,9 @@ public class ValidatorProcessor extends AbstractProcessor {
     private FieldWriter parseFieldWriter(RecordComponentElement component) {
         return new FieldWriter(
                 component.getSimpleName().toString(),
-                parseNullSafeWriters(component),
-                parseNullUnsafeWriters(component)
+                parseNullSafeWriters(component.asType()),
+                parseNullUnsafeWriters(component.asType())
         );
-    }
-
-    private ValidationWriter.@Nullable NullSafeWriter parseNullSafeWriters(RecordComponentElement component) {
-        return JakartaAnnotationParser.parseNullSafeWriters(component.getAccessor());
-    }
-
-    private List<ValidationWriter.NullUnsafeWriter> parseNullUnsafeWriters(RecordComponentElement component) {
-        return Stream.<ValidationWriter.NullUnsafeWriter>concat(
-                JakartaAnnotationParser.parseNullUnsafeWriters(component.getAccessor()),
-                Stream.of(
-                        parseValidateAnnotation(getReferredType(component)),
-                        parseIterable(component.getAccessor().getReturnType())
-                ).filter(Objects::nonNull)
-        ).toList();
     }
 
     private ValidationWriter.@Nullable NullUnsafeWriter parseValidateAnnotation(@Nullable Element referredType) {
@@ -256,7 +242,7 @@ public class ValidatorProcessor extends AbstractProcessor {
             return null;
         }
 
-        DeclaredType itemType = getIterableItemType(fieldType);
+        TypeMirror itemType = getIterableItemType(fieldType);
         if (itemType == null) {
             return null;
         }
@@ -267,28 +253,18 @@ public class ValidatorProcessor extends AbstractProcessor {
         );
     }
 
-    private ValidationWriter.@Nullable NullSafeWriter parseNullSafeWriters(DeclaredType elementType) {
-        return JakartaAnnotationParser.parseNullSafeWriters(elementType);
+    private ValidationWriter.@Nullable NullSafeWriter parseNullSafeWriters(TypeMirror type) {
+        return JakartaAnnotationParser.parseNullSafeWriters(new TypeAdapter(type, processingEnv));
     }
 
-    private List<ValidationWriter.NullUnsafeWriter> parseNullUnsafeWriters(DeclaredType itemType) {
+    private List<ValidationWriter.NullUnsafeWriter> parseNullUnsafeWriters(TypeMirror type) {
         return Stream.<ValidationWriter.NullUnsafeWriter>concat(
-                JakartaAnnotationParser.parseNullUnsafeWriters(itemType),
+                JakartaAnnotationParser.parseNullUnsafeWriters(new TypeAdapter(type, processingEnv)),
                 Stream.of(
-                        parseValidateAnnotation(getReferredType(itemType)),
-                        parseIterable(itemType)
+                        parseValidateAnnotation(getReferredType(type)),
+                        parseIterable(type)
                 ).filter(Objects::nonNull)
         ).toList();
-    }
-
-    private static @Nullable TypeElement getReferredType(RecordComponentElement component) {
-        if (component.asType() instanceof DeclaredType declaredType) {
-            Element element = declaredType.asElement();
-            if (element instanceof TypeElement typeElement) {
-                return typeElement;
-            }
-        }
-        return null;
     }
 
     // -- Utility functions --
@@ -347,23 +323,6 @@ public class ValidatorProcessor extends AbstractProcessor {
         return types.isAssignable(types.erasure(type), iterableType);
     }
 
-    private @Nullable DeclaredType getIterableItemType(TypeMirror type) {
-        if (!(type instanceof DeclaredType declared)) {
-            return null;
-        }
-
-        List<? extends TypeMirror> args = declared.getTypeArguments();
-        if (args.isEmpty()) {
-            return null;
-        }
-
-        if (!(args.getFirst() instanceof DeclaredType first)) {
-            return null;
-        }
-
-        return first;
-    }
-
     private @Nullable TypeElement getReferredType(TypeMirror mirror) {
         if (!(mirror instanceof DeclaredType declared)) {
             return null;
@@ -375,6 +334,19 @@ public class ValidatorProcessor extends AbstractProcessor {
         }
 
         return te;
+    }
+
+    private @Nullable TypeMirror getIterableItemType(TypeMirror type) {
+        if (!(type instanceof DeclaredType declared)) {
+            return null;
+        }
+
+        List<? extends TypeMirror> args = declared.getTypeArguments();
+        if (args.isEmpty()) {
+            return null;
+        }
+
+        return args.getFirst();
     }
 
 }

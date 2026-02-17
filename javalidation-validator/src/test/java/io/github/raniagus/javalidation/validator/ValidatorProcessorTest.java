@@ -209,7 +209,7 @@ class ValidatorProcessorTest {
                                 var age = root.age();
                                 var ageValidation = Validation.create();
                                 if (age != null) {
-                                    if (age < 18) {
+                                    if (!(age >= 18)) {
                                         ageValidation.addRootError("must be greater than or equal to {0}", 18);
                                     }
                                 }
@@ -382,7 +382,7 @@ class ValidatorProcessorTest {
                                 var age = root.age();
                                 var ageValidation = Validation.create();
                                 if (age != null) {
-                                    if (age < 18) {
+                                    if (!(age >= 18)) {
                                         ageValidation.addRootError("must be greater than or equal to {0}", 18);
                                     }
                                 }

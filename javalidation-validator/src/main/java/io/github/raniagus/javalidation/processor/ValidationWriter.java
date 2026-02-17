@@ -1,5 +1,6 @@
 package io.github.raniagus.javalidation.processor;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
@@ -47,7 +48,7 @@ public sealed interface ValidationWriter {
         }
     }
 
-    record NullSafeCondition(String accessor, String message) implements NullSafeWriter {
+    record NullSafeAccessor(String accessor, String message) implements NullSafeWriter {
         @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
@@ -97,60 +98,35 @@ public sealed interface ValidationWriter {
         }
     }
 
-    record MoreThan(String message, long value) implements NullUnsafeWriter {
+    record RawCompare(String operator, Number value, String message) implements NullUnsafeWriter {
         @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (%s <= %d) {\
-                    """.formatted(out.getVariable(), value));
+                    if (!(%s %s %s)) {\
+                    """.formatted(out.getVariable(), operator, value));
             out.incrementIndentationLevel();
             out.write("""
-                    %sValidation.addRootError("%s", %d);\
+                    %sValidation.addRootError("%s", %s);\
                     """.formatted(out.getVariable(), message, value));
             out.decrementIndentationLevel();
             out.write("}");
         }
     }
 
-    record MoreThanOrEqual(String message, long value) implements NullUnsafeWriter {
+    record DecimalCompare(String operator, BigDecimal value, String message) implements NullUnsafeWriter {
         @Override
-        public void writeBodyTo(ValidationOutput out) {
-            out.write("""
-                    if (%s < %d) {\
-                    """.formatted(out.getVariable(), value));
-            out.incrementIndentationLevel();
-            out.write("""
-                    %sValidation.addRootError("%s", %d);\
-                    """.formatted(out.getVariable(), message, value));
-            out.decrementIndentationLevel();
-            out.write("}");
+        public Stream<String> imports() {
+            return Stream.of("io.github.raniagus.javalidation.validator.ValidatorUtils");
         }
-    }
 
-    record LessThan(String message, long value) implements NullUnsafeWriter {
         @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (%s >= %d) {\
-                    """.formatted(out.getVariable(), value));
+                    if (!(ValidatorUtils.compare(%s, "%s") %s 0)) {\
+                    """.formatted(out.getVariable(), value, operator));
             out.incrementIndentationLevel();
             out.write("""
-                    %sValidation.addRootError("%s", %d);\
-                    """.formatted(out.getVariable(), message, value));
-            out.decrementIndentationLevel();
-            out.write("}");
-        }
-    }
-
-    record LessThanOrEqual(String message, long value) implements NullUnsafeWriter {
-        @Override
-        public void writeBodyTo(ValidationOutput out) {
-            out.write("""
-                    if (%s > %d) {\
-                    """.formatted(out.getVariable(), value));
-            out.incrementIndentationLevel();
-            out.write("""
-                    %sValidation.addRootError("%s", %d);\
+                    %sValidation.addRootError("%s", "%s");\
                     """.formatted(out.getVariable(), message, value));
             out.decrementIndentationLevel();
             out.write("}");
