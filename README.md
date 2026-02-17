@@ -56,6 +56,35 @@ For Jackson 3.x serialization support:
 </dependency>
 ```
 
+### Jakarta validation annotation processor (Optional)
+
+For Bean validation processing support:
+
+```xml
+<dependency>
+  <groupId>io.github.raniagus</groupId>
+  <artifactId>javalidation-jakarta-validator</artifactId>
+  <version>0.16.1</version>
+</dependency>
+```
+
+And in Maven plugin configuration:
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+        <annotationProcessorPaths>
+            <path>
+                <groupId>io.github.raniagus</groupId>
+                <artifactId>javalidation-jakarta-validator</artifactId>
+                <version>0.16.1</version>
+            </path>
+        </annotationProcessorPaths>
+    </configuration>
+</plugin>
+```
+
 ### Spring Boot Starter (Optional)
 
 For Spring Boot 4.x autoconfiguration with Jackson and MessageSource integration:

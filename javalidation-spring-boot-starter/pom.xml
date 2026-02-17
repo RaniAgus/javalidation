@@ -27,7 +27,7 @@
         </dependency>
         <dependency>
             <groupId>io.github.raniagus</groupId>
-            <artifactId>javalidation-validator</artifactId>
+            <artifactId>javalidation-jakarta-validator</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
