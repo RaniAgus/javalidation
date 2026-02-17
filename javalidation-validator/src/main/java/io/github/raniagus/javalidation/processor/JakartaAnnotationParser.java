@@ -311,8 +311,7 @@ public final class JakartaAnnotationParser {
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        // TODO: Return null for now - temporal validation requires more complex logic
-        return null;
+        return new ValidationWriter.TemporalCompare("isAfter", true, resolveMessage(message));
     }
 
     public static ValidationWriter.@Nullable NullUnsafeWriter parseFutureOrPresentAnnotation(TypeAdapter type) {
@@ -322,8 +321,7 @@ public final class JakartaAnnotationParser {
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        // TODO: Return null for now - temporal validation requires more complex logic
-        return null;
+        return new ValidationWriter.TemporalCompare("isBefore", false, resolveMessage(message));
     }
 
     public static ValidationWriter.@Nullable NullUnsafeWriter paresPastAnnotation(TypeAdapter type) {
@@ -333,8 +331,7 @@ public final class JakartaAnnotationParser {
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        // TODO: Return null for now - temporal validation requires more complex logic
-        return null;
+        return new ValidationWriter.TemporalCompare("isBefore", true, resolveMessage(message));
     }
 
     public static ValidationWriter.@Nullable NullUnsafeWriter parsePastOrPresentAnnotation(TypeAdapter type) {
@@ -344,8 +341,7 @@ public final class JakartaAnnotationParser {
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        // TODO: Return null for now - temporal validation requires more complex logic
-        return null;
+        return new ValidationWriter.TemporalCompare("isAfter", false, resolveMessage(message));
     }
 
     private static String resolveMessage(String message, String... params) {

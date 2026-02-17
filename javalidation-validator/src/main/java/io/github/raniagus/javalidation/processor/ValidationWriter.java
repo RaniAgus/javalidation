@@ -133,6 +133,29 @@ public sealed interface ValidationWriter {
         }
     }
 
+    record TemporalCompare(String accessor, boolean result, String message) implements NullUnsafeWriter {
+        @Override
+        public Stream<String> imports() {
+            return Stream.of(
+                    "io.github.raniagus.javalidation.validator.ValidatorUtils",
+                    "java.time.Instant"
+            );
+        }
+
+        @Override
+        public void writeBodyTo(ValidationOutput out) {
+            out.write("""
+                    if (!(ValidatorUtils.toInstant(%s).%s(Instant.now()) == %s)) {\
+                    """.formatted(out.getVariable(), accessor, result));
+            out.incrementIndentationLevel();
+            out.write("""
+                    %sValidation.addRootError("%s");\
+                    """.formatted(out.getVariable(), message));
+            out.decrementIndentationLevel();
+            out.write("}");
+        }
+    }
+
     record Pattern(String regex, String message) implements NullUnsafeWriter {
         @Override
         public void writeBodyTo(ValidationOutput out) {
