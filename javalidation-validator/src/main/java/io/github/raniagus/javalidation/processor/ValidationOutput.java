@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class ValidationOutput {
@@ -15,7 +14,7 @@ public class ValidationOutput {
     private final Writer writer;
     private final FieldKeyFormatter fieldKeyFormatter;
     private final List<String> variableNames = new ArrayList<>();
-    private final List<Object> keyPrefix = new ArrayList<>();
+    private final List<Object> keys = new ArrayList<>();
 
     private int indentLevel = 0;
     private String indent = "";
@@ -48,8 +47,8 @@ public class ValidationOutput {
         indent = " ".repeat(INDENT_SIZE * indentLevel);
     }
 
-    public void createVariable() {
-        variableNames.add("obj" + variableNames.size());
+    public void createVariable(String name) {
+        variableNames.add(name);
     }
 
     public String getVariable() {
@@ -60,13 +59,15 @@ public class ValidationOutput {
         variableNames.removeLast();
     }
 
-    public void addKeyPrefix(Object key) {
-        keyPrefix.add(key);
+    public void addKey(Object key) {
+        keys.add(key);
     }
 
-    public String getFullKey(String key) {
-        Object[] fullKey = Arrays.copyOf(keyPrefix.toArray(), keyPrefix.size() + 1);
-        fullKey[keyPrefix.size()] = key;
-        return fieldKeyFormatter.format(FieldKey.of(fullKey));
+    public void removeKey() {
+        keys.removeLast();
+    }
+
+    public String getFullKey() {
+        return fieldKeyFormatter.format(FieldKey.of(keys.toArray()));
     }
 }

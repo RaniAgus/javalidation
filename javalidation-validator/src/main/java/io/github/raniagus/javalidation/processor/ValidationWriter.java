@@ -10,21 +10,21 @@ public sealed interface ValidationWriter {
     default void writePropertiesTo(ValidationOutput out, String field) {
     }
 
-    void writeBodyTo(ValidationOutput out, String field);
+    void writeBodyTo(ValidationOutput out);
 
     sealed interface NullSafeWriter extends ValidationWriter {}
     sealed interface NullUnsafeWriter extends ValidationWriter {}
 
     record NotNull(String message) implements NullSafeWriter {
         @Override
-        public void writeBodyTo(ValidationOutput out, String field) {
+        public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (%s.%s() == null) {\
-                    """.formatted(out.getVariable(), field));
+                    if (%s == null) {\
+                    """.formatted(out.getVariable()));
             out.incrementIndentationLevel();
             out.write("""
                     validation.addFieldError("%s", "%s");\
-                    """.formatted(out.getFullKey(field), message));
+                    """.formatted(out.getFullKey(), message));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -32,14 +32,14 @@ public sealed interface ValidationWriter {
 
     record NullSafeCondition(String accessor, String message) implements NullSafeWriter {
         @Override
-        public void writeBodyTo(ValidationOutput out, String field) {
+        public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (%1$s.%2$s() == null || %1$s.%2$s().%3$s()) {\
-                    """.formatted(out.getVariable(), field, accessor));
+                    if (%1$s == null || %1$s.%2$s()) {\
+                    """.formatted(out.getVariable(), accessor));
             out.incrementIndentationLevel();
             out.write("""
                     validation.addFieldError("%s", "%s");\
-                    """.formatted(out.getFullKey(field), message));
+                    """.formatted(out.getFullKey(), message));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -52,14 +52,14 @@ public sealed interface ValidationWriter {
             int max
     ) implements NullUnsafeWriter {
         @Override
-        public void writeBodyTo(ValidationOutput out, String field) {
+        public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (%1$s.%2$s().%3$s() < %4$d || %1$s.%2$s().%3$s() > %5$d) {\
-                    """.formatted(out.getVariable(), field, accessor, min, max));
+                    if (%1$s.%2$s() < %3$d || %1$s.%2$s() > %4$d) {\
+                    """.formatted(out.getVariable(), accessor, min, max));
             out.incrementIndentationLevel();
             out.write("""
                     validation.addFieldError("%s", "%s", %d, %d);\
-                    """.formatted(out.getFullKey(field), message, min, max));
+                    """.formatted(out.getFullKey(), message, min, max));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -67,14 +67,14 @@ public sealed interface ValidationWriter {
 
     record MoreThan(String message, long value) implements NullUnsafeWriter {
         @Override
-        public void writeBodyTo(ValidationOutput out, String field) {
+        public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (%s.%s() <= %d) {\
-                    """.formatted(out.getVariable(), field, value));
+                    if (%s <= %d) {\
+                    """.formatted(out.getVariable(), value));
             out.incrementIndentationLevel();
             out.write("""
                     validation.addFieldError("%s", "%s", %d);\
-                    """.formatted(out.getFullKey(field), message, value));
+                    """.formatted(out.getFullKey(), message, value));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -82,14 +82,14 @@ public sealed interface ValidationWriter {
 
     record MoreThanOrEqual(String message, long value) implements NullUnsafeWriter {
         @Override
-        public void writeBodyTo(ValidationOutput out, String field) {
+        public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (%s.%s() < %d) {\
-                    """.formatted(out.getVariable(), field, value));
+                    if (%s < %d) {\
+                    """.formatted(out.getVariable(), value));
             out.incrementIndentationLevel();
             out.write("""
                     validation.addFieldError("%s", "%s", %d);\
-                    """.formatted(out.getFullKey(field), message, value));
+                    """.formatted(out.getFullKey(), message, value));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -97,14 +97,14 @@ public sealed interface ValidationWriter {
 
     record LessThan(String message, long value) implements NullUnsafeWriter {
         @Override
-        public void writeBodyTo(ValidationOutput out, String field) {
+        public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (%s.%s() >= %d) {\
-                    """.formatted(out.getVariable(), field, value));
+                    if (%s >= %d) {\
+                    """.formatted(out.getVariable(), value));
             out.incrementIndentationLevel();
             out.write("""
                     validation.addFieldError("%s", "%s", %d);\
-                    """.formatted(out.getFullKey(field), message, value));
+                    """.formatted(out.getFullKey(), message, value));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -112,14 +112,14 @@ public sealed interface ValidationWriter {
 
     record LessThanOrEqual(String message, long value) implements NullUnsafeWriter {
         @Override
-        public void writeBodyTo(ValidationOutput out, String field) {
+        public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (%s.%s() > %d) {\
-                    """.formatted(out.getVariable(), field, value));
+                    if (%s > %d) {\
+                    """.formatted(out.getVariable(), value));
             out.incrementIndentationLevel();
             out.write("""
                     validation.addFieldError("%s", "%s", %d);\
-                    """.formatted(out.getFullKey(field), message, value));
+                    """.formatted(out.getFullKey(), message, value));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -127,20 +127,20 @@ public sealed interface ValidationWriter {
 
     record Pattern(String regex, String message) implements NullUnsafeWriter {
         @Override
-        public void writeBodyTo(ValidationOutput out, String field) {
+        public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (!%s.%s().matches("%s")) {\
-                    """.formatted(out.getVariable(), field, regex));
+                    if (!%s.matches("%s")) {\
+                    """.formatted(out.getVariable(), regex));
             out.incrementIndentationLevel();
             out.write("""
                     validation.addFieldError("%s", "%s");\
-                    """.formatted(out.getFullKey(field), message));
+                    """.formatted(out.getFullKey(), message));
             out.decrementIndentationLevel();
             out.write("}");
         }
     }
 
-    record Validator(
+    record Validate(
             String referredTypeImport, // "com.example.RecordName"
             String referredTypeEnclosingClassPrefix, // "" or "EnclosingClass."
             String referredTypeName, // "RecordName"
@@ -165,10 +165,10 @@ public sealed interface ValidationWriter {
         }
 
         @Override
-        public void writeBodyTo(ValidationOutput out, String field) {
+        public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    validation.addAll(%s.validate(%s.%s()), new Object[]{"%s"});\
-                    """.formatted(validatorProperty(field), out.getVariable(), field, out.getFullKey(field)));
+                    validation.addAll(%s.validate(%s), new Object[]{"%s"});\
+                    """.formatted(validatorProperty(out.getVariable()), out.getVariable(), out.getFullKey()));
         }
 
         private String validatorProperty(String field) {

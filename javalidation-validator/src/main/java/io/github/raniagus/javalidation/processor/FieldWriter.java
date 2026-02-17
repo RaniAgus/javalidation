@@ -25,19 +25,27 @@ public record FieldWriter(
     }
 
     public void writeBodyTo(ValidationOutput out) {
+        if (nullSafeWriter == null && nullUnsafeWriters.isEmpty()) {
+            return;
+        }
+        out.write("var %s = %s.%s();".formatted(field, out.getVariable(), field));
+        out.createVariable(field);
+        out.addKey(field);
         if (nullSafeWriter != null) {
-            nullSafeWriter.writeBodyTo(out, field);
+            nullSafeWriter.writeBodyTo(out);
         }
         if (!nullUnsafeWriters.isEmpty()) {
             out.write("""
-                if (%s.%s() != null) {\
-                """.formatted(out.getVariable(), field));
+                if (%s != null) {\
+                """.formatted(out.getVariable()));
 
             out.incrementIndentationLevel();
-            nullUnsafeWriters.forEach(writer -> writer.writeBodyTo(out, field));
+            nullUnsafeWriters.forEach(writer -> writer.writeBodyTo(out));
             out.decrementIndentationLevel();
 
             out.write("}");
         }
+        out.removeVariable();
+        out.removeKey();
     }
 }

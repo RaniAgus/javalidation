@@ -35,7 +35,7 @@ public record ValidatorClassWriter(
         for (FieldWriter writer : fieldWriters) {
             writer.writePropertiesTo(out);
         }
-        out.createVariable();
+        out.createVariable("obj");
         out.write("@Override");
         out.write("""
                 public ValidationErrors validate(%s@Nullable %s %s) {\
