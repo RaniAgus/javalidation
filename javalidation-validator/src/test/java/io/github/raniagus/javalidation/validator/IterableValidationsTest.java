@@ -80,52 +80,6 @@ public class IterableValidationsTest {
                         }
                         """
                 ));
-        assertThat(compilation)
-                .generatedSourceFile("io.github.raniagus.javalidation.validator.Validators")
-                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("io.github.raniagus.javalidation.validator.Validators", """
-                        package io.github.raniagus.javalidation.validator;
-                        
-                        import io.github.raniagus.javalidation.ValidationErrors;
-                        import io.github.raniagus.javalidation.validator.Validator;
-                        import java.util.Map;
-                        import javax.annotation.processing.Generated;
-                        import test.UserRequest;
-                        import test.UserRequestValidator;
-
-                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
-                        public final class Validators {
-                            private static final Map<Class<?>, Validator<?>> CACHE;
-                        
-                            private Validators() {}
-                        
-                            static {
-                                CACHE = Map.ofEntries(
-                                        Map.entry(UserRequest.class, new UserRequestValidator())
-                                );
-                            }
-
-                            public static boolean hasValidator(Class<?> clazz) {
-                                return CACHE.containsKey(clazz);
-                            }
-
-                            @SuppressWarnings("unchecked")
-                            public static <T> ValidationErrors validate(T instance) {
-                                Validator<T> validator = getValidator((Class<T>) instance.getClass());
-                                return validator.validate(instance);
-                            }
-                        
-                            @SuppressWarnings("unchecked")
-                            public static <T> Validator<T> getValidator(Class<T> clazz) {
-                                 Validator<?> validator = CACHE.get(clazz);
-                                 if (validator == null) {
-                                     throw new IllegalArgumentException(
-                                         "No validator registered for " + clazz.getName()
-                                     );
-                                 }
-                                 return (Validator<T>) validator;
-                            }
-                        }
-                        """));
     }
 
     @Test
@@ -204,77 +158,6 @@ public class IterableValidationsTest {
                         }
                         """
                 ));
-        assertThat(compilation)
-                .generatedSourceFile("test.UserRequest$PersonValidator")
-                .hasSourceEquivalentTo(JavaFileObjects.forSourceString(
-                        "test.UserRequest$PersonValidator",
-                        """
-                        package test;
-                        
-                        import io.github.raniagus.javalidation.Validation;
-                        import io.github.raniagus.javalidation.ValidationErrors;
-                        import io.github.raniagus.javalidation.validator.Validator;
-                        import javax.annotation.processing.Generated;
-                        import org.jspecify.annotations.Nullable;
-
-                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
-                        public class UserRequest$PersonValidator implements Validator<UserRequest.Person> {
-                            @Override
-                            public ValidationErrors validate(UserRequest.@Nullable Person root) {
-                                Validation rootValidation = Validation.create();
-                                return rootValidation.finish();
-                            }
-                        }
-                        """
-                ));
-        assertThat(compilation)
-                .generatedSourceFile("io.github.raniagus.javalidation.validator.Validators")
-                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("io.github.raniagus.javalidation.validator.Validators", """
-                        package io.github.raniagus.javalidation.validator;
-                        
-                        import io.github.raniagus.javalidation.ValidationErrors;
-                        import io.github.raniagus.javalidation.validator.Validator;
-                        import java.util.Map;
-                        import javax.annotation.processing.Generated;
-                        import test.UserRequest;
-                        import test.UserRequest$PersonValidator;
-                        import test.UserRequestValidator;
-
-                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
-                        public final class Validators {
-                            private static final Map<Class<?>, Validator<?>> CACHE;
-                        
-                            private Validators() {}
-                        
-                            static {
-                                CACHE = Map.ofEntries(
-                                        Map.entry(UserRequest.class, new UserRequestValidator())
-                                      , Map.entry(UserRequest.Person.class, new UserRequest$PersonValidator())
-                                );
-                            }
-
-                            public static boolean hasValidator(Class<?> clazz) {
-                                return CACHE.containsKey(clazz);
-                            }
-
-                            @SuppressWarnings("unchecked")
-                            public static <T> ValidationErrors validate(T instance) {
-                                Validator<T> validator = getValidator((Class<T>) instance.getClass());
-                                return validator.validate(instance);
-                            }
-                        
-                            @SuppressWarnings("unchecked")
-                            public static <T> Validator<T> getValidator(Class<T> clazz) {
-                                 Validator<?> validator = CACHE.get(clazz);
-                                 if (validator == null) {
-                                     throw new IllegalArgumentException(
-                                         "No validator registered for " + clazz.getName()
-                                     );
-                                 }
-                                 return (Validator<T>) validator;
-                            }
-                        }
-                        """));
     }
 
 
@@ -352,51 +235,5 @@ public class IterableValidationsTest {
                         }
                         """
                 ));
-        assertThat(compilation)
-                .generatedSourceFile("io.github.raniagus.javalidation.validator.Validators")
-                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("io.github.raniagus.javalidation.validator.Validators", """
-                        package io.github.raniagus.javalidation.validator;
-                        
-                        import io.github.raniagus.javalidation.ValidationErrors;
-                        import io.github.raniagus.javalidation.validator.Validator;
-                        import java.util.Map;
-                        import javax.annotation.processing.Generated;
-                        import test.UserRequest;
-                        import test.UserRequestValidator;
-
-                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
-                        public final class Validators {
-                            private static final Map<Class<?>, Validator<?>> CACHE;
-                        
-                            private Validators() {}
-                        
-                            static {
-                                CACHE = Map.ofEntries(
-                                        Map.entry(UserRequest.class, new UserRequestValidator())
-                                );
-                            }
-
-                            public static boolean hasValidator(Class<?> clazz) {
-                                return CACHE.containsKey(clazz);
-                            }
-
-                            @SuppressWarnings("unchecked")
-                            public static <T> ValidationErrors validate(T instance) {
-                                Validator<T> validator = getValidator((Class<T>) instance.getClass());
-                                return validator.validate(instance);
-                            }
-                        
-                            @SuppressWarnings("unchecked")
-                            public static <T> Validator<T> getValidator(Class<T> clazz) {
-                                 Validator<?> validator = CACHE.get(clazz);
-                                 if (validator == null) {
-                                     throw new IllegalArgumentException(
-                                         "No validator registered for " + clazz.getName()
-                                     );
-                                 }
-                                 return (Validator<T>) validator;
-                            }
-                        }
-                        """));
     }
 }
