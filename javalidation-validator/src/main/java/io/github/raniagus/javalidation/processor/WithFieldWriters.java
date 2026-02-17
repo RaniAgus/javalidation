@@ -16,7 +16,7 @@ public interface WithFieldWriters {
         }
         if (!nullUnsafeWriters.isEmpty()) {
             out.write("""
-                if (%s != null) {\
+                if (java.util.Objects.nonNull(%s)) {\
                 """.formatted(out.getVariable()));
 
             out.incrementIndentationLevel();

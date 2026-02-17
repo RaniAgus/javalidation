@@ -19,6 +19,9 @@ public record TypeAdapter(TypeMirror type, ProcessingEnvironment processingEnv) 
             "byte", "short", "int", "long"
     );
 
+    /**
+     * Check if the type is a decimal type (BigDecimal, BigInteger, CharSequence, Number, or primitive numeric types).
+     */
     public boolean isDecimalType() {
         Elements elements = processingEnv.getElementUtils();
         Types types = processingEnv.getTypeUtils();
@@ -30,6 +33,26 @@ public record TypeAdapter(TypeMirror type, ProcessingEnvironment processingEnv) 
             }
         }
         return false;
+    }
+
+    /**
+     * Check if the type is a collection type
+     */
+    public boolean isCollection() {
+        return isOfType("java.util.Collection");
+    }
+
+    /**
+     * Check if the type is a map type
+     */
+    public boolean isOfType(String typeName) {
+        Elements elements = processingEnv.getElementUtils();
+        Types types = processingEnv.getTypeUtils();
+
+        TypeElement collectionElement = elements.getTypeElement(typeName);
+        if (collectionElement == null) return false;
+
+        return types.isAssignable(types.erasure(type), types.erasure(collectionElement.asType()));
     }
 
     /**

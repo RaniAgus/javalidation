@@ -2,6 +2,7 @@ package io.github.raniagus.javalidation.processor;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
 
@@ -22,7 +23,7 @@ public sealed interface ValidationWriter {
         @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (%s == null) {\
+                    if (java.util.Objects.isNull(%s)) {\
                     """.formatted(out.getVariable()));
             out.incrementIndentationLevel();
             out.write("""
@@ -37,7 +38,7 @@ public sealed interface ValidationWriter {
         @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (%s != null) {\
+                    if (java.util.Objects.nonNull(%s)) {\
                     """.formatted(out.getVariable()));
             out.incrementIndentationLevel();
             out.write("""
@@ -52,7 +53,7 @@ public sealed interface ValidationWriter {
         @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (%1$s == null || %1$s.%2$s()) {\
+                    if (java.util.Objects.isNull(%1$s) || %1$s.%2$s()) {\
                     """.formatted(out.getVariable(), accessor));
             out.incrementIndentationLevel();
             out.write("""
@@ -98,7 +99,7 @@ public sealed interface ValidationWriter {
         }
     }
 
-    record RawCompare(String operator, Number value, String message) implements NullUnsafeWriter {
+    record RawCompare(String operator, Number value, String message, boolean arg) implements NullUnsafeWriter {
         @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
@@ -106,8 +107,8 @@ public sealed interface ValidationWriter {
                     """.formatted(out.getVariable(), operator, value));
             out.incrementIndentationLevel();
             out.write("""
-                    %sValidation.addRootError("%s", %s);\
-                    """.formatted(out.getVariable(), message, value));
+                    %sValidation.addRootError("%s"%s);\
+                    """.formatted(out.getVariable(), message, arg ? ", " + value : ""));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -136,16 +137,13 @@ public sealed interface ValidationWriter {
     record TemporalCompare(String accessor, boolean result, String message) implements NullUnsafeWriter {
         @Override
         public Stream<String> imports() {
-            return Stream.of(
-                    "io.github.raniagus.javalidation.validator.ValidatorUtils",
-                    "java.time.Instant"
-            );
+            return Stream.of("io.github.raniagus.javalidation.validator.ValidatorUtils");
         }
 
         @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (!(ValidatorUtils.toInstant(%s).%s(Instant.now()) == %s)) {\
+                    if (!(ValidatorUtils.toInstant(%s).%s(java.time.Instant.now()) == %s)) {\
                     """.formatted(out.getVariable(), accessor, result));
             out.incrementIndentationLevel();
             out.write("""
@@ -156,16 +154,16 @@ public sealed interface ValidationWriter {
         }
     }
 
-    record Pattern(String regex, String message) implements NullUnsafeWriter {
+    record Pattern(String regex, String message, String... args) implements NullUnsafeWriter {
         @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (!%s.matches("%s")) {\
+                    if (!java.util.Objects.toString(%s).matches("%s")) {\
                     """.formatted(out.getVariable(), regex));
             out.incrementIndentationLevel();
             out.write("""
-                    %sValidation.addRootError("%s");\
-                    """.formatted(out.getVariable(), message));
+                    %sValidation.addRootError("%s"%s);\
+                    """.formatted(out.getVariable(), message, args.length == 0 ? "" : Stream.of(args).collect(Collectors.joining(", ", ", ", ""))));
             out.decrementIndentationLevel();
             out.write("}");
         }

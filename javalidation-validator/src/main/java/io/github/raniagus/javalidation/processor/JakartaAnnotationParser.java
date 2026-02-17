@@ -17,16 +17,16 @@ public final class JakartaAnnotationParser {
             Map.entry("{jakarta.validation.constraints.Min.message}", "must be greater than or equal to {value}"),
             Map.entry("{jakarta.validation.constraints.Max.message}", "must be less than or equal to {value}"),
             Map.entry("{jakarta.validation.constraints.Email.message}", "must be a well-formed email address"),
-            Map.entry("{jakarta.validation.constraints.Pattern.message}", "must match \"{regexp}\""),
+            Map.entry("{jakarta.validation.constraints.Pattern.message}", "must match \\\"{regexp}\\\""),
             Map.entry("{jakarta.validation.constraints.Positive.message}", "must be greater than 0"),
             Map.entry("{jakarta.validation.constraints.PositiveOrZero.message}", "must be greater than or equal to 0"),
             Map.entry("{jakarta.validation.constraints.Negative.message}", "must be less than 0"),
             Map.entry("{jakarta.validation.constraints.NegativeOrZero.message}", "must be less than or equal to 0"),
             Map.entry("{jakarta.validation.constraints.AssertTrue.message}", "must be true"),
             Map.entry("{jakarta.validation.constraints.AssertFalse.message}", "must be false"),
-            Map.entry("{jakarta.validation.constraints.DecimalMax.message}", "must be less than or equal to {value}"),
-            Map.entry("{jakarta.validation.constraints.DecimalMin.message}", "must be greater than or equal to {value}"),
-            Map.entry("{jakarta.validation.constraints.Digits.message}", "numeric value out of bounds (<{integer} digits>.<{fraction} digits> expected)"),
+            Map.entry("{jakarta.validation.constraints.DecimalMax.message}", "must be less than {inclusive}{value}"),
+            Map.entry("{jakarta.validation.constraints.DecimalMin.message}", "must be greater than {inclusive}{value}"),
+            Map.entry("{jakarta.validation.constraints.Digits.message}", "numeric value out of bounds ({integer} digits, {fraction} decimal digits expected)"),
             Map.entry("{jakarta.validation.constraints.Future.message}", "must be a future date"),
             Map.entry("{jakarta.validation.constraints.FutureOrPresent.message}", "must be a date in the present or in the future"),
             Map.entry("{jakarta.validation.constraints.Past.message}", "must be a past date"),
@@ -35,7 +35,7 @@ public final class JakartaAnnotationParser {
 
     private JakartaAnnotationParser() {}
 
-    public static ValidationWriter.@Nullable NullSafeWriter parseNullSafeWriters(TypeAdapter type) {
+    public static ValidationWriter.@Nullable NullSafeWriter parseNullSafeWriter(TypeAdapter type) {
         return Stream.of(
                 parseNullAnnotation(type),
                 parseNotBlankAnnotation(type),
@@ -118,7 +118,7 @@ public final class JakartaAnnotationParser {
         int max = getAnnotationIntValue(annotationMirror, "max", Integer.MAX_VALUE);
 
         return new ValidationWriter.Size(
-                "length", // TODO: Add Collection support
+                type.isCollection() || type.isOfType("java.util.Map") ? "size" : "length",
                 resolveMessage(message, "{min}", "{max}"),
                 min,
                 max
@@ -137,7 +137,8 @@ public final class JakartaAnnotationParser {
         return new ValidationWriter.RawCompare(
                 ">=",
                 value,
-                resolveMessage(message, "{value}")
+                resolveMessage(message, "{value}"),
+                true
         );
     }
 
@@ -153,7 +154,8 @@ public final class JakartaAnnotationParser {
         return new ValidationWriter.RawCompare(
                 "<=",
                 value,
-                resolveMessage(message, "{value}")
+                resolveMessage(message, "{value}"),
+                true
         );
     }
 
@@ -164,7 +166,7 @@ public final class JakartaAnnotationParser {
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        return new ValidationWriter.RawCompare(">", 0, resolveMessage(message));
+        return new ValidationWriter.RawCompare(">", 0, resolveMessage(message), false);
     }
 
     public static ValidationWriter.@Nullable NullUnsafeWriter parsePositiveOrZeroAnnotation(TypeAdapter type) {
@@ -174,7 +176,7 @@ public final class JakartaAnnotationParser {
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        return new ValidationWriter.RawCompare(">=", 0, resolveMessage(message));
+        return new ValidationWriter.RawCompare(">=", 0, resolveMessage(message), false);
     }
 
     public static ValidationWriter.@Nullable NullUnsafeWriter parseNegativeAnnotation(TypeAdapter type) {
@@ -184,7 +186,7 @@ public final class JakartaAnnotationParser {
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        return new ValidationWriter.RawCompare("<", 0, resolveMessage(message));
+        return new ValidationWriter.RawCompare("<", 0, resolveMessage(message), false);
     }
 
     public static ValidationWriter.@Nullable NullUnsafeWriter parseNegativeOrZeroAnnotation(TypeAdapter type) {
@@ -194,7 +196,7 @@ public final class JakartaAnnotationParser {
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        return new ValidationWriter.RawCompare("<=", 0, resolveMessage(message));
+        return new ValidationWriter.RawCompare("<=", 0, resolveMessage(message), false);
     }
 
     public static ValidationWriter.@Nullable NullUnsafeWriter parseEmailAnnotation(TypeAdapter type) {
@@ -221,7 +223,8 @@ public final class JakartaAnnotationParser {
 
         return new ValidationWriter.Pattern(
                 regexp.replace("\\", "\\\\"), // TODO: Check how to prevent escaping
-                resolveMessage(message, "{regexp}")
+                resolveMessage(message, "{regexp}"),
+                "\"" + regexp + "\""
         );
     }
 
@@ -257,9 +260,14 @@ public final class JakartaAnnotationParser {
 
         String message = getAnnotationMessage(annotationMirror);
         String value = getAnnotationStringValue(annotationMirror, "value", "0");
+        boolean inclusive = getAnnotationBooleanValue(annotationMirror, "inclusive", true);
 
         try {
-            return new ValidationWriter.DecimalCompare("<=", new BigDecimal(value), resolveMessage(message));
+            return new ValidationWriter.DecimalCompare(
+                    inclusive ? "<=" : "<",
+                    new BigDecimal(value),
+                    resolveMessage(message, "{value}").replace("{inclusive}", inclusive ? "or equal to " : "")
+            );
         } catch (NumberFormatException e) {
             return null;
         }
@@ -277,9 +285,14 @@ public final class JakartaAnnotationParser {
 
         String message = getAnnotationMessage(annotationMirror);
         String value = getAnnotationStringValue(annotationMirror, "value", "0");
+        boolean inclusive = getAnnotationBooleanValue(annotationMirror, "inclusive", true);
 
         try {
-            return new ValidationWriter.DecimalCompare(">=", new BigDecimal(value), resolveMessage(message));
+            return new ValidationWriter.DecimalCompare(
+                    inclusive ? ">=" : ">",
+                    new BigDecimal(value),
+                    resolveMessage(message, "{value}").replace("{inclusive}", inclusive ? "or equal to " : "")
+            );
         } catch (NumberFormatException e) {
             return null;
         }
@@ -300,7 +313,9 @@ public final class JakartaAnnotationParser {
 
         return new ValidationWriter.Pattern(
                 pattern,
-                resolveMessage(message, "{integer}", "{fraction}")
+                resolveMessage(message, "{integer}", "{fraction}"),
+                String.valueOf(integer),
+                String.valueOf(fraction)
         );
     }
 
@@ -396,6 +411,17 @@ public final class JakartaAnnotationParser {
         Object value = getAnnotationValue(mirror, attributeName);
         if (value instanceof Number number) {
             return number.intValue();
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Extract a boolean value from an annotation mirror.
+     */
+    private static boolean getAnnotationBooleanValue(AnnotationMirror mirror, String attributeName, boolean defaultValue) {
+        Object value = getAnnotationValue(mirror, attributeName);
+        if (value instanceof Boolean bool) {
+            return bool;
         }
         return defaultValue;
     }

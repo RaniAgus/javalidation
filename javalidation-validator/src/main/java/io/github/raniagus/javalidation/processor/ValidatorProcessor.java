@@ -218,7 +218,7 @@ public class ValidatorProcessor extends AbstractProcessor {
     private FieldWriter parseFieldWriter(RecordComponentElement component) {
         return new FieldWriter(
                 component.getSimpleName().toString(),
-                parseNullSafeWriters(component.asType()),
+                parseNullSafeWriter(component.asType()),
                 parseNullUnsafeWriters(component.asType())
         );
     }
@@ -247,14 +247,18 @@ public class ValidatorProcessor extends AbstractProcessor {
             return null;
         }
 
-        return new ValidationWriter.IterableWriter(
-                parseNullSafeWriters(itemType),
-                parseNullUnsafeWriters(itemType)
-        );
+        var nullSafeWriter = parseNullSafeWriter(itemType);
+        var nullUnsafeWriters = parseNullUnsafeWriters(itemType);
+
+        if (nullSafeWriter == null && nullUnsafeWriters.isEmpty()) {
+            return null;
+        }
+
+        return new ValidationWriter.IterableWriter(nullSafeWriter, nullUnsafeWriters);
     }
 
-    private ValidationWriter.@Nullable NullSafeWriter parseNullSafeWriters(TypeMirror type) {
-        return JakartaAnnotationParser.parseNullSafeWriters(new TypeAdapter(type, processingEnv));
+    private ValidationWriter.@Nullable NullSafeWriter parseNullSafeWriter(TypeMirror type) {
+        return JakartaAnnotationParser.parseNullSafeWriter(new TypeAdapter(type, processingEnv));
     }
 
     private List<ValidationWriter.NullUnsafeWriter> parseNullUnsafeWriters(TypeMirror type) {
