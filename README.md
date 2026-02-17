@@ -1,6 +1,6 @@
 # javalidation
 
-[![MvnRepository](https://badges.mvnrepository.com/badge/io.github.raniagus/javalidation/badge.svg?label=MvnRepository)](https://mvnrepository.com/artifact/io.github.raniagus/javalidation)
+[![Maven](https://badges.mvnrepository.com/badge/io.github.raniagus/javalidation/badge.svg?label=Maven&color=orange)](https://mvnrepository.com/artifact/io.github.raniagus/javalidation)
 
 A lightweight, dependency-free functional validation library for Java 21+, featuring a type-safe, serializable, and
 fully i18n-compatible `Result<T>` with accumulated `ValidationErrors`.
@@ -32,7 +32,7 @@ fully i18n-compatible `Result<T>` with accumulated `ValidationErrors`.
 Javalidation is hosted in the Maven Central Repository as three separate modules. Also, snapshots of the latest commit
 in the main branch can be consumed from Sonatype Central Portal repository[^1].
 
-### Core Module (Required)
+### Core Module
 
 The core validation library with zero dependencies:
 
@@ -44,7 +44,7 @@ The core validation library with zero dependencies:
 </dependency>
 ```
 
-### Jackson Module (Optional)
+### Jackson Module
 
 For Jackson 3.x serialization support:
 
@@ -56,9 +56,9 @@ For Jackson 3.x serialization support:
 </dependency>
 ```
 
-### Jakarta validation annotation processor (Optional - Beta)
+### Jakarta Validation API + Processor (Experimental)
 
-For Bean validation processing support:
+For Bean Validation support:
 
 ```xml
 <dependency>
@@ -68,7 +68,7 @@ For Bean validation processing support:
 </dependency>
 ```
 
-And in Maven plugin configuration:
+Add the annotation processor to your compiler configuration:
 ```xml
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
@@ -85,9 +85,12 @@ And in Maven plugin configuration:
 </plugin>
 ```
 
-### Spring Boot Starter (Optional)
+### Spring Boot Starter
 
-For Spring Boot 4.x autoconfiguration with Jackson and MessageSource integration:
+Provides Spring Boot 4.x autoconfiguration for:
+
+- Jackson and MessageSource integration
+- Using Validator with `@Valid` annotation
 
 ```xml
 <dependency>
@@ -97,8 +100,8 @@ For Spring Boot 4.x autoconfiguration with Jackson and MessageSource integration
 </dependency>
 ```
 
-The Spring Boot starter includes the core module automatically, you can opt in to include the Jackson and Jakarta
-validation modules to perform their corresponding auto configurations.
+The Spring Boot starter includes the core module automatically, and you can opt in to the Jackson and/or
+Jakarta Validation modules, so their corresponding features will be autoconfigured.
 
 ## Quick Start
 
@@ -629,6 +632,51 @@ Result<User> validateUser(String name, String age) {
 ```
 
 Spring automatically formats messages based on the request locale.
+
+**Bean validation**:
+
+When including `javalidation-jakarta-validation*` dependency and annotation processor, `@Valid` annotations are
+automatically validated using `Validations.validate(T)`, which is a compile-time generated service locator for different
+`Validator<T>` instances.
+
+To tell the annotation processor to generate a `Validator<T>`, you need to annotate the class with `@Validate`:
+
+```java
+import io.github.raniagus.javalidation.validator.Validate;
+import jakarta.validation.constraints.*;
+
+@Validate
+public record UserDto(
+        @NotBlank String name, 
+        @NotNull @Email String email, 
+        @NotEmpty List<@NotNull OrderDto> orders
+) {
+    @Validate
+    public record OrderDto(
+            @NotEmpty String productId,
+            @Min(0) int quantity
+    ) {}
+}
+```
+
+> **Important:** Only record classes are supported.
+
+If you'd like to inject the validators manually, you could create each corresponding `@Bean` calling
+`Validators.getValidator(Class)`:
+
+```java
+import io.github.raniagus.javalidation.validator.Validators;
+
+@Bean
+public Validator<UserDto> userValidator() {
+    return Validators.getValidator(UserDto.class);
+}
+
+@Bean
+public Validator<OrderDto> orderValidator() {
+    return Validators.getValidator(OrderDto.class);
+}
+```
 
 ## Advanced Patterns
 
