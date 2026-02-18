@@ -231,4 +231,98 @@ class ValidationTest {
         assertThatThrownBy(() -> validation.checkAndGet(() -> "value"))
                 .isInstanceOf(JavalidationException.class);
     }
+
+    // -- validateField --
+
+    @Test
+    void givenRootErrorInConsumer_whenValidateField_thenConvertsToFieldError() {
+        record Person(String name, int age) {}
+        record Request(Person person) {}
+
+        Request request = new Request(null);
+        var validation = Validation.create();
+
+        validation.validateField("person", personValidation -> {
+            if (request.person() == null) {
+                personValidation.addRootError("must not be null");
+            }
+        });
+
+        var errors = validation.finish();
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("person"));
+        assertThat(errors.fieldErrors().get(FieldKey.of("person")))
+                .containsExactly(TemplateString.of("must not be null"));
+    }
+
+    @Test
+    void givenFieldErrorInConsumer_whenValidateField_thenPrefixesFieldName() {
+        record Person(String name, int age) {}
+        record Request(Person person) {}
+
+        Request request = new Request(new Person(null, 15));
+        var validation = Validation.create();
+
+        validation.validateField("person", personValidation -> {
+            if (request.person().name() == null) {
+                personValidation.addFieldError("name", "must not be null");
+            }
+            if (request.person().age() < 18) {
+                personValidation.addFieldError("age", "must be at least 18");
+            }
+        });
+
+        var errors = validation.finish();
+        assertThat(errors.fieldErrors()).containsKeys(
+                FieldKey.of("person", "name"),
+                FieldKey.of("person", "age")
+        );
+        assertThat(errors.fieldErrors().get(FieldKey.of("person", "name")))
+                .containsExactly(TemplateString.of("must not be null"));
+        assertThat(errors.fieldErrors().get(FieldKey.of("person", "age")))
+                .containsExactly(TemplateString.of("must be at least 18"));
+    }
+
+    @Test
+    void givenNestedValidateField_whenValidateField_thenCreatesNestedPrefix() {
+        var validation = Validation.create();
+
+        validation.validateField("address", addressValidation -> {
+            addressValidation.validateField("street", streetValidation -> {
+                streetValidation.addRootError("required");
+            });
+        });
+
+        var errors = validation.finish();
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("address", "street"));
+        assertThat(errors.fieldErrors().get(FieldKey.of("address", "street")))
+                .containsExactly(TemplateString.of("required"));
+    }
+
+    @Test
+    void givenNullField_whenValidateField_thenThrowsNullPointerException() {
+        var validation = Validation.create();
+
+        assertThatThrownBy(() -> validation.validateField(null, v -> {}))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void givenNullConsumer_whenValidateField_thenThrowsNullPointerException() {
+        var validation = Validation.create();
+
+        assertThatThrownBy(() -> validation.validateField("field", null))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void givenNoErrorsInConsumer_whenValidateField_thenNoErrorsAdded() {
+        var validation = Validation.create();
+
+        validation.validateField("person", personValidation -> {
+            // No errors added
+        });
+
+        var errors = validation.finish();
+        assertThat(errors.isEmpty()).isTrue();
+    }
 }

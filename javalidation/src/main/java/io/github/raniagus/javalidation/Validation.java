@@ -149,7 +149,58 @@ public class Validation {
         fieldErrors.forEach(this::addFieldErrors);
     }
 
-    // TODO: add tests and documentation
+    /**
+     * Validates a nested field by executing validation logic within a scoped context.
+     * <p>
+     * This method provides a convenient way to validate nested objects by automatically
+     * managing field prefixes. Any errors added within the consumer (both root and field errors)
+     * will be prefixed with the specified field name.
+     * <p>
+     * Root errors added within the consumer become field errors for the specified field.
+     * Field errors added within the consumer are nested under the field with dot notation.
+     * <p>
+     * <b>Basic usage:</b>
+     * <pre>{@code
+     * record Person(String name, int age) {}
+     * record Request(Person person) {}
+     *
+     * Validation validation = Validation.create();
+     * validation.validateField("person", personValidation -> {
+     *     if (request.person() == null) {
+     *         personValidation.addRootError("must not be null");
+     *     } else {
+     *         if (request.person().name() == null) {
+     *             personValidation.addFieldError("name", "must not be null");
+     *         }
+     *         if (request.person().age() < 18) {
+     *             personValidation.addFieldError("age", "must be at least 18");
+     *         }
+     *     }
+     * });
+     *
+     * // Results in field errors:
+     * // - "person": ["must not be null"]  (if person is null)
+     * // - "person.name": ["must not be null"]  (if name is null)
+     * // - "person.age": ["must be at least 18"]  (if age < 18)
+     * }</pre>
+     * <p>
+     * <b>Nested validation:</b>
+     * <pre>{@code
+     * validation.validateField("address", addressValidation -> {
+     *     addressValidation.validateField("street", streetValidation -> {
+     *         if (street == null) {
+     *             streetValidation.addRootError("required");
+     *         }
+     *     });
+     * });
+     * // Error becomes: "address.street": ["required"]
+     * }</pre>
+     *
+     * @param field the field name to use as prefix (must not be null)
+     * @param consumer the validation logic to execute within the field context (must not be null)
+     * @return this validation for method chaining
+     * @throws NullPointerException if field or consumer is null
+     */
     public Validation validateField(Object field, Consumer<Validation> consumer) {
         Objects.requireNonNull(field);
         Objects.requireNonNull(consumer);

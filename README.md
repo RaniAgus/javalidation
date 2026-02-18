@@ -703,10 +703,21 @@ public ProcessOrderResult processOrder(Order order) {
 
 ### Complex Internal State Validation
 
-For complex validation scenarios requiring mutable state accumulation, use `Validation.create()` with `into()`:
+For complex validation scenarios requiring mutable state accumulation, use `Validation.create()`:
 
 ```java
 import static io.github.raniagus.javalidation.ResultCollector.*;
+
+record Order(
+        List<Item> items,
+        PaymentMethod paymentMethod,
+        User user
+) {}
+
+record User(
+        String name,
+        String email
+) {}
 
 public void validateComplexOrder(Order order) {
     Validation validation = Validation.create();
@@ -728,9 +739,29 @@ public void validateComplexOrder(Order order) {
             "Cash payments limited to {0} for orders over {1}", 1000, 10000);
     }
 
+    // Namespace validation at a certain field
+    validation.validateField("user", self -> {
+        // self == validation, so we could pass either self or validation to validateUser
+        validateUser(validation, order.user());
+    });
+
     // Throw if any errors accumulated
     validation.check();
 }
+
+public void validateUser(Validation validation, User user) { // Receive a Validation namespaced at "user"
+    if (user == null) {
+        validation.addRootError("User is required"); // Is added to validation at "user" field
+    }
+
+    if (user.name() == null) {
+        validation.addFieldError("name", "Name is required"); // Is added to validation at "user.name" field
+    }
+
+    if (user.email() == null) {
+        validation.addFieldError("email", "Email is required"); // Is added to validation at "user.email" field
+    }
+} 
 ```
 
 The `into()` collector accumulates errors into an existing `Validation` instance, allowing you to combine stream-based validation with imperative validation logic.
