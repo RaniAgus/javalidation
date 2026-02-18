@@ -48,7 +48,14 @@ public interface NullUnsafeWriter extends ValidationWriter {
         }
     }
 
-    record NumericCompare(String operator, Object value, NumericKind kind, String message, boolean useValueAsArg) implements NullUnsafeWriter {
+    record NumericCompare(
+            String operator,
+            Object value,
+            NumericKind kind,
+            String message,
+            boolean useValueAsArg
+    ) implements NullUnsafeWriter {
+
         @Override
         public Stream<String> imports() {
             return switch (kind) {
@@ -84,23 +91,72 @@ public interface NullUnsafeWriter extends ValidationWriter {
         }
     }
 
-    record TemporalCompare(String accessor, boolean result, String message) implements NullUnsafeWriter {
+    record TemporalCompare(
+            String accessor,
+            boolean result,
+            TemporalKind kind,
+            String message
+    ) implements NullUnsafeWriter {
+
         @Override
         public Stream<String> imports() {
-            return Stream.of("io.github.raniagus.javalidation.validator.ValidatorUtils", "java.time.Instant");
+            return switch (kind) {
+                case INSTANT, LONG, INTEGER, SHORT, BYTE, DATE, CALENDAR -> Stream.of("java.time.Instant");
+                case LOCAL_DATE -> Stream.of("java.time.LocalDate");
+                case LOCAL_TIME -> Stream.of("java.time.LocalTime");
+                case LOCAL_DATE_TIME -> Stream.of("java.time.LocalDateTime");
+                case OFFSET_DATE_TIME -> Stream.of("java.time.OffsetDateTime");
+                case OFFSET_TIME -> Stream.of("java.time.OffsetTime");
+                case ZONED_DATE_TIME -> Stream.of("java.time.ZonedDateTime");
+                case YEAR -> Stream.of("java.time.Year");
+                case YEAR_MONTH -> Stream.of("java.time.YearMonth");
+                case MONTH_DAY -> Stream.of("java.time.MonthDay");
+                case HIJRAH_DATE -> Stream.of("java.time.chrono.HijrahDate");
+                case JAPANESE_DATE -> Stream.of("java.time.chrono.JapaneseDate");
+                case MINGUO_DATE -> Stream.of("java.time.chrono.MinguoDate");
+                case THAI_BUDDHIST_DATE -> Stream.of("java.time.chrono.ThaiBuddhistDate");
+            };
         }
 
         @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (!(ValidatorUtils.toInstant(%s).%s(Instant.now()) == %s)) {\
-                    """.formatted(out.getVariable(), accessor, result));
+                if (!(%s.%s(%s) == %s)) {\
+                """.formatted(normalized(out.getVariable()), accessor, now(), result));
             out.incrementIndentationLevel();
             out.write("""
-                    %sValidation.addRootError("%s");\
-                    """.formatted(out.getVariable(), message));
+                %sValidation.addRootError("%s");\
+                """.formatted(out.getVariable(), message));
             out.decrementIndentationLevel();
             out.write("}");
+        }
+
+        private String now() {
+            return switch (kind) {
+                case INSTANT, LONG, INTEGER, SHORT, BYTE, DATE, CALENDAR -> "Instant.now()";
+                case LOCAL_DATE -> "LocalDate.now()";
+                case LOCAL_TIME -> "LocalTime.now()";
+                case LOCAL_DATE_TIME -> "LocalDateTime.now()";
+                case OFFSET_DATE_TIME -> "OffsetDateTime.now()";
+                case OFFSET_TIME -> "OffsetTime.now()";
+                case ZONED_DATE_TIME -> "ZonedDateTime.now()";
+                case YEAR -> "Year.now()";
+                case YEAR_MONTH -> "YearMonth.now()";
+                case MONTH_DAY -> "MonthDay.now()";
+                case HIJRAH_DATE -> "HijrahDate.now()";
+                case JAPANESE_DATE -> "JapaneseDate.now()";
+                case MINGUO_DATE -> "MinguoDate.now()";
+                case THAI_BUDDHIST_DATE -> "ThaiBuddhistDate.now()";
+            };
+        }
+
+        private String normalized(String variable) {
+            return switch (kind) {
+                case LONG, INTEGER, SHORT, BYTE -> "Instant.ofEpochMilli(%s)".formatted(variable);
+                case DATE -> "Instant.ofEpochMilli(%s.getTime())".formatted(variable);
+                case CALENDAR -> "Instant.ofEpochMilli(%s.getTimeInMillis())".formatted(variable);
+                default -> variable;
+            };
         }
     }
 

@@ -26,6 +26,30 @@ public record TypeAdapter(TypeMirror type, ProcessingEnvironment processingEnv) 
         return null;
     }
 
+    public @Nullable TemporalKind getTemporalKind() {
+        if (isOfType("java.time.Instant")) return TemporalKind.INSTANT;
+        if (isOfType("java.time.LocalDate")) return TemporalKind.LOCAL_DATE;
+        if (isOfType("java.time.LocalTime")) return TemporalKind.LOCAL_TIME;
+        if (isOfType("java.time.LocalDateTime")) return TemporalKind.LOCAL_DATE_TIME;
+        if (isOfType("java.time.OffsetDateTime")) return TemporalKind.OFFSET_DATE_TIME;
+        if (isOfType("java.time.OffsetTime")) return TemporalKind.OFFSET_TIME;
+        if (isOfType("java.time.ZonedDateTime")) return TemporalKind.ZONED_DATE_TIME;
+        if (isOfType("java.time.Year")) return TemporalKind.YEAR;
+        if (isOfType("java.time.YearMonth")) return TemporalKind.YEAR_MONTH;
+        if (isOfType("java.time.MonthDay")) return TemporalKind.MONTH_DAY;
+        if (isOfType("java.util.Date")) return TemporalKind.DATE;
+        if (isOfType("java.util.Calendar")) return TemporalKind.CALENDAR;
+        if (isOfType("java.time.chrono.HijrahDate")) return TemporalKind.HIJRAH_DATE;
+        if (isOfType("java.time.chrono.JapaneseDate")) return TemporalKind.JAPANESE_DATE;
+        if (isOfType("java.time.chrono.MinguoDate")) return TemporalKind.MINGUO_DATE;
+        if (isOfType("java.time.chrono.ThaiBuddhistDate")) return TemporalKind.THAI_BUDDHIST_DATE;
+        if (isOfType("java.lang.Long") || type.getKind() == TypeKind.LONG) return TemporalKind.LONG;
+        if (isOfType("java.lang.Integer") || type.getKind() == TypeKind.INT) return TemporalKind.INTEGER;
+        if (isOfType("java.lang.Short") || type.getKind() == TypeKind.SHORT) return TemporalKind.SHORT;
+        if (isOfType("java.lang.Byte") || type.getKind() == TypeKind.BYTE) return TemporalKind.BYTE;
+        return null;
+    }
+
     /**
      * Check if the type is a collection type
      */

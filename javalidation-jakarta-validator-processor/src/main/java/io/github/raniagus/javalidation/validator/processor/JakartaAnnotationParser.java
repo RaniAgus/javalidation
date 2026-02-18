@@ -382,43 +382,67 @@ public final class JakartaAnnotationParser {
     }
 
     public static @Nullable NullUnsafeWriter parseFutureAnnotation(TypeAdapter type) {
+        TemporalKind temporalKind = type.getTemporalKind();
+        if (temporalKind == null) {
+            return null;
+        }
+
         var annotationMirror = type.getAnnotationMirror(Future.class);
         if (annotationMirror == null) {
             return null;
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        return new NullUnsafeWriter.TemporalCompare("isAfter", true, resolveMessage(message));
+        return new NullUnsafeWriter.TemporalCompare(
+                "isAfter", true, temporalKind, resolveMessage(message));
     }
 
     public static @Nullable NullUnsafeWriter parseFutureOrPresentAnnotation(TypeAdapter type) {
+        TemporalKind temporalKind = type.getTemporalKind();
+        if (temporalKind == null) {
+            return null;
+        }
+
         var annotationMirror = type.getAnnotationMirror(FutureOrPresent.class);
         if (annotationMirror == null) {
             return null;
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        return new NullUnsafeWriter.TemporalCompare("isBefore", false, resolveMessage(message));
+        return new NullUnsafeWriter.TemporalCompare(
+                "isBefore", false, temporalKind, resolveMessage(message));
     }
 
     public static @Nullable NullUnsafeWriter paresPastAnnotation(TypeAdapter type) {
+        TemporalKind temporalKind = type.getTemporalKind();
+        if (temporalKind == null) {
+            return null;
+        }
+
         var annotationMirror = type.getAnnotationMirror(Past.class);
         if (annotationMirror == null) {
             return null;
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        return new NullUnsafeWriter.TemporalCompare("isBefore", true, resolveMessage(message));
+        return new NullUnsafeWriter.TemporalCompare(
+                "isBefore", true, temporalKind, resolveMessage(message));
     }
 
     public static @Nullable NullUnsafeWriter parsePastOrPresentAnnotation(TypeAdapter type) {
+        TemporalKind temporalKind = type.getTemporalKind();
+        if (temporalKind == null) {
+            return null;
+        }
+
         var annotationMirror = type.getAnnotationMirror(PastOrPresent.class);
         if (annotationMirror == null) {
             return null;
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        return new NullUnsafeWriter.TemporalCompare("isAfter", false, resolveMessage(message));
+        return new NullUnsafeWriter.TemporalCompare(
+                "isAfter", false, temporalKind, resolveMessage(message));
     }
 
     private static String resolveMessage(String message, String... params) {

@@ -3,7 +3,6 @@ package test.jakarta;
 import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.ValidationErrors;
 import io.github.raniagus.javalidation.validator.Validator;
-import io.github.raniagus.javalidation.validator.ValidatorUtils;
 import java.time.Instant;
 import javax.annotation.processing.Generated;
 import org.jspecify.annotations.NullMarked;
@@ -17,7 +16,7 @@ public class PastRecordValidator implements Validator<PastRecord> {
         var value = root.value();
         var valueValidation = Validation.create();
         if (value != null) {
-            if (!(ValidatorUtils.toInstant(value).isBefore(Instant.now()) == true)) {
+            if (!(value.isBefore(Instant.now()) == true)) {
                 valueValidation.addRootError("must be a past date");
             }
         }

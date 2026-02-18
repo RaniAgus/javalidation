@@ -1,0 +1,10 @@
+package io.github.raniagus.javalidation.validator.processor;
+
+public enum TemporalKind {
+    INSTANT, LOCAL_DATE, LOCAL_TIME, LOCAL_DATE_TIME,
+    OFFSET_DATE_TIME, OFFSET_TIME, ZONED_DATE_TIME,
+    YEAR, YEAR_MONTH, MONTH_DAY,
+    DATE, CALENDAR,
+    HIJRAH_DATE, JAPANESE_DATE, MINGUO_DATE, THAI_BUDDHIST_DATE,
+    LONG, INTEGER, SHORT, BYTE,
+}
