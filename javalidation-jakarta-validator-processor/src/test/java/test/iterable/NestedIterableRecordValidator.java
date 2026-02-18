@@ -9,22 +9,22 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class NestedIterableRecordValidator implements Validator<NestedIterableRecord> {
     @Override
-    public void validate(Validation rootValidation, NestedIterableRecord root) {
-        rootValidation.validateField("scores", scoresValidation -> {
+    public void validate(Validation validation, NestedIterableRecord root) {
+        validation.validateField("scores", () -> {
             var scores = root.scores();
             if (scores != null) {
                 int scoresIndex = 0;
                 for (var scoresItem : scores) {
-                    scoresValidation.validateField(scoresIndex++, scoresItemValidation -> {
+                    validation.validateField(scoresIndex++, () -> {
                         if (scoresItem == null || scoresItem.isEmpty()) {
-                            scoresItemValidation.addRootError("must not be empty");
+                            validation.addRootError("must not be empty");
                         }
                         if (scoresItem != null) {
                             int scoresItemIndex = 0;
                             for (var scoresItemItem : scoresItem) {
-                                scoresItemValidation.validateField(scoresItemIndex++, scoresItemItemValidation -> {
+                                validation.validateField(scoresItemIndex++, () -> {
                                     if (scoresItemItem == null) {
-                                        scoresItemItemValidation.addRootError("must not be null");
+                                        validation.addRootError("must not be null");
                                     }
                                 });
                             }

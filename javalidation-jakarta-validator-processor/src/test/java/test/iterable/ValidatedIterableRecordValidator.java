@@ -13,21 +13,21 @@ public class ValidatedIterableRecordValidator implements Validator<ValidatedIter
     private final Validator<ValidatedIterableRecord.Person> friendsItemValidator = new ValidatedIterableRecord$PersonValidator();
 
     @Override
-    public void validate(Validation rootValidation, ValidatedIterableRecord root) {
-        rootValidation.validateField("friends", friendsValidation -> {
+    public void validate(Validation validation, ValidatedIterableRecord root) {
+        validation.validateField("friends", () -> {
             var friends = root.friends();
             if (friends == null) {
-                friendsValidation.addRootError("must not be null");
+                validation.addRootError("must not be null");
             }
             if (friends != null) {
                 int friendsIndex = 0;
                 for (var friendsItem : friends) {
-                    friendsValidation.validateField(friendsIndex++, friendsItemValidation -> {
+                    validation.validateField(friendsIndex++, () -> {
                         if (friendsItem == null) {
-                            friendsItemValidation.addRootError("must not be null");
+                            validation.addRootError("must not be null");
                         }
                         if (friendsItem != null) {
-                            friendsItemValidator.validate(friendsItemValidation, friendsItem);
+                            friendsItemValidator.validate(validation, friendsItem);
                         }
                     });
                 }

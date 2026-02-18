@@ -12,6 +12,7 @@ import io.github.raniagus.javalidation.validator.Validator;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -79,12 +80,14 @@ public class IterableValidationsTest {
         @Test
         void multipleErrors_allReported() {
             assertThat(validator.validate(new PrimitiveIterableRecord(List.of("ab", "hello", "abcdefghijk"))))
-                    .isEqualTo(Validation.create()
-                            .validateField("tags", v -> {
+                    .isEqualTo(
+                        createValidationErrors(v ->
+                            v.validateField("tags", () -> {
                                 v.addFieldError(0, "size must be between {0} and {1}", 3, 10);
                                 v.addFieldError(2, "size must be between {0} and {1}", 3, 10);
                             })
-                            .finish());
+                        )
+                    );
         }
     }
 
@@ -131,16 +134,18 @@ public class IterableValidationsTest {
                     new ValidatedIterableRecord.Person(null),
                     new ValidatedIterableRecord.Person("Alice"),
                     new ValidatedIterableRecord.Person(null)
-            )))).isEqualTo(Validation.create()
-                    .validateField("friends", friendsValidator -> {
-                        friendsValidator.validateField(0, itemValidator -> {
-                            itemValidator.addFieldError("name", "must not be null");
+            )))).isEqualTo(
+                createValidationErrors(v ->
+                    v.validateField("friends", () -> {
+                        v.validateField(0, () -> {
+                            v.addFieldError("name", "must not be null");
                         });
-                        friendsValidator.validateField(2, itemValidator -> {
-                            itemValidator.addFieldError("name", "must not be null");
+                        v.validateField(2, () -> {
+                            v.addFieldError("name", "must not be null");
                         });
                     })
-                    .finish());
+                )
+            );
         }
 
         @Test
@@ -148,16 +153,18 @@ public class IterableValidationsTest {
             assertThat(validator.validate(new ValidatedIterableRecord(Arrays.asList(
                     null,
                     new ValidatedIterableRecord.Person(null)
-            )))).isEqualTo(Validation.create()
-                    .validateField("friends", friendsValidator -> {
-                        friendsValidator.validateField(0, itemValidator -> {
-                                itemValidator.addRootError("must not be null");
+            )))).isEqualTo(
+                createValidationErrors(v ->
+                    v.validateField("friends", () -> {
+                        v.validateField(0, () -> {
+                                v.addRootError("must not be null");
                         });
-                        friendsValidator.validateField(1, itemValidator -> {
-                                itemValidator.addFieldError("name", "must not be null");
+                        v.validateField(1, () -> {
+                                v.addFieldError("name", "must not be null");
                         });
                     })
-                    .finish());
+                )
+            );
         }
     }
 
@@ -207,18 +214,24 @@ public class IterableValidationsTest {
                     Arrays.asList(null, null),
                     List.of()
             )))).isEqualTo(
-                    Validation.create()
-                            .validateField("scores", scoresValidator -> {
-                                scoresValidator.validateField(0, itemValidator -> {
-                                        itemValidator.addFieldError(0, "must not be null");
-                                        itemValidator.addFieldError(1, "must not be null");
-                                });
-                                scoresValidator.validateField(1, itemValidator -> {
-                                        itemValidator.addRootError("must not be empty");
-                                });
-                            })
-                            .finish()
+                    createValidationErrors(v ->
+                        v.validateField("scores", () -> {
+                            v.validateField(0, () -> {
+                                    v.addFieldError(0, "must not be null");
+                                    v.addFieldError(1, "must not be null");
+                            });
+                            v.validateField(1, () -> {
+                                    v.addRootError("must not be empty");
+                            });
+                        })
+                    )
             );
         }
+    }
+
+    private ValidationErrors createValidationErrors(Consumer<Validation> consumer) {
+        Validation validation = Validation.create();
+        consumer.accept(validation);
+        return validation.finish();
     }
 }

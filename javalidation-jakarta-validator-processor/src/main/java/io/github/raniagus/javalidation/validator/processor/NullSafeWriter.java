@@ -10,8 +10,8 @@ public sealed interface NullSafeWriter extends ValidationWriter {
                     """.formatted(out.getVariable()));
             out.incrementIndentationLevel();
             out.write("""
-                    %sValidation.addRootError("%s");\
-                    """.formatted(out.getVariable(), message));
+                    validation.addRootError("%s");\
+                    """.formatted(message));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -25,7 +25,7 @@ public sealed interface NullSafeWriter extends ValidationWriter {
                     """.formatted(out.getVariable()));
             out.incrementIndentationLevel();
             out.write("""
-                    %sValidation.addRootError("%s");\
+                    validation.addRootError("%s");\
                     """.formatted(out.getVariable(), message));
             out.decrementIndentationLevel();
             out.write("}");
@@ -40,8 +40,8 @@ public sealed interface NullSafeWriter extends ValidationWriter {
                     """.formatted(out.getVariable(), accessor));
             out.incrementIndentationLevel();
             out.write("""
-                    %sValidation.addRootError("%s");\
-                    """.formatted(out.getVariable(), message));
+                    validation.addRootError("%s");\
+                    """.formatted(message));
             out.decrementIndentationLevel();
             out.write("}");
         }

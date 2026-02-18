@@ -710,8 +710,7 @@ import static io.github.raniagus.javalidation.ResultCollector.*;
 
 record Order(
         List<Item> items,
-        PaymentMethod paymentMethod,
-        User user
+        PaymentMethod paymentMethod
 ) {}
 
 public void validateComplexOrder(Order order) {
@@ -723,8 +722,8 @@ public void validateComplexOrder(Order order) {
     }
 
     // Field validation by calling utility method
-    validation.validateField("items", itemsValidation -> {
-        validateItemsList(itemsValidation, order.items());
+    validation.validateField("items", () -> {
+        validateItemsList(validation, order.items());
     });
 
     // Additional cross-field validation

@@ -10,12 +10,12 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class PatternRecordValidator implements Validator<PatternRecord> {
     @Override
-    public void validate(Validation rootValidation, PatternRecord root) {
-        rootValidation.validateField("value", valueValidation -> {
+    public void validate(Validation validation, PatternRecord root) {
+        validation.validateField("value", () -> {
             var value = root.value();
             if (value != null) {
                 if (!Objects.toString(value).matches("^[a-z]+$")) {
-                    valueValidation.addRootError("must match \"{0}\"", "^[a-z]+$");
+                    validation.addRootError("must match \"{0}\"", "^[a-z]+$");
                 }
             }
         });

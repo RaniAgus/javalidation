@@ -9,11 +9,11 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class NotBlankRecordValidator implements Validator<NotBlankRecord> {
     @Override
-    public void validate(Validation rootValidation, NotBlankRecord root) {
-        rootValidation.validateField("value", valueValidation -> {
+    public void validate(Validation validation, NotBlankRecord root) {
+        validation.validateField("value", () -> {
             var value = root.value();
             if (value == null || value.isBlank()) {
-                valueValidation.addRootError("must not be blank");
+                validation.addRootError("must not be blank");
             }
         });
     }

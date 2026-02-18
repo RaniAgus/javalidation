@@ -9,11 +9,11 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class ValidatedIterableRecord$PersonValidator implements Validator<ValidatedIterableRecord.Person> {
     @Override
-    public void validate(Validation rootValidation, ValidatedIterableRecord.Person root) {
-        rootValidation.validateField("name", nameValidation -> {
+    public void validate(Validation validation, ValidatedIterableRecord.Person root) {
+        validation.validateField("name", () -> {
             var name = root.name();
             if (name == null) {
-                nameValidation.addRootError("must not be null");
+                validation.addRootError("must not be null");
             }
         });
     }

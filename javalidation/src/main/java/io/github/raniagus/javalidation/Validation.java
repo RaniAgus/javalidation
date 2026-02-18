@@ -153,31 +153,31 @@ public class Validation {
      * Validates a nested field by executing validation logic within a scoped context.
      * <p>
      * This method provides a convenient way to validate nested objects by automatically
-     * managing field prefixes. Any errors added within the consumer (both root and field errors)
+     * managing field prefixes. Any errors added within the runnable (both root and field errors)
      * will be prefixed with the specified field name.
      * <p>
-     * Root errors added within the consumer become field errors for the specified field.
-     * Field errors added within the consumer are nested under the field with dot notation.
+     * Root errors added within the runnable become field errors for the specified field.
+     * Field errors added within the runnable are nested under the field with dot notation.
      * <p>
      * <b>Basic usage:</b>
      * <pre>{@code
      * record Person(String name, int age) {}
      * record Request(Person person) {}
      *
-     * ValidationErrors errors = Validation.create()
-     *     .validateField("person", personValidation -> {
-     *         if (request.person() == null) {
-     *             personValidation.addRootError("must not be null");
-     *         } else {
-     *             if (request.person().name() == null) {
-     *                 personValidation.addFieldError("name", "must not be null");
-     *             }
-     *             if (request.person().age() < 18) {
-     *                 personValidation.addFieldError("age", "must be at least 18");
-     *             }
+     * Validation validation = Validation.create();
+     * 
+     * validation.validateField("person", () -> {
+     *     if (request.person() == null) {
+     *         validation.addRootError("must not be null");
+     *     } else {
+     *         if (request.person().name() == null) {
+     *             validation.addFieldError("name", "must not be null");
      *         }
-     *     })
-     *     .finish();
+     *         if (request.person().age() < 18) {
+     *             validation.addFieldError("age", "must be at least 18");
+     *         }
+     *     }
+     * });
      *
      * // Results in field errors:
      * // - "person": ["must not be null"]  (if person is null)
@@ -186,15 +186,15 @@ public class Validation {
      * }</pre>
      *
      * @param field the field name to use as prefix (must not be null)
-     * @param consumer the validation logic to execute within the field context (must not be null)
+     * @param runnable the validation logic to execute within the field context (must not be null)
      * @return this validation for method chaining
-     * @throws NullPointerException if field or consumer is null
+     * @throws NullPointerException if field or runnable is null
      */
-    public Validation validateField(Object field, Consumer<Validation> consumer) {
+    public Validation validateField(Object field, Runnable runnable) {
         Objects.requireNonNull(field);
-        Objects.requireNonNull(consumer);
+        Objects.requireNonNull(runnable);
         prefix.add(field);
-        consumer.accept(this);
+        runnable.run();
         prefix.removeLast();
         return this;
     }

@@ -9,15 +9,15 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class NotNullAndSizeRecordValidator implements Validator<NotNullAndSizeRecord> {
     @Override
-    public void validate(Validation rootValidation, NotNullAndSizeRecord root) {
-        rootValidation.validateField("value", valueValidation -> {
+    public void validate(Validation validation, NotNullAndSizeRecord root) {
+        validation.validateField("value", () -> {
             var value = root.value();
             if (value == null) {
-                valueValidation.addRootError("must not be null");
+                validation.addRootError("must not be null");
             }
             if (value != null) {
                 if (value.length() < 3 || value.length() > 10) {
-                    valueValidation.addRootError("size must be between {0} and {1}", 3, 10);
+                    validation.addRootError("size must be between {0} and {1}", 3, 10);
                 }
             }
         });

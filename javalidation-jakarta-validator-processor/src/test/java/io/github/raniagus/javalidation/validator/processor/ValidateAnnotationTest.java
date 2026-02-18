@@ -69,7 +69,7 @@ class ValidateAnnotationTest {
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
                         public class SimpleRecordValidator implements Validator<SimpleRecord> {
                            @Override
-                           public void validate(Validation rootValidation, SimpleRecord root) {
+                           public void validate(Validation validation, SimpleRecord root) {
                         
                            }
                         }
@@ -182,11 +182,11 @@ class ValidateAnnotationTest {
                             private final Validator<UserAddress> addressValidator = new UserAddressValidator();
 
                             @Override
-                            public void validate(Validation rootValidation, UserRequest root) {
-                                rootValidation.validateField("address", addressValidation -> {
+                            public void validate(Validation validation, UserRequest root) {
+                                validation.validateField("address", () -> {
                                     var address = root.address();
                                     if (address != null) {
-                                        addressValidator.validate(addressValidation, address);
+                                        addressValidator.validate(validation, address);
                                     }
                                 });
                             }
@@ -207,7 +207,7 @@ class ValidateAnnotationTest {
                         @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
                         public class UserAddressValidator implements Validator<UserAddress> {
                             @Override
-                            public void validate(Validation rootValidation, UserAddress root) {
+                            public void validate(Validation validation, UserAddress root) {
 
                             }
                         }
@@ -319,11 +319,11 @@ class ValidateAnnotationTest {
                             private final Validator<UserRequest.UserAddress> addressValidator = new UserRequest$UserAddressValidator();
 
                             @Override
-                            public void validate(Validation rootValidation, UserRequest root) {
-                                rootValidation.validateField("address", addressValidation -> {
+                            public void validate(Validation validation, UserRequest root) {
+                                validation.validateField("address", () -> {
                                     var address = root.address();
                                     if (address != null) {
-                                        addressValidator.validate(addressValidation, address);
+                                        addressValidator.validate(validation, address);
                                     }
                                 });
                             }
@@ -346,7 +346,7 @@ class ValidateAnnotationTest {
                         @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
                         public class UserRequest$UserAddressValidator implements Validator<UserRequest.UserAddress> {
                             @Override
-                            public void validate(Validation rootValidation, UserRequest.UserAddress root) {
+                            public void validate(Validation validation, UserRequest.UserAddress root) {
 
                             }
                         }

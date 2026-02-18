@@ -9,11 +9,11 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class NotNullRecordValidator implements Validator<NotNullRecord> {
     @Override
-    public void validate(Validation rootValidation, NotNullRecord root) {
-        rootValidation.validateField("value", valueValidation -> {
+    public void validate(Validation validation, NotNullRecord root) {
+        validation.validateField("value", () -> {
             var value = root.value();
             if (value == null) {
-                valueValidation.addRootError("must not be null");
+                validation.addRootError("must not be null");
             }
         });
     }

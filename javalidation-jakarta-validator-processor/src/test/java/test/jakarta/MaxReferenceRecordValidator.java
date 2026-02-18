@@ -9,12 +9,12 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class MaxReferenceRecordValidator implements Validator<MaxReferenceRecord> {
     @Override
-    public void validate(Validation rootValidation, MaxReferenceRecord root) {
-        rootValidation.validateField("value", valueValidation -> {
+    public void validate(Validation validation, MaxReferenceRecord root) {
+        validation.validateField("value", () -> {
             var value = root.value();
             if (value != null) {
                 if (!(value <= 100)) {
-                    valueValidation.addRootError("must be less than or equal to {0}", 100);
+                    validation.addRootError("must be less than or equal to {0}", 100);
                 }
             }
         });

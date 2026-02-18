@@ -9,12 +9,12 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class SizeCollectionRecordValidator implements Validator<SizeCollectionRecord> {
     @Override
-    public void validate(Validation rootValidation, SizeCollectionRecord root) {
-        rootValidation.validateField("value", valueValidation -> {
+    public void validate(Validation validation, SizeCollectionRecord root) {
+        validation.validateField("value", () -> {
             var value = root.value();
             if (value != null) {
                 if (value.size() < 1 || value.size() > 10) {
-                    valueValidation.addRootError("size must be between {0} and {1}", 1, 10);
+                    validation.addRootError("size must be between {0} and {1}", 1, 10);
                 }
             }
         });

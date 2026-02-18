@@ -37,8 +37,8 @@ public record ValidatorClassWriter(
         out.registerVariable("root");
         out.write("@Override");
         out.write("""
-                public void validate(Validation %sValidation, %s%s %s) {\
-                """.formatted(out.getVariable(), enclosingClassPrefix, recordName, out.getVariable()));
+                public void validate(Validation validation, %s%s %s) {\
+                """.formatted(enclosingClassPrefix, recordName, out.getVariable()));
         out.incrementIndentationLevel();
         out.write("");
         for (ValidationWriter writer : fieldWriters) {

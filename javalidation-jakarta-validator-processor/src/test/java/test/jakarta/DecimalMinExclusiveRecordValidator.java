@@ -10,12 +10,12 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class DecimalMinExclusiveRecordValidator implements Validator<DecimalMinExclusiveRecord> {
     @Override
-    public void validate(Validation rootValidation, DecimalMinExclusiveRecord root) {
-        rootValidation.validateField("value", valueValidation -> {
+    public void validate(Validation validation, DecimalMinExclusiveRecord root) {
+        validation.validateField("value", () -> {
             var value = root.value();
             if (value != null) {
                 if (!(value.compareTo(new BigDecimal("10.5")) > 0)) {
-                    valueValidation.addRootError("must be greater than {0}", "10.5");
+                    validation.addRootError("must be greater than {0}", "10.5");
                 }
             }
         });

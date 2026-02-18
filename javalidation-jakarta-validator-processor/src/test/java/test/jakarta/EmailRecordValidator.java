@@ -10,12 +10,12 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class EmailRecordValidator implements Validator<EmailRecord> {
     @Override
-    public void validate(Validation rootValidation, EmailRecord root) {
-        rootValidation.validateField("value", valueValidation -> {
+    public void validate(Validation validation, EmailRecord root) {
+        validation.validateField("value", () -> {
             var value = root.value();
             if (value != null) {
                 if (!Objects.toString(value).matches("^[^@]+@[^@]+\\.[^@]+$")) {
-                    valueValidation.addRootError("must be a well-formed email address");
+                    validation.addRootError("must be a well-formed email address");
                 }
             }
         });

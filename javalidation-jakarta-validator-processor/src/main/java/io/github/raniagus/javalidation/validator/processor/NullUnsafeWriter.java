@@ -20,8 +20,8 @@ public interface NullUnsafeWriter extends ValidationWriter {
                     """.formatted(out.getVariable(), accessor, min, max));
             out.incrementIndentationLevel();
             out.write("""
-                    %sValidation.addRootError("%s", %d, %d);\
-                    """.formatted(out.getVariable(), message, min, max));
+                    validation.addRootError("%s", %d, %d);\
+                    """.formatted(message, min, max));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -35,8 +35,8 @@ public interface NullUnsafeWriter extends ValidationWriter {
                     """.formatted(out.getVariable(), value));
             out.incrementIndentationLevel();
             out.write("""
-                    %sValidation.addRootError("%s");\
-                    """.formatted(out.getVariable(), message));
+                    validation.addRootError("%s");\
+                    """.formatted(message));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -72,8 +72,8 @@ public interface NullUnsafeWriter extends ValidationWriter {
                     """.formatted(comparison));
             out.incrementIndentationLevel();
             out.write("""
-                    %sValidation.addRootError("%s"%s);\
-                    """.formatted(out.getVariable(), message, formatArg()));
+                    validation.addRootError("%s"%s);\
+                    """.formatted(message, formatArg()));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -119,8 +119,8 @@ public interface NullUnsafeWriter extends ValidationWriter {
                 """.formatted(normalized(out.getVariable()), accessor, now(), result));
             out.incrementIndentationLevel();
             out.write("""
-                %sValidation.addRootError("%s");\
-                """.formatted(out.getVariable(), message));
+                validation.addRootError("%s");\
+                """.formatted(message));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -167,8 +167,8 @@ public interface NullUnsafeWriter extends ValidationWriter {
                     """.formatted(out.getVariable(), regex));
             out.incrementIndentationLevel();
             out.write("""
-                    %sValidation.addRootError("%s"%s);\
-                    """.formatted(out.getVariable(), message, formatArgs()));
+                    validation.addRootError("%s"%s);\
+                    """.formatted(message, formatArgs()));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -216,8 +216,8 @@ public interface NullUnsafeWriter extends ValidationWriter {
             }
             out.incrementIndentationLevel();
             out.write("""
-                %sValidation.addRootError("%s", %s, %s);\
-                """.formatted(out.getVariable(), message, integer, fraction));
+                validation.addRootError("%s", %s, %s);\
+                """.formatted(message, integer, fraction));
             out.decrementIndentationLevel();
             out.write("}");
         }
@@ -250,8 +250,8 @@ public interface NullUnsafeWriter extends ValidationWriter {
         @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    %sValidator.validate(%sValidation, %s);\
-                    """.formatted(out.getVariable(), out.getVariable(), out.getVariable()));
+                    %sValidator.validate(validation, %s);\
+                    """.formatted(out.getVariable(), out.getVariable()));
         }
     }
 
@@ -287,7 +287,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
             out.write("for (var %sItem : %s) {".formatted(out.getVariable(), out.getVariable()));
             out.incrementIndentationLevel();
 
-            out.write("%sValidation.validateField(%sIndex++, %sItemValidation -> {".formatted(out.getVariable(), out.getVariable(), out.getVariable()));
+            out.write("validation.validateField(%sIndex++, () -> {".formatted(out.getVariable()));
             out.incrementIndentationLevel();
 
             out.registerVariable(out.getVariable() + "Item");

@@ -9,12 +9,12 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class NegativeReferenceRecordValidator implements Validator<NegativeReferenceRecord> {
     @Override
-    public void validate(Validation rootValidation, NegativeReferenceRecord root) {
-        rootValidation.validateField("value", valueValidation -> {
+    public void validate(Validation validation, NegativeReferenceRecord root) {
+        validation.validateField("value", () -> {
             var value = root.value();
             if (value != null) {
                 if (!(value < 0)) {
-                    valueValidation.addRootError("must be less than 0");
+                    validation.addRootError("must be less than 0");
                 }
             }
         });

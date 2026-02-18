@@ -9,11 +9,11 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class MaxPrimitiveRecordValidator implements Validator<MaxPrimitiveRecord> {
     @Override
-    public void validate(Validation rootValidation, MaxPrimitiveRecord root) {
-        rootValidation.validateField("value", valueValidation -> {
+    public void validate(Validation validation, MaxPrimitiveRecord root) {
+        validation.validateField("value", () -> {
             var value = root.value();
             if (!(value <= 100)) {
-                valueValidation.addRootError("must be less than or equal to {0}", 100);
+                validation.addRootError("must be less than or equal to {0}", 100);
             }
         });
     }

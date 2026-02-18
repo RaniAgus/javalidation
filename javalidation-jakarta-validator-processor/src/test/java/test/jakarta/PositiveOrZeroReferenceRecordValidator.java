@@ -9,12 +9,12 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class PositiveOrZeroReferenceRecordValidator implements Validator<PositiveOrZeroReferenceRecord> {
     @Override
-    public void validate(Validation rootValidation, PositiveOrZeroReferenceRecord root) {
-        rootValidation.validateField("value", valueValidation -> {
+    public void validate(Validation validation, PositiveOrZeroReferenceRecord root) {
+        validation.validateField("value", () -> {
             var value = root.value();
             if (value != null) {
                 if (!(value >= 0)) {
-                    valueValidation.addRootError("must be greater than or equal to 0");
+                    validation.addRootError("must be greater than or equal to 0");
                 }
             }
         });

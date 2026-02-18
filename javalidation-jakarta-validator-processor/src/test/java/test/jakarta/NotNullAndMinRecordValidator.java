@@ -9,15 +9,15 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class NotNullAndMinRecordValidator implements Validator<NotNullAndMinRecord> {
     @Override
-    public void validate(Validation rootValidation, NotNullAndMinRecord root) {
-        rootValidation.validateField("value", valueValidation -> {
+    public void validate(Validation validation, NotNullAndMinRecord root) {
+        validation.validateField("value", () -> {
             var value = root.value();
             if (value == null) {
-                valueValidation.addRootError("must not be null");
+                validation.addRootError("must not be null");
             }
             if (value != null) {
                 if (!(value >= 10)) {
-                    valueValidation.addRootError("must be greater than or equal to {0}", 10);
+                    validation.addRootError("must be greater than or equal to {0}", 10);
                 }
             }
         });

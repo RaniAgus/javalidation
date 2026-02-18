@@ -242,9 +242,9 @@ class ValidationTest {
         Request request = new Request(null);
         var validation = Validation.create();
 
-        validation.validateField("person", personValidation -> {
+        validation.validateField("person", () -> {
             if (request.person() == null) {
-                personValidation.addRootError("must not be null");
+                validation.addRootError("must not be null");
             }
         });
 
@@ -262,12 +262,12 @@ class ValidationTest {
         Request request = new Request(new Person(null, 15));
         var validation = Validation.create();
 
-        validation.validateField("person", personValidation -> {
+        validation.validateField("person", () -> {
             if (request.person().name() == null) {
-                personValidation.addFieldError("name", "must not be null");
+                validation.addFieldError("name", "must not be null");
             }
             if (request.person().age() < 18) {
-                personValidation.addFieldError("age", "must be at least 18");
+                validation.addFieldError("age", "must be at least 18");
             }
         });
 
@@ -286,9 +286,9 @@ class ValidationTest {
     void givenNestedValidateField_whenValidateField_thenCreatesNestedPrefix() {
         var validation = Validation.create();
 
-        validation.validateField("address", addressValidation -> {
-            addressValidation.validateField("street", streetValidation -> {
-                streetValidation.addRootError("required");
+        validation.validateField("address", () -> {
+            validation.validateField("street", () -> {
+                validation.addRootError("required");
             });
         });
 
@@ -302,7 +302,7 @@ class ValidationTest {
     void givenNullField_whenValidateField_thenThrowsNullPointerException() {
         var validation = Validation.create();
 
-        assertThatThrownBy(() -> validation.validateField(null, v -> {}))
+        assertThatThrownBy(() -> validation.validateField(null, () -> {}))
                 .isInstanceOf(NullPointerException.class);
     }
 
@@ -318,7 +318,7 @@ class ValidationTest {
     void givenNoErrorsInConsumer_whenValidateField_thenNoErrorsAdded() {
         var validation = Validation.create();
 
-        validation.validateField("person", personValidation -> {
+        validation.validateField("person", () -> {
             // No errors added
         });
 

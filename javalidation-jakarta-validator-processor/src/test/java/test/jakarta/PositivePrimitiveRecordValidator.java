@@ -9,11 +9,11 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class PositivePrimitiveRecordValidator implements Validator<PositivePrimitiveRecord> {
     @Override
-    public void validate(Validation rootValidation, PositivePrimitiveRecord root) {
-        rootValidation.validateField("value", valueValidation -> {
+    public void validate(Validation validation, PositivePrimitiveRecord root) {
+        validation.validateField("value", () -> {
             var value = root.value();
             if (!(value > 0)) {
-                valueValidation.addRootError("must be greater than 0");
+                validation.addRootError("must be greater than 0");
             }
         });
     }

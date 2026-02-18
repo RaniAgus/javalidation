@@ -9,11 +9,11 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class MinRecordValidator implements Validator<MinRecord> {
     @Override
-    public void validate(Validation rootValidation, MinRecord root) {
-        rootValidation.validateField("value", valueValidation -> {
+    public void validate(Validation validation, MinRecord root) {
+        validation.validateField("value", () -> {
             var value = root.value();
             if (!(value >= 10)) {
-                valueValidation.addRootError("must be greater than or equal to {0}", 10);
+                validation.addRootError("must be greater than or equal to {0}", 10);
             }
         });
     }

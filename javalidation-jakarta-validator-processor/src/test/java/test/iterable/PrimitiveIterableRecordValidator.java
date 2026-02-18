@@ -10,19 +10,19 @@ import org.jspecify.annotations.NullMarked;
 public class PrimitiveIterableRecordValidator implements Validator<PrimitiveIterableRecord> {
 
     @Override
-    public void validate(Validation rootValidation, PrimitiveIterableRecord root) {
-        rootValidation.validateField("tags", tagsValidation -> {
+    public void validate(Validation validation, PrimitiveIterableRecord root) {
+        validation.validateField("tags", () -> {
             var tags = root.tags();
             if (tags == null) {
-                tagsValidation.addRootError("must not be null");
+                validation.addRootError("must not be null");
             }
             if (tags != null) {
                 int tagsIndex = 0;
                 for (var tagsItem : tags) {
-                    tagsValidation.validateField(tagsIndex++, tagsItemValidation -> {
+                    validation.validateField(tagsIndex++, () -> {
                         if (tagsItem != null) {
                             if (tagsItem.length() < 3 || tagsItem.length() > 10) {
-                                tagsItemValidation.addRootError("size must be between {0} and {1}", 3, 10);
+                                validation.addRootError("size must be between {0} and {1}", 3, 10);
                             }
                         }
                     });

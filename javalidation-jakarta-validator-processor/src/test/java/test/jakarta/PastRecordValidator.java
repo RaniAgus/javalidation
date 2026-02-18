@@ -10,12 +10,12 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class PastRecordValidator implements Validator<PastRecord> {
     @Override
-    public void validate(Validation rootValidation, PastRecord root) {
-        rootValidation.validateField("value", valueValidation -> {
+    public void validate(Validation validation, PastRecord root) {
+        validation.validateField("value", () -> {
             var value = root.value();
             if (value != null) {
                 if (!(value.isBefore(Instant.now()) == true)) {
-                    valueValidation.addRootError("must be a past date");
+                    validation.addRootError("must be a past date");
                 }
             }
         });

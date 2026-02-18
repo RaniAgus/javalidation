@@ -10,12 +10,12 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class MaxBigIntegerRecordValidator implements Validator<MaxBigIntegerRecord> {
     @Override
-    public void validate(Validation rootValidation, MaxBigIntegerRecord root) {
-        rootValidation.validateField("value", valueValidation -> {
+    public void validate(Validation validation, MaxBigIntegerRecord root) {
+        validation.validateField("value", () -> {
             var value = root.value();
             if (value != null) {
                 if (!(value.compareTo(new BigInteger("100")) <= 0)) {
-                    valueValidation.addRootError("must be less than or equal to {0}", 100);
+                    validation.addRootError("must be less than or equal to {0}", 100);
                 }
             }
         });

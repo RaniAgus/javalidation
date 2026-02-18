@@ -41,7 +41,7 @@ public sealed interface FieldWriter extends ValidationWriter {
             return;
         }
 
-        out.write("%sValidation.validateField(\"%s\", %sValidation -> {".formatted(out.getVariable(), field(), field()));
+        out.write("validation.validateField(\"%s\", () -> {".formatted(field()));
         out.incrementIndentationLevel();
 
         out.write("var %s = %s.%s();".formatted(field(), out.getVariable(), field()));

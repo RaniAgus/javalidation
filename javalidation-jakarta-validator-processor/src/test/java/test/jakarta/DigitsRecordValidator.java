@@ -10,13 +10,13 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class DigitsRecordValidator implements Validator<DigitsRecord> {
     @Override
-    public void validate(Validation rootValidation, DigitsRecord root) {
-        rootValidation.validateField("value", valueValidation -> {
+    public void validate(Validation validation, DigitsRecord root) {
+        validation.validateField("value", () -> {
             var value = root.value();
             if (value != null) {
                 var value_bd = new BigDecimal(value.toString()).stripTrailingZeros();
                 if (!(value_bd.precision() - value_bd.scale() <= 5 && Math.max(value_bd.scale(), 0) <= 2)) {
-                    valueValidation.addRootError("numeric value out of bounds ({0} digits, {1} decimal digits expected)", 5, 2);
+                    validation.addRootError("numeric value out of bounds ({0} digits, {1} decimal digits expected)", 5, 2);
                 }
             }
         });
