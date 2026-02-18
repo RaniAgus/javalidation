@@ -1,238 +1,204 @@
 package io.github.raniagus.javalidation.validator.processor;
 
-import static com.google.testing.compile.CompilationSubject.assertThat;
 import static com.google.testing.compile.Compiler.javac;
+import static org.assertj.core.api.Assertions.assertThat;
+import static com.google.testing.compile.CompilationSubject.assertThat;
 
-import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
-import javax.tools.JavaFileObject;
+import io.github.raniagus.javalidation.FieldKey;
+import io.github.raniagus.javalidation.Validation;
+import io.github.raniagus.javalidation.ValidationErrors;
+import io.github.raniagus.javalidation.validator.Validator;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import test.iterable.*;
 
 public class IterableValidationsTest {
 
-    @Test
-    void shouldGenerateValidatorForPrimitiveIterable() {
-        // Arrange - create source files in memory
-        JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.UserRequest", """
-                package test;
-                
-                import io.github.raniagus.javalidation.validator.*;
-                import jakarta.validation.constraints.*;
-                import java.util.List;
-                
-                @Validate
-                public record UserRequest(
-                    @NotNull List<@Size(min = 3, max = 10) String> tags
-                ) {}
-                """
-        );
-
-        // Act - compile with your processor
-        Compilation compilation = javac()
-                .withProcessors(new ValidatorProcessor())
-                .compile(sourceFile);
-
-        // Assert - compilation succeeded
-        assertThat(compilation).succeeded();
-
-        // Assert - all generated files match expected
-        assertThat(compilation)
-                .generatedSourceFile("test.UserRequestValidator")
-                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.UserRequestValidator", """
-                        package test;
-                        
-                        import io.github.raniagus.javalidation.Validation;
-                        import io.github.raniagus.javalidation.ValidationErrors;
-                        import io.github.raniagus.javalidation.validator.Validator;
-                        import javax.annotation.processing.Generated;
-                        import org.jspecify.annotations.Nullable;
-
-                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
-                        public class UserRequestValidator implements Validator<UserRequest> {
-
-                            @Override
-                            public ValidationErrors validate(@Nullable UserRequest root) {
-                                Validation rootValidation = Validation.create();
-
-                                var tags = root.tags();
-                                var tagsValidation = Validation.create();
-                                if (tags == null) {
-                                    tagsValidation.addRootError("must not be null");
-                                }
-                                if (tags != null) {
-                                    int tagsIndex = 0;
-                                    for (var tagsItem : tags) {
-                                        var tagsItemValidation = Validation.create();
-                                        if (tagsItem != null) {
-                                            if (tagsItem.length() < 3 || tagsItem.length() > 10) {
-                                                tagsItemValidation.addRootError("size must be between {0} and {1}", 3, 10);
-                                            }
-                                        }
-                                        tagsValidation.addAll(tagsItemValidation.finish(), new Object[]{tagsIndex++});
-                                    }
-                    
-                                }
-                                rootValidation.addAll(tagsValidation.finish(), new Object[]{"tags"});
-
-                                return rootValidation.finish();
-                            }
-                        }
-                        """
-                ));
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "PrimitiveIterableRecord",
+            "ValidatedIterableRecord",
+            "NestedIterableRecord",
+    })
+    void givenAnnotatedRecords_WhenAnnotationProcessing_ThenGenerateExpectedFiles(String recordName) {
+        assertThat(
+                javac()
+                        .withProcessors(new ValidatorProcessor())
+                        .compile(JavaFileObjects.forResource("test/iterable/" + recordName + ".java")))
+                .generatedSourceFile("test.iterable." + recordName + "Validator")
+                .hasSourceEquivalentTo(
+                        JavaFileObjects.forResource("test/iterable/" + recordName + "Validator.java"));
     }
 
-    @Test
-    void shouldGenerateValidatorForValidatedIterable() {
-        // Arrange - create source files in memory
-        JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.UserRequest", """
-                package test;
-                
-                import io.github.raniagus.javalidation.validator.*;
-                import jakarta.validation.constraints.*;
-                import java.util.List;
-                
-                @Validate
-                public record UserRequest(
-                    @NotNull List<@NotNull Person> friends
-                ) {
-                    @Validate
-                    public record Person(String name) {}
-                }
-                """
-        );
+    @Nested
+    class PrimitiveIterableRecordValidatorTest {
+        private final Validator<PrimitiveIterableRecord> validator = new PrimitiveIterableRecordValidator();
 
-        // Act - compile with your processor
-        Compilation compilation = javac()
-                .withProcessors(new ValidatorProcessor())
-                .compile(sourceFile);
+        @Test
+        void nullTags_hasFieldError() {
+            assertThat(validator.validate(new PrimitiveIterableRecord(null)))
+                    .isEqualTo(ValidationErrors.ofField("tags", "must not be null"));
+        }
 
-        // Assert - compilation succeeded
-        assertThat(compilation).succeeded();
+        @Test
+        void emptyTags_noErrors() {
+            assertThat(validator.validate(new PrimitiveIterableRecord(List.of())))
+                    .isEqualTo(ValidationErrors.empty());
+        }
 
-        // Assert - all generated files match expected
-        assertThat(compilation)
-                .generatedSourceFile("test.UserRequestValidator")
-                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.UserRequestValidator", """
-                        package test;
-                        
-                        import io.github.raniagus.javalidation.Validation;
-                        import io.github.raniagus.javalidation.ValidationErrors;
-                        import io.github.raniagus.javalidation.validator.Validator;
-                        import javax.annotation.processing.Generated;
-                        import org.jspecify.annotations.Nullable;
-                        import test.UserRequest;
-                        import test.UserRequest$PersonValidator;
+        @Test
+        void validTags_noErrors() {
+            assertThat(validator.validate(new PrimitiveIterableRecord(List.of("abc", "hello", "world123"))))
+                    .isEqualTo(ValidationErrors.empty());
+        }
 
-                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
-                        public class UserRequestValidator implements Validator<UserRequest> {
-                            private final Validator<UserRequest.Person> friendsItemValidator = new UserRequest$PersonValidator();
+        @Test
+        void tagTooShort_hasFieldError() {
+            assertThat(validator.validate(new PrimitiveIterableRecord(List.of("ab"))))
+                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("tags", 0), "size must be between {0} and {1}", 3, 10));
+        }
 
-                            @Override
-                            public ValidationErrors validate(@Nullable UserRequest root) {
-                                Validation rootValidation = Validation.create();
-                    
-                                var friends = root.friends();
-                                var friendsValidation = Validation.create();
-                                if (friends == null) {
-                                    friendsValidation.addRootError("must not be null");
-                                }
-                                if (friends != null) {
-                                    int friendsIndex = 0;
-                                    for (var friendsItem : friends) {
-                                        var friendsItemValidation = Validation.create();
-                                        if (friendsItem == null) {
-                                            friendsItemValidation.addRootError("must not be null");
-                                        }
-                                        if (friendsItem != null) {
-                                            friendsItemValidation.addAll(friendsItemValidator.validate(friendsItem));
-                                        }
-                                        friendsValidation.addAll(friendsItemValidation.finish(), new Object[]{friendsIndex++});
-                                    }
-                    
-                                }
-                                rootValidation.addAll(friendsValidation.finish(), new Object[]{"friends"});
+        @Test
+        void tagTooLong_hasFieldError() {
+            assertThat(validator.validate(new PrimitiveIterableRecord(List.of("abcdefghijk"))))
+                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("tags", 0), "size must be between {0} and {1}", 3, 10));
+        }
 
-                                return rootValidation.finish();
-                            }
-                        }
-                        """
-                ));
+        @Test
+        void nullTagItem_noErrors() {
+            assertThat(validator.validate(new PrimitiveIterableRecord(Collections.singletonList(null))))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void multipleErrors_allReported() {
+            assertThat(validator.validate(new PrimitiveIterableRecord(List.of("ab", "hello", "abcdefghijk"))))
+                    .isEqualTo(Validation.create()
+                            .addFieldError(FieldKey.of("tags", 0), "size must be between {0} and {1}", 3, 10)
+                            .addFieldError(FieldKey.of("tags", 2), "size must be between {0} and {1}", 3, 10)
+                            .finish());
+        }
     }
 
+    @Nested
+    class ValidatedIterableRecordValidatorTest {
+        private final Validator<ValidatedIterableRecord> validator = new ValidatedIterableRecordValidator();
 
-    @Test
-    void shouldGenerateValidatorForNestedIterable() {
-        // Arrange - create source files in memory
-        JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.UserRequest", """
-                package test;
-                
-                import io.github.raniagus.javalidation.validator.*;
-                import jakarta.validation.constraints.*;
-                import java.util.List;
-                
-                @Validate
-                public record UserRequest(
-                    List<@NotEmpty List<@NotNull Integer>> scores
-                ) {}
-                """
-        );
+        @Test
+        void nullFriends_hasFieldError() {
+            assertThat(validator.validate(new ValidatedIterableRecord(null)))
+                    .isEqualTo(ValidationErrors.ofField("friends", "must not be null"));
+        }
 
-        // Act - compile with your processor
-        Compilation compilation = javac()
-                .withProcessors(new ValidatorProcessor())
-                .compile(sourceFile);
+        @Test
+        void emptyFriends_noErrors() {
+            assertThat(validator.validate(new ValidatedIterableRecord(List.of())))
+                    .isEqualTo(ValidationErrors.empty());
+        }
 
-        // Assert - compilation succeeded
-        assertThat(compilation).succeeded();
+        @Test
+        void validFriends_noErrors() {
+            assertThat(validator.validate(new ValidatedIterableRecord(List.of(
+                    new ValidatedIterableRecord.Person("Alice"),
+                    new ValidatedIterableRecord.Person("Bob")
+            )))).isEqualTo(ValidationErrors.empty());
+        }
 
-        // Assert - all generated files match expected
-        assertThat(compilation)
-                .generatedSourceFile("test.UserRequestValidator")
-                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.UserRequestValidator", """
-                        package test;
-                        
-                        import io.github.raniagus.javalidation.Validation;
-                        import io.github.raniagus.javalidation.ValidationErrors;
-                        import io.github.raniagus.javalidation.validator.Validator;
-                        import javax.annotation.processing.Generated;
-                        import org.jspecify.annotations.Nullable;
+        @Test
+        void nullFriendItem_hasFieldError() {
+            assertThat(validator.validate(new ValidatedIterableRecord(Collections.singletonList(null))))
+                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("friends", 0), "must not be null"));
+        }
 
-                        @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
-                        public class UserRequestValidator implements Validator<UserRequest> {
-                            @Override
-                            public ValidationErrors validate(@Nullable UserRequest root) {
-                                Validation rootValidation = Validation.create();
+        @Test
+        void friendWithNullName_hasNestedFieldError() {
+            assertThat(validator.validate(new ValidatedIterableRecord(List.of(
+                    new ValidatedIterableRecord.Person(null)
+            )))).isEqualTo(ValidationErrors.ofField(FieldKey.of("friends", 0, "name"), "must not be null"));
+        }
 
-                                var scores = root.scores();
-                                var scoresValidation = Validation.create();
-                                if (scores != null) {
-                                    int scoresIndex = 0;
-                                    for (var scoresItem : scores) {
-                                        var scoresItemValidation = Validation.create();
-                                        if (scoresItem == null || scoresItem.isEmpty()) {
-                                            scoresItemValidation.addRootError("must not be empty");
-                                        }
-                                        if (scoresItem != null) {
-                                            int scoresItemIndex = 0;
-                                            for (var scoresItemItem : scoresItem) {
-                                                var scoresItemItemValidation = Validation.create();
-                                                if (scoresItemItem == null) {
-                                                    scoresItemItemValidation.addRootError("must not be null");
-                                                }
-                                                scoresItemValidation.addAll(scoresItemItemValidation.finish(), new Object[]{scoresItemIndex++});
-                                            }
-            
-                                        }
-                                        scoresValidation.addAll(scoresItemValidation.finish(), new Object[]{scoresIndex++});
-                                    }
-            
-                                }
-                                rootValidation.addAll(scoresValidation.finish(), new Object[]{"scores"});
+        @Test
+        void multipleErrors_allReported() {
+            assertThat(validator.validate(new ValidatedIterableRecord(List.of(
+                    new ValidatedIterableRecord.Person(null),
+                    new ValidatedIterableRecord.Person("Alice"),
+                    new ValidatedIterableRecord.Person(null)
+            )))).isEqualTo(Validation.create()
+                    .addFieldError(FieldKey.of("friends", 0, "name"), "must not be null")
+                    .addFieldError(FieldKey.of("friends", 2, "name"), "must not be null")
+                    .finish());
+        }
 
-                                return rootValidation.finish();
-                            }
-                        }
-                        """
-                ));
+        @Test
+        void nullItemAndInvalidItem_allReported() {
+            assertThat(validator.validate(new ValidatedIterableRecord(Arrays.asList(
+                    null,
+                    new ValidatedIterableRecord.Person(null)
+            )))).isEqualTo(Validation.create()
+                    .addFieldError(FieldKey.of("friends", 0), "must not be null")
+                    .addFieldError(FieldKey.of("friends", 1, "name"), "must not be null")
+                    .finish());
+        }
+    }
+
+    @Nested
+    class NestedIterableRecordValidatorTest {
+        private final Validator<NestedIterableRecord> validator = new NestedIterableRecordValidator();
+
+        @Test
+        void nullScores_noErrors() {
+            assertThat(validator.validate(new NestedIterableRecord(null)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void emptyScores_noErrors() {
+            assertThat(validator.validate(new NestedIterableRecord(List.of())))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void emptyInnerList_hasFieldError() {
+            assertThat(validator.validate(new NestedIterableRecord(List.of(List.of()))))
+                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("scores", 0), "must not be empty"));
+        }
+
+        @Test
+        void nullInnerList_hasFieldError() {
+            assertThat(validator.validate(new NestedIterableRecord(Collections.singletonList(null))))
+                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("scores", 0), "must not be empty"));
+        }
+
+        @Test
+        void nullItemInInnerList_hasFieldError() {
+            assertThat(validator.validate(new NestedIterableRecord(List.of(Collections.singletonList(null)))))
+                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("scores", 0, 0), "must not be null"));
+        }
+
+        @Test
+        void validScores_noErrors() {
+            assertThat(validator.validate(new NestedIterableRecord(List.of(List.of(1, 2), List.of(3)))))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void multipleErrors_allReported() {
+            assertThat(validator.validate(new NestedIterableRecord(List.of(
+                    Arrays.asList(null, null),
+                    List.of()
+            )))).isEqualTo(
+                    Validation.create()
+                            .addFieldError(FieldKey.of("scores", 0, 0), "must not be null")
+                            .addFieldError(FieldKey.of("scores", 0, 1), "must not be null")
+                            .addFieldError(FieldKey.of("scores", 1), "must not be empty")
+                            .finish()
+            );
+        }
     }
 }

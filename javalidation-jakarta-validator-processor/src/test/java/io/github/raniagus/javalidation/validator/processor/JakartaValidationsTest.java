@@ -1,599 +1,577 @@
 package io.github.raniagus.javalidation.validator.processor;
 
+import com.google.testing.compile.JavaFileObjects;
+import io.github.raniagus.javalidation.ValidationErrors;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import test.jakarta.*;
+
+import java.time.Duration;
+import java.time.Instant;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static com.google.testing.compile.CompilationSubject.assertThat;
 import static com.google.testing.compile.Compiler.javac;
 
-import com.google.testing.compile.Compilation;
-import com.google.testing.compile.JavaFileObjects;
-import java.util.Set;
-import javax.tools.JavaFileObject;
-import org.junit.jupiter.api.Test;
+class JakartaValidationsTest {
 
-public class JakartaValidationsTest {
-    enum Imports {
-        OBJECTS("import java.util.Objects;\n"),
-        VALIDATION_UTILS("import io.github.raniagus.javalidation.validator.ValidatorUtils;\n");
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "NotNullRecord",
+            "NotEmptyRecord",
+            "NotBlankRecord",
+            "SizeMinMaxRecord",
+            "SizeMinOnlyRecord",
+            "SizeMaxOnlyRecord",
+            "SizeCollectionRecord",
+            "SizeMapRecord",
+            "EmailRecord",
+            "MinRecord",
+            "MaxReferenceRecord",
+            "MaxPrimitiveRecord",
+            "PositiveReferenceRecord",
+            "PositivePrimitiveRecord",
+            "PositiveOrZeroReferenceRecord",
+            "PositiveOrZeroPrimitiveRecord",
+            "NegativeReferenceRecord",
+            "NegativePrimitiveRecord",
+            "NegativeOrZeroReferenceRecord",
+            "NegativeOrZeroPrimitiveRecord",
+            "PastRecord",
+            "PastOrPresentRecord",
+            "FutureRecord",
+            "FutureOrPresentRecord",
+            "PatternRecord",
+            "DecimalMinInclusiveRecord",
+            "DecimalMinExclusiveRecord",
+            "DecimalMaxInclusiveRecord",
+            "DecimalMaxExclusiveRecord",
+            "DigitsRecord",
+            "NotNullAndSizeRecord",
+            "NotNullAndMinRecord",
+    })
+    void givenAnnotatedRecords_WhenAnnotationProcessing_ThenGenerateExpectedFiles(String recordName) {
+        assertThat(
+                javac()
+                        .withProcessors(new ValidatorProcessor())
+                        .compile(JavaFileObjects.forResource("test/jakarta/" + recordName + ".java")))
+                .generatedSourceFile("test.jakarta." + recordName + "Validator")
+                .hasSourceEquivalentTo(
+                        JavaFileObjects.forResource("test/jakarta/" + recordName + "Validator.java"));
+    }
 
-        final String value;
 
-        Imports(String value) {
-            this.value = value;
+    // ── @NotNull ──────────────────────────────────────────────────────────────
+    @Nested
+    class NotNull {
+        NotNullRecordValidator validator = new NotNullRecordValidator();
+
+        @Test
+        void nullValue_hasFieldError() {
+            assertThat(validator.validate(new NotNullRecord(null)))
+                    .isEqualTo(ValidationErrors.ofField("value", "must not be null"));
         }
 
-        public String getValue(Imports... imports) {
-            return Set.of(imports).contains(this) ? value : "";
+        @Test
+        void nonNullValue_noErrors() {
+            assertThat(validator.validate(new NotNullRecord("hello")))
+                    .isEqualTo(ValidationErrors.empty());
         }
     }
 
-    // ─── helpers ────────────────────────────────────────────────────────────
+    // ── @NotEmpty ─────────────────────────────────────────────────────────────
+    @Nested
+    class NotEmpty {
+        NotEmptyRecordValidator validator = new NotEmptyRecordValidator();
 
-    private static Compilation compile(String recordBody) {
-        JavaFileObject source = JavaFileObjects.forSourceString("test.TestRecord", """
-                package test;
-                
-                import io.github.raniagus.javalidation.validator.*;
-                import io.github.raniagus.javalidation.validator.*;
-                import jakarta.validation.constraints.*;
-                import java.math.*;
-                import java.time.*;
-                import java.util.*;
-                
-                @Validate
-                public record TestRecord(%s) {}
-                """.formatted(recordBody));
+        @Test
+        void nullValue_hasFieldError() {
+            assertThat(validator.validate(new NotEmptyRecord(null)))
+                    .isEqualTo(ValidationErrors.ofField("value", "must not be empty"));
+        }
 
-        return javac()
-                .withProcessors(new ValidatorProcessor())
-                .compile(source);
+        @Test
+        void emptyString_hasFieldError() {
+            assertThat(validator.validate(new NotEmptyRecord("")))
+                    .isEqualTo(ValidationErrors.ofField("value", "must not be empty"));
+        }
+
+        @Test
+        void blankString_noErrors() {
+            assertThat(validator.validate(new NotEmptyRecord(" ")))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void nonEmptyString_noErrors() {
+            assertThat(validator.validate(new NotEmptyRecord("hello")))
+                    .isEqualTo(ValidationErrors.empty());
+        }
     }
 
-    private static JavaFileObject expectedValidator(String body, Imports... imports) {
-        return JavaFileObjects.forSourceString("test.TestRecordValidator", """
-                package test;
-                
-                import io.github.raniagus.javalidation.Validation;
-                import io.github.raniagus.javalidation.ValidationErrors;
-                import io.github.raniagus.javalidation.validator.Validator;
-                %s%simport javax.annotation.processing.Generated;
-                import org.jspecify.annotations.Nullable;
-                
-                @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")
-                public class TestRecordValidator implements Validator<TestRecord> {
-                    @Override
-                    public ValidationErrors validate(@Nullable TestRecord root) {
-                        Validation rootValidation = Validation.create();
-                        %s
-                        return rootValidation.finish();
-                    }
-                }
-                """.formatted(
-                Imports.OBJECTS.getValue(imports),
-                Imports.VALIDATION_UTILS.getValue(imports),
-                body
-        ));
+    // ── @NotBlank ─────────────────────────────────────────────────────────────
+    @Nested
+    class NotBlank {
+        NotBlankRecordValidator validator = new NotBlankRecordValidator();
+
+        @Test
+        void nullValue_hasFieldError() {
+            assertThat(validator.validate(new NotBlankRecord(null)))
+                    .isEqualTo(ValidationErrors.ofField("value", "must not be blank"));
+        }
+
+        @Test
+        void emptyString_hasFieldError() {
+            assertThat(validator.validate(new NotBlankRecord("")))
+                    .isEqualTo(ValidationErrors.ofField("value", "must not be blank"));
+        }
+
+        @Test
+        void blankString_hasFieldError() {
+            assertThat(validator.validate(new NotBlankRecord("   ")))
+                    .isEqualTo(ValidationErrors.ofField("value", "must not be blank"));
+        }
+
+        @Test
+        void nonBlankString_noErrors() {
+            assertThat(validator.validate(new NotBlankRecord("hello")))
+                    .isEqualTo(ValidationErrors.empty());
+        }
     }
 
-    // ─── @NotNull ────────────────────────────────────────────────────────────
+    // ── @Size ─────────────────────────────────────────────────────────────────
+    @Nested
+    class Size {
+        SizeMinMaxRecordValidator validator = new SizeMinMaxRecordValidator();
 
-    @Test
-    void notNull() {
-        assertThat(compile("@NotNull String value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                        var value = root.value();
-                        var valueValidation = Validation.create();
-                        if (value == null) {
-                            valueValidation.addRootError("must not be null");
-                        }
-                        rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """));
+        @Test
+        void nullValue_noErrors() {
+            assertThat(validator.validate(new SizeMinMaxRecord(null)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void belowMin_hasFieldError() {
+            assertThat(validator.validate(new SizeMinMaxRecord("")))
+                    .isEqualTo(ValidationErrors.ofField("value", "size must be between {0} and {1}", 1, 10));
+        }
+
+        @Test
+        void atMin_noErrors() {
+            assertThat(validator.validate(new SizeMinMaxRecord("a")))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void atMax_noErrors() {
+            assertThat(validator.validate(new SizeMinMaxRecord("0123456789")))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void aboveMax_hasFieldError() {
+            assertThat(validator.validate(new SizeMinMaxRecord("01234567890")))
+                    .isEqualTo(ValidationErrors.ofField("value", "size must be between {0} and {1}", 1, 10));
+        }
     }
 
-    // ─── @NotEmpty ───────────────────────────────────────────────────────────
+    // ── @Email ────────────────────────────────────────────────────────────────
+    @Nested
+    class Email {
+        EmailRecordValidator validator = new EmailRecordValidator();
 
-    @Test
-    void notEmpty() {
-        assertThat(compile("@NotEmpty String value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                        var value = root.value();
-                        var valueValidation = Validation.create();
-                        if (value == null || value.isEmpty()) {
-                            valueValidation.addRootError("must not be empty");
-                        }
-                        rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """));
+        @Test
+        void nullValue_noErrors() {
+            assertThat(validator.validate(new EmailRecord(null)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void validEmail_noErrors() {
+            assertThat(validator.validate(new EmailRecord("user@example.com")))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void missingAt_hasFieldError() {
+            assertThat(validator.validate(new EmailRecord("userexample.com")))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be a well-formed email address"));
+        }
+
+        @Test
+        void missingDomain_hasFieldError() {
+            assertThat(validator.validate(new EmailRecord("user@")))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be a well-formed email address"));
+        }
     }
 
-    // ─── @NotBlank ───────────────────────────────────────────────────────────
+    // ── @Min ──────────────────────────────────────────────────────────────────
+    @Nested
+    class Min {
+        MinRecordValidator validator = new MinRecordValidator();
 
-    @Test
-    void notBlank() {
-        assertThat(compile("@NotBlank String value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                        var value = root.value();
-                        var valueValidation = Validation.create();
-                        if (value == null || value.isBlank()) {
-                            valueValidation.addRootError("must not be blank");
-                        }
-                        rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """));
+        @Test
+        void belowMin_hasFieldError() {
+            assertThat(validator.validate(new MinRecord(9L)))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be greater than or equal to {0}", 10));
+        }
+
+        @Test
+        void atMin_noErrors() {
+            assertThat(validator.validate(new MinRecord(10L)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void aboveMin_noErrors() {
+            assertThat(validator.validate(new MinRecord(11L)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
     }
 
-    // ─── @Size ───────────────────────────────────────────────────────────────
+    // ── @Max ──────────────────────────────────────────────────────────────────
+    @Nested
+    class Max {
+        MaxPrimitiveRecordValidator validator = new MaxPrimitiveRecordValidator();
 
-    @Test
-    void size_minAndMax() {
-        assertThat(compile("@Size(min = 1, max = 10) String value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                        var value = root.value();
-                        var valueValidation = Validation.create();
-                        if (value != null) {
-                            if (value.length() < 1 || value.length() > 10) {
-                                valueValidation.addRootError("size must be between {0} and {1}", 1, 10);
-                            }
-                        }
-                        rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """));
+        @Test
+        void belowMax_noErrors() {
+            assertThat(validator.validate(new MaxPrimitiveRecord(99L)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void atMax_noErrors() {
+            assertThat(validator.validate(new MaxPrimitiveRecord(100L)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void aboveMax_hasFieldError() {
+            assertThat(validator.validate(new MaxPrimitiveRecord(101L)))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be less than or equal to {0}", 100));
+        }
     }
 
-    @Test
-    void size_minOnly() {
-        assertThat(compile("@Size(min = 1) String value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                        var value = root.value();
-                        var valueValidation = Validation.create();
-                        if (value != null) {
-                            if (value.length() < 1 || value.length() > 2147483647) {
-                                valueValidation.addRootError("size must be between {0} and {1}", 1, 2147483647);
-                            }
-                        }
-                        rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """));
+    // ── @Positive ─────────────────────────────────────────────────────────────
+    @Nested
+    class Positive {
+        PositivePrimitiveRecordValidator validator = new PositivePrimitiveRecordValidator();
+
+        @Test
+        void negative_hasFieldError() {
+            assertThat(validator.validate(new PositivePrimitiveRecord(-1L)))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be greater than 0"));
+        }
+
+        @Test
+        void zero_hasFieldError() {
+            assertThat(validator.validate(new PositivePrimitiveRecord(0L)))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be greater than 0"));
+        }
+
+        @Test
+        void positive_noErrors() {
+            assertThat(validator.validate(new PositivePrimitiveRecord(1L)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
     }
 
-    @Test
-    void size_maxOnly() {
-        assertThat(compile("@Size(max = 10) String value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                        var value = root.value();
-                        var valueValidation = Validation.create();
-                        if (value != null) {
-                            if (value.length() < 0 || value.length() > 10) {
-                                valueValidation.addRootError("size must be between {0} and {1}", 0, 10);
-                            }
-                        }
-                        rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """));
+    // ── @PositiveOrZero ───────────────────────────────────────────────────────
+    @Nested
+    class PositiveOrZero {
+        PositiveOrZeroPrimitiveRecordValidator validator = new PositiveOrZeroPrimitiveRecordValidator();
+
+        @Test
+        void negative_hasFieldError() {
+            assertThat(validator.validate(new PositiveOrZeroPrimitiveRecord(-1L)))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be greater than or equal to 0"));
+        }
+
+        @Test
+        void zero_noErrors() {
+            assertThat(validator.validate(new PositiveOrZeroPrimitiveRecord(0L)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void positive_noErrors() {
+            assertThat(validator.validate(new PositiveOrZeroPrimitiveRecord(1L)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
     }
 
-    @Test
-    void size_collection() {
-        assertThat(compile("@Size(min = 1, max = 10) List<String> value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                    var value = root.value();
-                    var valueValidation = Validation.create();
-                    if (value != null) {
-                        if (value.size() < 1 || value.size() > 10) {
-                            valueValidation.addRootError("size must be between {0} and {1}", 1, 10);
-                        }
-                    }
-                    rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """));
+    // ── @Negative ─────────────────────────────────────────────────────────────
+    @Nested
+    class Negative {
+        NegativePrimitiveRecordValidator validator = new NegativePrimitiveRecordValidator();
+
+        @Test
+        void negative_noErrors() {
+            assertThat(validator.validate(new NegativePrimitiveRecord(-1L)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void zero_hasFieldError() {
+            assertThat(validator.validate(new NegativePrimitiveRecord(0L)))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be less than 0"));
+        }
+
+        @Test
+        void positive_hasFieldError() {
+            assertThat(validator.validate(new NegativePrimitiveRecord(1L)))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be less than 0"));
+        }
     }
 
-    @Test
-    void size_map() {
-        assertThat(compile("@Size(min = 1, max = 10) Map<String, String> value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                    var value = root.value();
-                    var valueValidation = Validation.create();
-                    if (value != null) {
-                        if (value.size() < 1 || value.size() > 10) {
-                            valueValidation.addRootError("size must be between {0} and {1}", 1, 10);
-                        }
-                    }
-                    rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """));
+    // ── @NegativeOrZero ───────────────────────────────────────────────────────
+    @Nested
+    class NegativeOrZero {
+        NegativeOrZeroPrimitiveRecordValidator validator = new NegativeOrZeroPrimitiveRecordValidator();
+
+        @Test
+        void negative_noErrors() {
+            assertThat(validator.validate(new NegativeOrZeroPrimitiveRecord(-1L)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void zero_noErrors() {
+            assertThat(validator.validate(new NegativeOrZeroPrimitiveRecord(0L)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void positive_hasFieldError() {
+            assertThat(validator.validate(new NegativeOrZeroPrimitiveRecord(1L)))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be less than or equal to 0"));
+        }
     }
 
-    // ─── @Email ───────────────────────────────────────────────────────────────
+    // ── @Past ─────────────────────────────────────────────────────────────────
+    @Nested
+    class Past {
+        PastRecordValidator validator = new PastRecordValidator();
 
-    @Test
-    void email() {
-        assertThat(compile("@Email String value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                        var value = root.value();
-                        var valueValidation = Validation.create();
-                        if (value != null) {
-                            if (!Objects.toString(value).matches("^[^@]+@[^@]+\\\\.[^@]+$")) {
-                                valueValidation.addRootError("must be a well-formed email address");
-                            }
-                        }
-                        rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """, Imports.OBJECTS));
+        @Test
+        void nullValue_noErrors() {
+            assertThat(validator.validate(new PastRecord(null)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void pastInstant_noErrors() {
+            assertThat(validator.validate(new PastRecord(Instant.now().minus(Duration.ofDays(1)))))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void futureInstant_hasFieldError() {
+            assertThat(validator.validate(new PastRecord(Instant.now().plus(Duration.ofDays(60)))))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be a past date"));
+        }
     }
 
-    // ─── @Min / @Max ─────────────────────────────────────────────────────────
+    // ── @PastOrPresent ────────────────────────────────────────────────────────
+    @Nested
+    class PastOrPresent {
+        PastOrPresentRecordValidator validator = new PastOrPresentRecordValidator();
 
-    @Test
-    void min() {
-        assertThat(compile("@Min(10) long value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                        var value = root.value();
-                        var valueValidation = Validation.create();
-                        if (!(value >= 10)) {
-                            valueValidation.addRootError("must be greater than or equal to {0}", 10);
-                        }
-                        rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """));
+        @Test
+        void nullValue_noErrors() {
+            assertThat(validator.validate(new PastOrPresentRecord(null)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void pastInstant_noErrors() {
+            assertThat(validator.validate(new PastOrPresentRecord(Instant.now().minus(Duration.ofDays(1)))))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void futureInstant_hasFieldError() {
+            assertThat(validator.validate(new PastOrPresentRecord(Instant.now().plus(Duration.ofDays(60)))))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be a date in the past or in the present"));
+        }
     }
 
-    @Test
-    void max_referenceType() {
-        assertThat(compile("@Max(100) Integer value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                        var value = root.value();
-                        var valueValidation = Validation.create();
-                        if (value != null) {
-                            if (!(value <= 100)) {
-                                valueValidation.addRootError("must be less than or equal to {0}", 100);
-                            }
-                        }
-                        rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """));
+    // ── @Future ───────────────────────────────────────────────────────────────
+    @Nested
+    class Future {
+        FutureRecordValidator validator = new FutureRecordValidator();
+
+        @Test
+        void nullValue_noErrors() {
+            assertThat(validator.validate(new FutureRecord(null)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void futureInstant_noErrors() {
+            assertThat(validator.validate(new FutureRecord(Instant.now().plus(Duration.ofDays(60)))))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void pastInstant_hasFieldError() {
+            assertThat(validator.validate(new FutureRecord(Instant.now().minus(Duration.ofDays(1)))))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be a future date"));
+        }
     }
 
-    @Test
-    void max_primitiveType() {
-        assertThat(compile("@Max(100) long value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                        var value = root.value();
-                        var valueValidation = Validation.create();
-                        if (!(value <= 100)) {
-                            valueValidation.addRootError("must be less than or equal to {0}", 100);
-                        }
-                        rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """));
+    // ── @FutureOrPresent ──────────────────────────────────────────────────────
+    @Nested
+    class FutureOrPresent {
+        FutureOrPresentRecordValidator validator = new FutureOrPresentRecordValidator();
+
+        @Test
+        void nullValue_noErrors() {
+            assertThat(validator.validate(new FutureOrPresentRecord(null)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void futureInstant_noErrors() {
+            assertThat(validator.validate(new FutureOrPresentRecord(Instant.now().plus(Duration.ofDays(60)))))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void pastInstant_hasFieldError() {
+            assertThat(validator.validate(new FutureOrPresentRecord(Instant.now().minus(Duration.ofDays(1)))))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be a date in the present or in the future"));
+        }
     }
 
-    // ─── @Positive / @PositiveOrZero ─────────────────────────────────────────
+    // ── @Pattern ──────────────────────────────────────────────────────────────
+    @Nested
+    class Pattern {
+        PatternRecordValidator validator = new PatternRecordValidator();
 
-    @Test
-    void positive_referenceType() {
-        assertThat(compile("@Positive Integer value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                        var value = root.value();
-                        var valueValidation = Validation.create();
-                        if (value != null) {
-                            if (!(value > 0)) {
-                                valueValidation.addRootError("must be greater than 0");
-                            }
-                        }
-                        rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """));
+        @Test
+        void nullValue_noErrors() {
+            assertThat(validator.validate(new PatternRecord(null)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void matchingValue_noErrors() {
+            assertThat(validator.validate(new PatternRecord("hello")))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void nonMatchingValue_hasFieldError() {
+            assertThat(validator.validate(new PatternRecord("Hello123")))
+                    .isEqualTo(ValidationErrors.ofField("value", "must match \"{0}\"", "^[a-z]+$"));
+        }
     }
 
-    @Test
-    void positive_primitiveType() {
-        assertThat(compile("@Positive long value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                        var value = root.value();
-                        var valueValidation = Validation.create();
-                        if (!(value > 0)) {
-                            valueValidation.addRootError("must be greater than 0");
-                        }
-                        rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """));
+    // ── @DecimalMin ───────────────────────────────────────────────────────────
+    @Nested
+    class DecimalMin {
+        DecimalMinInclusiveRecordValidator inclusiveValidator = new DecimalMinInclusiveRecordValidator();
+        DecimalMinExclusiveRecordValidator exclusiveValidator = new DecimalMinExclusiveRecordValidator();
+
+        @Test
+        void nullValue_noErrors() {
+            assertThat(inclusiveValidator.validate(new DecimalMinInclusiveRecord(null)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void inclusive_atMin_noErrors() {
+            assertThat(inclusiveValidator.validate(new DecimalMinInclusiveRecord(new java.math.BigDecimal("10.5"))))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void inclusive_belowMin_hasFieldError() {
+            assertThat(inclusiveValidator.validate(new DecimalMinInclusiveRecord(new java.math.BigDecimal("10.4"))))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be greater than or equal to {0}", "10.5"));
+        }
+
+        @Test
+        void exclusive_atMin_hasFieldError() {
+            assertThat(exclusiveValidator.validate(new DecimalMinExclusiveRecord(new java.math.BigDecimal("10.5"))))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be greater than {0}", "10.5"));
+        }
+
+        @Test
+        void exclusive_aboveMin_noErrors() {
+            assertThat(exclusiveValidator.validate(new DecimalMinExclusiveRecord(new java.math.BigDecimal("10.6"))))
+                    .isEqualTo(ValidationErrors.empty());
+        }
     }
 
-    @Test
-    void positiveOrZero_referenceType() {
-        assertThat(compile("@PositiveOrZero Integer value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                        var value = root.value();
-                        var valueValidation = Validation.create();
-                        if (value != null) {
-                            if (!(value >= 0)) {
-                                valueValidation.addRootError("must be greater than or equal to 0");
-                            }
-                        }
-                        rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """));
+    // ── @DecimalMax ───────────────────────────────────────────────────────────
+    @Nested
+    class DecimalMax {
+        DecimalMaxInclusiveRecordValidator inclusiveValidator = new DecimalMaxInclusiveRecordValidator();
+        DecimalMaxExclusiveRecordValidator exclusiveValidator = new DecimalMaxExclusiveRecordValidator();
+
+        @Test
+        void nullValue_noErrors() {
+            assertThat(inclusiveValidator.validate(new DecimalMaxInclusiveRecord(null)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void inclusive_atMax_noErrors() {
+            assertThat(inclusiveValidator.validate(new DecimalMaxInclusiveRecord(new java.math.BigDecimal("10.5"))))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void inclusive_aboveMax_hasFieldError() {
+            assertThat(inclusiveValidator.validate(new DecimalMaxInclusiveRecord(new java.math.BigDecimal("10.6"))))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be less than or equal to {0}", "10.5"));
+        }
+
+        @Test
+        void exclusive_atMax_hasFieldError() {
+            assertThat(exclusiveValidator.validate(new DecimalMaxExclusiveRecord(new java.math.BigDecimal("10.5"))))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be less than {0}", "10.5"));
+        }
+
+        @Test
+        void exclusive_belowMax_noErrors() {
+            assertThat(exclusiveValidator.validate(new DecimalMaxExclusiveRecord(new java.math.BigDecimal("10.4"))))
+                    .isEqualTo(ValidationErrors.empty());
+        }
     }
 
-    @Test
-    void positiveOrZero_primitiveType() {
-        assertThat(compile("@PositiveOrZero long value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                        var value = root.value();
-                        var valueValidation = Validation.create();
-                        if (!(value >= 0)) {
-                            valueValidation.addRootError("must be greater than or equal to 0");
-                        }
-                        rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """));
-    }
+    // ── @Digits ───────────────────────────────────────────────────────────────
+    @Nested
+    class Digits {
+        DigitsRecordValidator validator = new DigitsRecordValidator();
 
-    // ─── @Negative / @NegativeOrZero ─────────────────────────────────────────
+        @Test
+        void nullValue_noErrors() {
+            assertThat(validator.validate(new DigitsRecord(null)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
 
-    @Test
-    void negative_referenceType() {
-        assertThat(compile("@Negative Integer value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                        var value = root.value();
-                        var valueValidation = Validation.create();
-                        if (value != null) {
-                            if (!(value < 0)) {
-                                valueValidation.addRootError("must be less than 0");
-                            }
-                        }
-                        rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """));
-    }
+        @Test
+        void validDigits_noErrors() {
+            assertThat(validator.validate(new DigitsRecord(new java.math.BigDecimal("12345.67"))))
+                    .isEqualTo(ValidationErrors.empty());
+        }
 
-    @Test
-    void negative_primitiveType() {
-        assertThat(compile("@Negative long value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                        var value = root.value();
-                        var valueValidation = Validation.create();
-                        if (!(value < 0)) {
-                            valueValidation.addRootError("must be less than 0");
-                        }
-                        rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """));
-    }
+        @Test
+        void tooManyIntegerDigits_hasFieldError() {
+            assertThat(validator.validate(new DigitsRecord(new java.math.BigDecimal("123456.7"))))
+                    .isEqualTo(ValidationErrors.ofField("value", "numeric value out of bounds ({0} digits, {1} decimal digits expected)", 5, 2));
+        }
 
-    @Test
-    void negativeOrZero_referenceType() {
-        assertThat(compile("@NegativeOrZero Integer value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                        var value = root.value();
-                        var valueValidation = Validation.create();
-                        if (value != null) {
-                            if (!(value <= 0)) {
-                                valueValidation.addRootError("must be less than or equal to 0");
-                            }
-                        }
-                        rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """));
-    }
-
-    @Test
-    void negativeOrZero_primitiveType() {
-        assertThat(compile("@NegativeOrZero long value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                        var value = root.value();
-                        var valueValidation = Validation.create();
-                        if (!(value <= 0)) {
-                            valueValidation.addRootError("must be less than or equal to 0");
-                        }
-                        rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                        """));
-    }
-
-    @Test
-    void past() {
-        assertThat(compile("@Past Instant value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                    var value = root.value();
-                    var valueValidation = Validation.create();
-                    if (value != null) {
-                        if (!(ValidatorUtils.toInstant(value).isBefore(java.time.Instant.now()) == true)) {
-                            valueValidation.addRootError("must be a past date");
-                        }
-                    }
-                    rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """, Imports.VALIDATION_UTILS));
-    }
-
-    @Test
-    void pastOrPresent() {
-        assertThat(compile("@PastOrPresent Instant value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                    var value = root.value();
-                    var valueValidation = Validation.create();
-                    if (value != null) {
-                        if (!(ValidatorUtils.toInstant(value).isAfter(java.time.Instant.now()) == false)) {
-                            valueValidation.addRootError("must be a date in the past or in the present");
-                        }
-                    }
-                    rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """, Imports.VALIDATION_UTILS));
-    }
-
-    @Test
-    void future() {
-        assertThat(compile("@Future Instant value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                    var value = root.value();
-                    var valueValidation = Validation.create();
-                    if (value != null) {
-                        if (!(ValidatorUtils.toInstant(value).isAfter(java.time.Instant.now()) == true)) {
-                            valueValidation.addRootError("must be a future date");
-                        }
-                    }
-                    rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """, Imports.VALIDATION_UTILS));
-    }
-
-    @Test
-    void futureOrPresent() {
-        assertThat(compile("@FutureOrPresent Instant value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                    var value = root.value();
-                    var valueValidation = Validation.create();
-                    if (value != null) {
-                        if (!(ValidatorUtils.toInstant(value).isBefore(java.time.Instant.now()) == false)) {
-                            valueValidation.addRootError("must be a date in the present or in the future");
-                        }
-                    }
-                    rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """, Imports.VALIDATION_UTILS));
-    }
-
-// ─── @Pattern ─────────────────────────────────────────────────────────────
-
-    @Test
-    void pattern() {
-        assertThat(compile("@Pattern(regexp = \"^[a-z]+$\") String value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                    var value = root.value();
-                    var valueValidation = Validation.create();
-                    if (value != null) {
-                        if (!Objects.toString(value).matches("^[a-z]+$")) {
-                            valueValidation.addRootError("must match \\"{0}\\"", "^[a-z]+$");
-                        }
-                    }
-                    rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """, Imports.OBJECTS));
-    }
-
-    // ─── @DecimalMin / @DecimalMax ────────────────────────────────────────────
-
-    @Test
-    void decimalMin_inclusive() {
-        assertThat(compile("@DecimalMin(\"10.5\") BigDecimal value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                    var value = root.value();
-                    var valueValidation = Validation.create();
-                    if (value != null) {
-                        if (!(ValidatorUtils.compare(value, "10.5") >= 0)) {
-                            valueValidation.addRootError("must be greater than or equal to {0}", "10.5");
-                        }
-                    }
-                    rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """, Imports.VALIDATION_UTILS));
-    }
-
-    @Test
-    void decimalMin_exclusive() {
-        assertThat(compile("@DecimalMin(value = \"10.5\", inclusive = false) BigDecimal value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                    var value = root.value();
-                    var valueValidation = Validation.create();
-                    if (value != null) {
-                        if (!(ValidatorUtils.compare(value, "10.5") > 0)) {
-                            valueValidation.addRootError("must be greater than {0}", "10.5");
-                        }
-                    }
-                    rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """, Imports.VALIDATION_UTILS));
-    }
-
-    @Test
-    void decimalMax_inclusive() {
-        assertThat(compile("@DecimalMax(\"10.5\") BigDecimal value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                    var value = root.value();
-                    var valueValidation = Validation.create();
-                    if (value != null) {
-                        if (!(ValidatorUtils.compare(value, "10.5") <= 0)) {
-                            valueValidation.addRootError("must be less than or equal to {0}", "10.5");
-                        }
-                    }
-                    rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """, Imports.VALIDATION_UTILS));
-    }
-
-    @Test
-    void decimalMax_exclusive() {
-        assertThat(compile("@DecimalMax(value = \"10.5\", inclusive = false) BigDecimal value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                    var value = root.value();
-                    var valueValidation = Validation.create();
-                    if (value != null) {
-                        if (!(ValidatorUtils.compare(value, "10.5") < 0)) {
-                            valueValidation.addRootError("must be less than {0}", "10.5");
-                        }
-                    }
-                    rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """, Imports.VALIDATION_UTILS));
-    }
-
-    // ─── @Digits ──────────────────────────────────────────────────────────────
-
-    @Test
-    void digits() {
-        assertThat(compile("@Digits(integer = 5, fraction = 2) BigDecimal value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                    var value = root.value();
-                    var valueValidation = Validation.create();
-                    if (value != null) {
-                        if (!Objects.toString(value).matches("^-?\\\\d{0,5}(\\\\.\\\\d{0,2})?$")) {
-                            valueValidation.addRootError("numeric value out of bounds ({0} digits, {1} decimal digits expected)", 5, 2);
-                        }
-                    }
-                    rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """, Imports.OBJECTS));
-    }
-
-    // ─── combinations ────────────────────────────────────────────────────────
-
-    @Test
-    void notNull_and_size() {
-        assertThat(compile("@NotNull @Size(min = 3, max = 10) String value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                    var value = root.value();
-                    var valueValidation = Validation.create();
-                    if (value == null) {
-                        valueValidation.addRootError("must not be null");
-                    }
-                    if (value != null) {
-                        if (value.length() < 3 || value.length() > 10) {
-                            valueValidation.addRootError("size must be between {0} and {1}", 3, 10);
-                        }
-                    }
-                    rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """));
-    }
-
-    @Test
-    void notNull_and_min() {
-        assertThat(compile("@NotNull @Min(10) Integer value"))
-                .generatedSourceFile("test.TestRecordValidator")
-                .hasSourceEquivalentTo(expectedValidator("""
-                    var value = root.value();
-                    var valueValidation = Validation.create();
-                    if (value == null) {
-                        valueValidation.addRootError("must not be null");
-                    }
-                    if (value != null) {
-                        if (!(value >= 10)) {
-                            valueValidation.addRootError("must be greater than or equal to {0}", 10);
-                        }
-                    }
-                    rootValidation.addAll(valueValidation.finish(), new Object[]{"value"});
-                    """));
+        @Test
+        void tooManyFractionDigits_hasFieldError() {
+            assertThat(validator.validate(new DigitsRecord(new java.math.BigDecimal("12345.678"))))
+                    .isEqualTo(ValidationErrors.ofField("value", "numeric value out of bounds ({0} digits, {1} decimal digits expected)", 5, 2));
+        }
     }
 }
