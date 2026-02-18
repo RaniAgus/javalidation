@@ -117,7 +117,6 @@ public class Validation {
      * @see #addFieldError(FieldKey, String, Object...)
      */
     public Validation addFieldError(String field, String message, Object... args) {
-        Objects.requireNonNull(field);
         return addFieldError(FieldKey.of(field), message, args);
     }
 
@@ -141,7 +140,6 @@ public class Validation {
      * @see #addFieldError(String, String, Object...)
      */
     public Validation addFieldError(FieldKey fieldKey, String message, Object... args) {
-        Objects.requireNonNull(fieldKey);
         Objects.requireNonNull(message);
         fieldErrors.computeIfAbsent(fieldKey, k -> new ArrayList<>(1))
                 .add(new TemplateString(message, args));

@@ -77,14 +77,6 @@ class ValidationTest {
     }
 
     @Test
-    void givenNullField_whenAddFieldError_thenThrowsNullPointerException() {
-        var validation = Validation.create();
-
-        assertThatThrownBy(() -> validation.addFieldError(null, "error"))
-                .isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
     void givenNullMessage_whenAddFieldError_thenThrowsNullPointerException() {
         var validation = Validation.create();
 
