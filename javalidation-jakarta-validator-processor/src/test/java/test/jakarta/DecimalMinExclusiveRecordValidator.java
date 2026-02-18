@@ -3,7 +3,7 @@ package test.jakarta;
 import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.ValidationErrors;
 import io.github.raniagus.javalidation.validator.Validator;
-import io.github.raniagus.javalidation.validator.ValidatorUtils;
+import java.math.BigDecimal;
 import javax.annotation.processing.Generated;
 import org.jspecify.annotations.NullMarked;
 
@@ -16,7 +16,7 @@ public class DecimalMinExclusiveRecordValidator implements Validator<DecimalMinE
         var value = root.value();
         var valueValidation = Validation.create();
         if (value != null) {
-            if (!(ValidatorUtils.compare(value, "10.5") > 0)) {
+            if (!(value.compareTo(new BigDecimal("10.5")) > 0)) {
                 valueValidation.addRootError("must be greater than {0}", "10.5");
             }
         }

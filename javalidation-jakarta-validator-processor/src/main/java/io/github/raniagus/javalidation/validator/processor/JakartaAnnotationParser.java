@@ -126,6 +126,11 @@ public final class JakartaAnnotationParser {
     }
 
     public static @Nullable NullUnsafeWriter parseMinAnnotation(TypeAdapter type) {
+        NumericKind numericKind = type.getNumericKind();
+        if (numericKind == null) {
+            return null;
+        }
+
         var annotationMirror = type.getAnnotationMirror(Min.class);
         if (annotationMirror == null) {
             return null;
@@ -134,15 +139,21 @@ public final class JakartaAnnotationParser {
         String message = getAnnotationMessage(annotationMirror);
         long value = getAnnotationLongValue(annotationMirror, "value", 0);
 
-        return new NullUnsafeWriter.RawCompare(
+        return new NullUnsafeWriter.NumericCompare(
                 ">=",
                 value,
+                numericKind,
                 resolveMessage(message, "{value}"),
                 true
         );
     }
 
     public static @Nullable NullUnsafeWriter parseMaxAnnotation(TypeAdapter type) {
+        NumericKind numericKind = type.getNumericKind();
+        if (numericKind == null) {
+            return null;
+        }
+
         var annotationMirror = type.getAnnotationMirror(Max.class);
         if (annotationMirror == null) {
             return null;
@@ -151,52 +162,97 @@ public final class JakartaAnnotationParser {
         String message = getAnnotationMessage(annotationMirror);
         long value = getAnnotationLongValue(annotationMirror, "value", 0);
 
-        return new NullUnsafeWriter.RawCompare(
+        return new NullUnsafeWriter.NumericCompare(
                 "<=",
                 value,
+                numericKind,
                 resolveMessage(message, "{value}"),
                 true
         );
     }
 
     public static @Nullable NullUnsafeWriter parsePositiveAnnotation(TypeAdapter type) {
+        NumericKind numericKind = type.getNumericKind();
+        if (numericKind == null) {
+            return null;
+        }
+
         var annotationMirror = type.getAnnotationMirror(Positive.class);
         if (annotationMirror == null) {
             return null;
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        return new NullUnsafeWriter.RawCompare(">", 0, resolveMessage(message), false);
+        return new NullUnsafeWriter.NumericCompare(
+                ">",
+                0,
+                numericKind,
+                resolveMessage(message),
+                false
+        );
     }
 
     public static @Nullable NullUnsafeWriter parsePositiveOrZeroAnnotation(TypeAdapter type) {
+        NumericKind numericKind = type.getNumericKind();
+        if (numericKind == null) {
+            return null;
+        }
+
         var annotationMirror = type.getAnnotationMirror(PositiveOrZero.class);
         if (annotationMirror == null) {
             return null;
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        return new NullUnsafeWriter.RawCompare(">=", 0, resolveMessage(message), false);
+        return new NullUnsafeWriter.NumericCompare(
+                ">=",
+                0,
+                numericKind,
+                resolveMessage(message),
+                false
+        );
     }
 
     public static @Nullable NullUnsafeWriter parseNegativeAnnotation(TypeAdapter type) {
+        NumericKind numericKind = type.getNumericKind();
+        if (numericKind == null) {
+            return null;
+        }
+
         var annotationMirror = type.getAnnotationMirror(Negative.class);
         if (annotationMirror == null) {
             return null;
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        return new NullUnsafeWriter.RawCompare("<", 0, resolveMessage(message), false);
+        return new NullUnsafeWriter.NumericCompare(
+                "<",
+                0,
+                numericKind,
+                resolveMessage(message),
+                false
+        );
     }
 
     public static @Nullable NullUnsafeWriter parseNegativeOrZeroAnnotation(TypeAdapter type) {
+        NumericKind numericKind = type.getNumericKind();
+        if (numericKind == null) {
+            return null;
+        }
+
         var annotationMirror = type.getAnnotationMirror(NegativeOrZero.class);
         if (annotationMirror == null) {
             return null;
         }
 
         String message = getAnnotationMessage(annotationMirror);
-        return new NullUnsafeWriter.RawCompare("<=", 0, resolveMessage(message), false);
+        return new NullUnsafeWriter.NumericCompare(
+                "<=",
+                0,
+                numericKind,
+                resolveMessage(message),
+                false
+        );
     }
 
     public static @Nullable NullUnsafeWriter parseEmailAnnotation(TypeAdapter type) {
@@ -222,9 +278,9 @@ public final class JakartaAnnotationParser {
         String message = getAnnotationMessage(annotationMirror);
 
         return new NullUnsafeWriter.Pattern(
-                regexp.replace("\\", "\\\\"), // TODO: Check how to prevent escaping
+                regexp.replace("\\", "\\\\"),
                 resolveMessage(message, "{regexp}"),
-                "\"" + regexp + "\""
+                regexp
         );
     }
 
@@ -249,7 +305,8 @@ public final class JakartaAnnotationParser {
     }
 
     public static @Nullable NullUnsafeWriter parseDecimalMaxAnnotation(TypeAdapter type) {
-        if (!type.isDecimalType()) {
+        NumericKind numericKind = type.getNumericKind();
+        if (numericKind == null) {
             return null;
         }
 
@@ -263,10 +320,12 @@ public final class JakartaAnnotationParser {
         boolean inclusive = getAnnotationBooleanValue(annotationMirror, "inclusive", true);
 
         try {
-            return new NullUnsafeWriter.DecimalCompare(
+            return new NullUnsafeWriter.NumericCompare(
                     inclusive ? "<=" : "<",
-                    new BigDecimal(value),
-                    resolveMessage(message, "{value}").replace("{inclusive}", inclusive ? "or equal to " : "")
+                    value,
+                    numericKind,
+                    resolveMessage(message, "{value}").replace("{inclusive}", inclusive ? "or equal to " : ""),
+                    true
             );
         } catch (NumberFormatException e) {
             return null;
@@ -274,7 +333,8 @@ public final class JakartaAnnotationParser {
     }
 
     public static @Nullable NullUnsafeWriter parseDecimalMinAnnotation(TypeAdapter type) {
-        if (!type.isDecimalType()) {
+        NumericKind numericKind = type.getNumericKind();
+        if (numericKind == null) {
             return null;
         }
 
@@ -288,10 +348,12 @@ public final class JakartaAnnotationParser {
         boolean inclusive = getAnnotationBooleanValue(annotationMirror, "inclusive", true);
 
         try {
-            return new NullUnsafeWriter.DecimalCompare(
+            return new NullUnsafeWriter.NumericCompare(
                     inclusive ? ">=" : ">",
-                    new BigDecimal(value),
-                    resolveMessage(message, "{value}").replace("{inclusive}", inclusive ? "or equal to " : "")
+                    value,
+                    numericKind,
+                    resolveMessage(message, "{value}").replace("{inclusive}", inclusive ? "or equal to " : ""),
+                    true
             );
         } catch (NumberFormatException e) {
             return null;
@@ -314,8 +376,8 @@ public final class JakartaAnnotationParser {
         return new NullUnsafeWriter.Pattern(
                 pattern,
                 resolveMessage(message, "{integer}", "{fraction}"),
-                String.valueOf(integer),
-                String.valueOf(fraction)
+                integer,
+                fraction
         );
     }
 

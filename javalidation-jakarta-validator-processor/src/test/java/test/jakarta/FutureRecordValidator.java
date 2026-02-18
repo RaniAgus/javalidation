@@ -4,6 +4,7 @@ import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.ValidationErrors;
 import io.github.raniagus.javalidation.validator.Validator;
 import io.github.raniagus.javalidation.validator.ValidatorUtils;
+import java.time.Instant;
 import javax.annotation.processing.Generated;
 import org.jspecify.annotations.NullMarked;
 
@@ -16,7 +17,7 @@ public class FutureRecordValidator implements Validator<FutureRecord> {
         var value = root.value();
         var valueValidation = Validation.create();
         if (value != null) {
-            if (!(ValidatorUtils.toInstant(value).isAfter(java.time.Instant.now()) == true)) {
+            if (!(ValidatorUtils.toInstant(value).isAfter(Instant.now()) == true)) {
                 valueValidation.addRootError("must be a future date");
             }
         }

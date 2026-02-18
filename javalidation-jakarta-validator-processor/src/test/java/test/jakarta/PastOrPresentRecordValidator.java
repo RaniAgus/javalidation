@@ -4,6 +4,7 @@ import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.ValidationErrors;
 import io.github.raniagus.javalidation.validator.Validator;
 import io.github.raniagus.javalidation.validator.ValidatorUtils;
+import java.time.Instant;
 import javax.annotation.processing.Generated;
 import org.jspecify.annotations.NullMarked;
 
@@ -16,7 +17,7 @@ public class PastOrPresentRecordValidator implements Validator<PastOrPresentReco
         var value = root.value();
         var valueValidation = Validation.create();
         if (value != null) {
-            if (!(ValidatorUtils.toInstant(value).isAfter(java.time.Instant.now()) == false)) {
+            if (!(ValidatorUtils.toInstant(value).isAfter(Instant.now()) == false)) {
                 valueValidation.addRootError("must be a date in the past or in the present");
             }
         }

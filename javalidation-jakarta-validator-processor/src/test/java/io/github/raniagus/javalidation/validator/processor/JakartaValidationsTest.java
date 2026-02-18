@@ -2,6 +2,8 @@ package io.github.raniagus.javalidation.validator.processor;
 
 import com.google.testing.compile.JavaFileObjects;
 import io.github.raniagus.javalidation.ValidationErrors;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -30,6 +32,8 @@ class JakartaValidationsTest {
             "EmailRecord",
             "MinRecord",
             "MaxReferenceRecord",
+            "MaxBigIntegerRecord",
+            "MaxBigDecimalRecord",
             "MaxPrimitiveRecord",
             "PositiveReferenceRecord",
             "PositivePrimitiveRecord",
@@ -234,23 +238,80 @@ class JakartaValidationsTest {
     // ── @Max ──────────────────────────────────────────────────────────────────
     @Nested
     class Max {
-        MaxPrimitiveRecordValidator validator = new MaxPrimitiveRecordValidator();
+        MaxPrimitiveRecordValidator primitiveValidator = new MaxPrimitiveRecordValidator();
+        MaxReferenceRecordValidator referenceValidator = new MaxReferenceRecordValidator();
+        MaxBigIntegerRecordValidator bigIntegerValidator = new MaxBigIntegerRecordValidator();
+        MaxBigDecimalRecordValidator bigDecimalValidator = new MaxBigDecimalRecordValidator();
 
         @Test
-        void belowMax_noErrors() {
-            assertThat(validator.validate(new MaxPrimitiveRecord(99L)))
+        void belowPrimitiveMax_noErrors() {
+            assertThat(primitiveValidator.validate(new MaxPrimitiveRecord(99L)))
                     .isEqualTo(ValidationErrors.empty());
         }
 
         @Test
-        void atMax_noErrors() {
-            assertThat(validator.validate(new MaxPrimitiveRecord(100L)))
+        void atPrimitiveMax_noErrors() {
+            assertThat(primitiveValidator.validate(new MaxPrimitiveRecord(100L)))
                     .isEqualTo(ValidationErrors.empty());
         }
 
         @Test
-        void aboveMax_hasFieldError() {
-            assertThat(validator.validate(new MaxPrimitiveRecord(101L)))
+        void abovePrimitiveMax_hasFieldError() {
+            assertThat(primitiveValidator.validate(new MaxPrimitiveRecord(101L)))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be less than or equal to {0}", 100));
+        }
+
+        @Test
+        void belowReferenceMax_noErrors() {
+            assertThat(referenceValidator.validate(new MaxReferenceRecord(99L)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void atReferenceMax_noErrors() {
+            assertThat(referenceValidator.validate(new MaxReferenceRecord(100L)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void aboveReferenceMax_hasFieldError() {
+            assertThat(referenceValidator.validate(new MaxReferenceRecord(101L)))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be less than or equal to {0}", 100));
+        }
+
+        @Test
+        void belowBigIntegerMax_noErrors() {
+            assertThat(bigIntegerValidator.validate(new MaxBigIntegerRecord(BigInteger.valueOf(99L))))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void atBigIntegerMax_noErrors() {
+            assertThat(bigIntegerValidator.validate(new MaxBigIntegerRecord(BigInteger.valueOf(100L))))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void aboveBigIntegerMax_hasFieldError() {
+            assertThat(bigIntegerValidator.validate(new MaxBigIntegerRecord(BigInteger.valueOf(101L))))
+                    .isEqualTo(ValidationErrors.ofField("value", "must be less than or equal to {0}", 100));
+        }
+
+        @Test
+        void belowBigDecimalMax_noErrors() {
+            assertThat(bigDecimalValidator.validate(new MaxBigDecimalRecord(BigDecimal.valueOf(99L))))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void atBigDecimalMax_noErrors() {
+            assertThat(bigDecimalValidator.validate(new MaxBigDecimalRecord(BigDecimal.valueOf(100L))))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void aboveBigDecimalMax_hasFieldError() {
+            assertThat(bigDecimalValidator.validate(new MaxBigDecimalRecord(BigDecimal.valueOf(101L))))
                     .isEqualTo(ValidationErrors.ofField("value", "must be less than or equal to {0}", 100));
         }
     }

@@ -48,51 +48,52 @@ public interface NullUnsafeWriter extends ValidationWriter {
         }
     }
 
-    record RawCompare(String operator, Number value, String message, boolean arg) implements NullUnsafeWriter {
+    record NumericCompare(String operator, Object value, NumericKind kind, String message, boolean useValueAsArg) implements NullUnsafeWriter {
+        @Override
+        public Stream<String> imports() {
+            return switch (kind) {
+                case BIG_DECIMAL, NUMBER, CHAR_SEQUENCE -> Stream.of("java.math.BigDecimal");
+                case BIG_INTEGER -> Stream.of("java.math.BigInteger");
+                default -> Stream.empty();
+            };
+        }
+
         @Override
         public void writeBodyTo(ValidationOutput out) {
+            String comparison = switch (kind) {
+                case BIG_DECIMAL -> "%s.compareTo(new BigDecimal(\"%s\")) %s 0".formatted(out.getVariable(), value, operator);
+                case BIG_INTEGER -> "%s.compareTo(new BigInteger(\"%s\")) %s 0".formatted(out.getVariable(), value, operator);
+                case BYTE, SHORT, INTEGER, LONG -> "%s %s %s".formatted(out.getVariable(), operator, value);
+                case NUMBER, CHAR_SEQUENCE -> "new BigDecimal(%s.toString()).compareTo(new BigDecimal(\"%s\")) %s 0".formatted(out.getVariable(), value, operator);
+            };
             out.write("""
-                    if (!(%s %s %s)) {\
-                    """.formatted(out.getVariable(), operator, value));
+                    if (!(%s)) {\
+                    """.formatted(comparison));
             out.incrementIndentationLevel();
             out.write("""
                     %sValidation.addRootError("%s"%s);\
-                    """.formatted(out.getVariable(), message, arg ? ", " + value : ""));
+                    """.formatted(out.getVariable(), message, formatArg()));
             out.decrementIndentationLevel();
             out.write("}");
         }
-    }
 
-    record DecimalCompare(String operator, BigDecimal value, String message) implements NullUnsafeWriter {
-        @Override
-        public Stream<String> imports() {
-            return Stream.of("io.github.raniagus.javalidation.validator.ValidatorUtils");
-        }
-
-        @Override
-        public void writeBodyTo(ValidationOutput out) {
-            out.write("""
-                    if (!(ValidatorUtils.compare(%s, "%s") %s 0)) {\
-                    """.formatted(out.getVariable(), value, operator));
-            out.incrementIndentationLevel();
-            out.write("""
-                    %sValidation.addRootError("%s", "%s");\
-                    """.formatted(out.getVariable(), message, value));
-            out.decrementIndentationLevel();
-            out.write("}");
+        private String formatArg() {
+            if (!useValueAsArg) return "";
+            if (value instanceof String) return ", \"" + value + "\"";
+            return ", " + value;
         }
     }
 
     record TemporalCompare(String accessor, boolean result, String message) implements NullUnsafeWriter {
         @Override
         public Stream<String> imports() {
-            return Stream.of("io.github.raniagus.javalidation.validator.ValidatorUtils");
+            return Stream.of("io.github.raniagus.javalidation.validator.ValidatorUtils", "java.time.Instant");
         }
 
         @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (!(ValidatorUtils.toInstant(%s).%s(java.time.Instant.now()) == %s)) {\
+                    if (!(ValidatorUtils.toInstant(%s).%s(Instant.now()) == %s)) {\
                     """.formatted(out.getVariable(), accessor, result));
             out.incrementIndentationLevel();
             out.write("""
@@ -103,7 +104,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
         }
     }
 
-    record Pattern(String regex, String message, String... args) implements NullUnsafeWriter {
+    record Pattern(String regex, String message, Object... args) implements NullUnsafeWriter {
         @Override
         public Stream<String> imports() {
             return Stream.of("java.util.Objects");
@@ -117,9 +118,16 @@ public interface NullUnsafeWriter extends ValidationWriter {
             out.incrementIndentationLevel();
             out.write("""
                     %sValidation.addRootError("%s"%s);\
-                    """.formatted(out.getVariable(), message, args.length == 0 ? "" : Stream.of(args).collect(Collectors.joining(", ", ", ", ""))));
+                    """.formatted(out.getVariable(), message, formatArgs()));
             out.decrementIndentationLevel();
             out.write("}");
+        }
+
+        private String formatArgs() {
+            if (args.length == 0) return "";
+            return Stream.of(args)
+                    .map(arg -> arg instanceof String ? "\"" + arg + "\"" : arg.toString())
+                    .collect(Collectors.joining(", ", ",", ""));
         }
     }
 
