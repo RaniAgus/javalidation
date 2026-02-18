@@ -238,11 +238,11 @@ public interface NullUnsafeWriter extends ValidationWriter {
         @Override
         public void writePropertiesTo(ValidationOutput out) {
             out.write("""
-                    private final Validator<%s%s> %s = new %s();\
+                    private final Validator<%s%s> %sValidator = new %s();\
                     """.formatted(
                     referredTypeEnclosingClassPrefix,
                     referredTypeName,
-                    validatorProperty(out.getVariable()),
+                    out.getVariable(),
                     referredValidatorName
             ));
         }
@@ -250,19 +250,15 @@ public interface NullUnsafeWriter extends ValidationWriter {
         @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    %sValidation.addAll(%s.validate(%s));\
-                    """.formatted(out.getVariable(), validatorProperty(out.getVariable()), out.getVariable()));
-        }
-
-        private String validatorProperty(String field) {
-            return field + "Validator";
+                    %sValidator.validate(%sValidation, %s);\
+                    """.formatted(out.getVariable(), out.getVariable(), out.getVariable()));
         }
     }
 
     record IterableWriter(
             @Nullable NullSafeWriter nullSafeWriter,
             List<NullUnsafeWriter> nullUnsafeWriters
-    ) implements NullUnsafeWriter, WithWriters {
+    ) implements NullUnsafeWriter, WithNestedObjectWriters {
 
         public Stream<String> imports() {
             return Stream.concat(
@@ -291,14 +287,15 @@ public interface NullUnsafeWriter extends ValidationWriter {
             out.write("for (var %sItem : %s) {".formatted(out.getVariable(), out.getVariable()));
             out.incrementIndentationLevel();
 
-            out.write("var %sItemValidation = Validation.create();".formatted(out.getVariable()));
+            out.write("%sValidation.validateField(%sIndex++, %sItemValidation -> {".formatted(out.getVariable(), out.getVariable(), out.getVariable()));
+            out.incrementIndentationLevel();
 
-            String field = out.getVariable();
-            out.registerVariable(field + "Item");
-            writeNestedFieldsTo(nullSafeWriter, nullUnsafeWriters, out);
+            out.registerVariable(out.getVariable() + "Item");
+            writeNestedFieldsTo(out);
             out.removeVariable();
 
-            out.write("%sValidation.addAll(%sItemValidation.finish(), new Object[]{%sIndex++});".formatted(field, out.getVariable(), field));
+            out.decrementIndentationLevel();
+            out.write("});");
 
             out.decrementIndentationLevel();
             out.write("}");

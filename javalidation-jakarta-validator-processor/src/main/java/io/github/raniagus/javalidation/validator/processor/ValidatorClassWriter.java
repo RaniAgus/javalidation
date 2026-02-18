@@ -10,17 +10,16 @@ public record ValidatorClassWriter(
         String recordName, // "RecordName"
         String recordFullName, // "EnclosingClass.RecordName"
         String recordImportName, // "com.example.RecordName" or "com.example.EnclosingClass"
-        List<FieldWriter> objectValidationWriters
+        List<FieldWriter> fieldWriters
 ) implements ClassWriter {
     @Override
     public Stream<String> imports() {
         return Stream.concat(
                 Stream.of(
                         "io.github.raniagus.javalidation.Validation",
-                        "io.github.raniagus.javalidation.ValidationErrors",
                         "io.github.raniagus.javalidation.validator.Validator"
                 ),
-                objectValidationWriters.stream().flatMap(ValidationWriter::imports)
+                fieldWriters.stream().flatMap(ValidationWriter::imports)
         );
     }
 
@@ -31,22 +30,20 @@ public record ValidatorClassWriter(
                 public class %s implements Validator<%s%s> {\
                 """.formatted(className, enclosingClassPrefix, recordName));
         out.incrementIndentationLevel();
-        for (FieldWriter writer : objectValidationWriters) {
+        for (FieldWriter writer : fieldWriters) {
             writer.writePropertiesTo(out);
         }
         out.write("");
         out.registerVariable("root");
         out.write("@Override");
         out.write("""
-                public ValidationErrors validate(%s%s %s) {\
-                """.formatted(enclosingClassPrefix, recordName, out.getVariable()));
+                public void validate(Validation %sValidation, %s%s %s) {\
+                """.formatted(out.getVariable(), enclosingClassPrefix, recordName, out.getVariable()));
         out.incrementIndentationLevel();
-        out.write("Validation %sValidation = Validation.create();".formatted(out.getVariable()));
         out.write("");
-        for (ValidationWriter writer : objectValidationWriters) {
+        for (ValidationWriter writer : fieldWriters) {
             writer.writeBodyTo(out);
         }
-        out.write("return %sValidation.finish();".formatted(out.getVariable()));
         out.decrementIndentationLevel();
         out.write("}");
         out.decrementIndentationLevel();

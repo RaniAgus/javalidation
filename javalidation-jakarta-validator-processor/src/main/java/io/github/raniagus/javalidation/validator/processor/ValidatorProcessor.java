@@ -217,13 +217,13 @@ public class ValidatorProcessor extends AbstractProcessor {
 
     private FieldWriter parseFieldWriter(RecordComponentElement component) {
         if (component.asType().getKind().isPrimitive()) {
-            return new PrimitiveValidationWriter(
+            return new FieldWriter.PrimitiveWriter(
                     component.getSimpleName().toString(),
                     parseNullUnsafeWriters(component.asType())
             );
         }
 
-        return new ObjectValidationWriter(
+        return new FieldWriter.ObjectWriter(
                 component.getSimpleName().toString(),
                 parseNullSafeWriter(component.asType()),
                 parseNullUnsafeWriters(component.asType())

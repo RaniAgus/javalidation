@@ -1,8 +1,14 @@
 package io.github.raniagus.javalidation.validator;
 
+import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.ValidationErrors;
 
-@FunctionalInterface
 public interface Validator<T> {
-    ValidationErrors validate(T value);
+    default ValidationErrors validate(T value) {
+        Validation validation = Validation.create();
+        validate(validation, value);
+        return validation.finish();
+    }
+
+    void validate(Validation validation, T value);
 }

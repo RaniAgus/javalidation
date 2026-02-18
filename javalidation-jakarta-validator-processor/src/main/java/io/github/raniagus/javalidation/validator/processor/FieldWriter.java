@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
 
-public interface FieldWriter extends ValidationWriter {
+public sealed interface FieldWriter extends ValidationWriter {
     @Override
     default Stream<String> imports() {
         return Stream.concat(
@@ -32,4 +32,48 @@ public interface FieldWriter extends ValidationWriter {
     }
 
     List<NullUnsafeWriter> nullUnsafeWriters();
+
+    @Override
+    default void writeBodyTo(ValidationOutput out) {
+        NullSafeWriter nullSafeWriter = nullSafeWriter();
+        List<NullUnsafeWriter> nullUnsafeWriters = nullUnsafeWriters();
+        if (nullSafeWriter == null && nullUnsafeWriters.isEmpty()) {
+            return;
+        }
+
+        out.write("%sValidation.validateField(\"%s\", %sValidation -> {".formatted(out.getVariable(), field(), field()));
+        out.incrementIndentationLevel();
+
+        out.write("var %s = %s.%s();".formatted(field(), out.getVariable(), field()));
+        out.registerVariable(field());
+
+        writeNestedFieldsTo(out);
+
+        out.removeVariable();
+        out.decrementIndentationLevel();
+        out.write("});");
+    }
+
+    void writeNestedFieldsTo(ValidationOutput out);
+
+    record PrimitiveWriter(
+            String field,
+            List<NullUnsafeWriter> nullUnsafeWriters
+    ) implements FieldWriter {
+        @Override
+        public void writeNestedFieldsTo(ValidationOutput out) {
+            nullUnsafeWriters.forEach(writer -> writer.writeBodyTo(out));
+        }
+    }
+
+    record ObjectWriter(
+            String field,
+            @Nullable NullSafeWriter nullSafeWriter,
+            List<NullUnsafeWriter> nullUnsafeWriters
+    ) implements FieldWriter, WithNestedObjectWriters {
+        @Override
+        public void writeNestedFieldsTo(ValidationOutput out) {
+            WithNestedObjectWriters.super.writeNestedFieldsTo(out);
+        }
+    }
 }
