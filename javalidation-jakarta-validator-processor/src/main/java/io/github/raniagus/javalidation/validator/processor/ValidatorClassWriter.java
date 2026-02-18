@@ -18,8 +18,7 @@ public record ValidatorClassWriter(
                 Stream.of(
                         "io.github.raniagus.javalidation.Validation",
                         "io.github.raniagus.javalidation.ValidationErrors",
-                        "io.github.raniagus.javalidation.validator.Validator",
-                        "org.jspecify.annotations.Nullable"
+                        "io.github.raniagus.javalidation.validator.Validator"
                 ),
                 objectValidationWriters.stream().flatMap(ValidationWriter::imports)
         );
@@ -39,7 +38,7 @@ public record ValidatorClassWriter(
         out.registerVariable("root");
         out.write("@Override");
         out.write("""
-                public ValidationErrors validate(%s@Nullable %s %s) {\
+                public ValidationErrors validate(%s%s %s) {\
                 """.formatted(enclosingClassPrefix, recordName, out.getVariable()));
         out.incrementIndentationLevel();
         out.write("Validation %sValidation = Validation.create();".formatted(out.getVariable()));

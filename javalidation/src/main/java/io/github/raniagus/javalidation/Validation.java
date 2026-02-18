@@ -114,11 +114,36 @@ public class Validation {
      * @param args optional arguments for the message template
      * @return this validation for method chaining
      * @throws NullPointerException if field or message is null
+     * @see #addFieldError(FieldKey, String, Object...)
      */
     public Validation addFieldError(String field, String message, Object... args) {
         Objects.requireNonNull(field);
+        return addFieldError(FieldKey.of(field), message, args);
+    }
+
+    /**
+     * Adds a field-specific validation error, using a {@link FieldKey} for more complex field paths.
+     * <p>
+     * Multiple errors can be added to the same field, and they will be accumulated in order.
+     * <p>
+     * The message supports MessageFormat placeholders for internationalization:
+     * <pre>{@code
+     * validation.addFieldError(FieldKey.of("age"), "Must be at least {0}", 18);
+     * validation.addFieldError(FieldKey.of("email"), "Invalid email format");
+     * validation.addFieldError(FieldKey.of("email"), "Email already exists");  // second error for same field
+     * }</pre>
+     *
+     * @param fieldKey the field key (must not be null)
+     * @param message the error message template (must not be null)
+     * @param args optional arguments for the message template
+     * @return this validation for method chaining
+     * @throws NullPointerException if field or message is null
+     * @see #addFieldError(String, String, Object...)
+     */
+    public Validation addFieldError(FieldKey fieldKey, String message, Object... args) {
+        Objects.requireNonNull(fieldKey);
         Objects.requireNonNull(message);
-        fieldErrors.computeIfAbsent(FieldKey.of(field), k -> new ArrayList<>(1))
+        fieldErrors.computeIfAbsent(fieldKey, k -> new ArrayList<>(1))
                 .add(new TemplateString(message, args));
         return this;
     }

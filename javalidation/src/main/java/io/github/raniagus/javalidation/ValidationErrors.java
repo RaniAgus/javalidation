@@ -1,8 +1,6 @@
 package io.github.raniagus.javalidation;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -24,10 +22,10 @@ import java.util.stream.Collectors;
  * <b>Creating validation errors:</b>
  * <pre>{@code
  * // Single root error
- * ValidationErrors errors = ValidationErrors.of("Invalid input");
+ * ValidationErrors errors = ValidationErrors.ofRoot("Invalid input");
  *
  * // Single field error
- * ValidationErrors errors = ValidationErrors.of("email", "Invalid email format");
+ * ValidationErrors errors = ValidationErrors.ofField("email", "Invalid email format");
  *
  * // Build complex errors
  * ValidationErrors errors = Validation.create()
@@ -92,7 +90,7 @@ public record ValidationErrors(
      * <p>
      * The message supports MessageFormat placeholders ({0}, {1}, etc.):
      * <pre>{@code
-     * ValidationErrors errors = ValidationErrors.of("User must be at least {0} years old", 18);
+     * ValidationErrors errors = ValidationErrors.ofRoot("User must be at least {0} years old", 18);
      * }</pre>
      *
      * @param message the error message template
@@ -108,7 +106,7 @@ public record ValidationErrors(
      * <p>
      * The message supports MessageFormat placeholders:
      * <pre>{@code
-     * ValidationErrors errors = ValidationErrors.of("age", "Must be at least {0}", 18);
+     * ValidationErrors errors = ValidationErrors.ofField("age", "Must be at least {0}", 18);
      * }</pre>
      *
      * @param field the field name
@@ -117,7 +115,25 @@ public record ValidationErrors(
      * @return validation errors containing the single field error
      */
     public static ValidationErrors ofField(String field, String message, Object... args) {
-        return new ValidationErrors(List.of(), Map.of(FieldKey.of(field), List.of(new TemplateString(message, args))));
+        return ofField(FieldKey.of(field), message, args);
+    }
+
+    /**
+     * Creates a {@code ValidationErrors} with a single field error. The field is specified as a {@link FieldKey} for
+     * more complex field paths.
+     * <p>
+     * The message supports MessageFormat placeholders:
+     * <pre>{@code
+     * ValidationErrors errors = ValidationErrors.ofField(FieldKey.of("age"), "Must be at least {0}", 18);
+     * }</pre>
+     *
+     * @param field the field key
+     * @param message the error message template
+     * @param args optional arguments for the message template
+     * @return validation errors containing the single field error
+     */
+    public static ValidationErrors ofField(FieldKey field, String message, Object... args) {
+        return new ValidationErrors(List.of(), Map.of(field, List.of(new TemplateString(message, args))));
     }
 
     /**

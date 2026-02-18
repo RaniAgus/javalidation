@@ -13,17 +13,21 @@ public interface ClassWriter {
         out.write("");
 
         List<String> imports = Stream.concat(
-                imports(), Stream.of("javax.annotation.processing.Generated"))
-                .sorted()
-                .distinct()
-                .toList();
+                imports(),
+                Stream.of(
+                        "javax.annotation.processing.Generated",
+                        "org.jspecify.annotations.NullMarked"
+                )
+        ).sorted().distinct().toList();
 
         for (String importStatement : imports) {
             out.write("import %s;".formatted(importStatement));
         }
+
         out.write("");
         out.write("""
-                @Generated("io.github.raniagus.javalidation.processor.ValidatorProcessor")\
+                @NullMarked
+                @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")\
                 """);
         writeBody(out);
     }
