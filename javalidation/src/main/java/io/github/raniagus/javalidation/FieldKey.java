@@ -1,10 +1,17 @@
 package io.github.raniagus.javalidation;
 
 import java.util.Arrays;
+import java.util.List;
 
 public record FieldKey(Object[] parts) implements Comparable<FieldKey> {
     public static FieldKey of(Object... key) {
         return new FieldKey(key);
+    }
+
+    public static FieldKey of(List<Object> prefix, Object... key) {
+        Object[] newKey = Arrays.copyOf(prefix.toArray(), prefix.size() + key.length);
+        System.arraycopy(key, 0, newKey, prefix.size(), key.length);
+        return new FieldKey(newKey);
     }
 
     public FieldKey withPrefix(Object... prefix) {

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
@@ -65,6 +66,7 @@ import org.jspecify.annotations.Nullable;
  * @see JavalidationException
  */
 public class Validation {
+    private final List<Object> prefix = new ArrayList<>();
     private final List<TemplateString> rootErrors = new ArrayList<>();
     private final Map<FieldKey, List<TemplateString>> fieldErrors = new HashMap<>();
 
@@ -88,13 +90,23 @@ public class Validation {
      */
     public Validation addRootError(String message, Object... args) {
         Objects.requireNonNull(message);
-        rootErrors.add(new TemplateString(message, args));
+        if (prefix.isEmpty()) {
+            rootErrors.add(new TemplateString(message, args));
+        } else {
+            fieldErrors.computeIfAbsent(FieldKey.of(prefix), k -> new ArrayList<>(1))
+                    .add(new TemplateString(message, args));
+        }
         return this;
     }
 
     private void addRootErrors(List<TemplateString> messages) {
         Objects.requireNonNull(messages);
-        rootErrors.addAll(messages);
+        if (prefix.isEmpty()) {
+            rootErrors.addAll(messages);
+        } else {
+            fieldErrors.computeIfAbsent(FieldKey.of(prefix), k -> new ArrayList<>(messages.size()))
+                    .addAll(messages);
+        }
     }
 
     /**
@@ -114,34 +126,11 @@ public class Validation {
      * @param args optional arguments for the message template
      * @return this validation for method chaining
      * @throws NullPointerException if field or message is null
-     * @see #addFieldError(FieldKey, String, Object...)
      */
-    public Validation addFieldError(String field, String message, Object... args) {
-        return addFieldError(FieldKey.of(field), message, args);
-    }
-
-    /**
-     * Adds a field-specific validation error, using a {@link FieldKey} for more complex field paths.
-     * <p>
-     * Multiple errors can be added to the same field, and they will be accumulated in order.
-     * <p>
-     * The message supports MessageFormat placeholders for internationalization:
-     * <pre>{@code
-     * validation.addFieldError(FieldKey.of("age"), "Must be at least {0}", 18);
-     * validation.addFieldError(FieldKey.of("email"), "Invalid email format");
-     * validation.addFieldError(FieldKey.of("email"), "Email already exists");  // second error for same field
-     * }</pre>
-     *
-     * @param fieldKey the field key (must not be null)
-     * @param message the error message template (must not be null)
-     * @param args optional arguments for the message template
-     * @return this validation for method chaining
-     * @throws NullPointerException if field or message is null
-     * @see #addFieldError(String, String, Object...)
-     */
-    public Validation addFieldError(FieldKey fieldKey, String message, Object... args) {
+    public Validation addFieldError(Object field, String message, Object... args) {
+        Objects.requireNonNull(field);
         Objects.requireNonNull(message);
-        fieldErrors.computeIfAbsent(fieldKey, k -> new ArrayList<>(1))
+        fieldErrors.computeIfAbsent(FieldKey.of(prefix, field), k -> new ArrayList<>(1))
                 .add(new TemplateString(message, args));
         return this;
     }
@@ -158,6 +147,16 @@ public class Validation {
     private void addFieldErrors(Map<FieldKey, List<TemplateString>> fieldErrors) {
         Objects.requireNonNull(fieldErrors);
         fieldErrors.forEach(this::addFieldErrors);
+    }
+
+    // TODO: add tests and documentation
+    public Validation validateField(Object field, Consumer<Validation> consumer) {
+        Objects.requireNonNull(field);
+        Objects.requireNonNull(consumer);
+        prefix.add(field);
+        consumer.accept(this);
+        prefix.removeLast();
+        return this;
     }
 
     /**

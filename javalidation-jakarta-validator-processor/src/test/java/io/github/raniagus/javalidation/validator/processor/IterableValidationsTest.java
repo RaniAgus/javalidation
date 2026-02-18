@@ -80,8 +80,10 @@ public class IterableValidationsTest {
         void multipleErrors_allReported() {
             assertThat(validator.validate(new PrimitiveIterableRecord(List.of("ab", "hello", "abcdefghijk"))))
                     .isEqualTo(Validation.create()
-                            .addFieldError(FieldKey.of("tags", 0), "size must be between {0} and {1}", 3, 10)
-                            .addFieldError(FieldKey.of("tags", 2), "size must be between {0} and {1}", 3, 10)
+                            .validateField("tags", v -> {
+                                v.addFieldError(0, "size must be between {0} and {1}", 3, 10);
+                                v.addFieldError(2, "size must be between {0} and {1}", 3, 10);
+                            })
                             .finish());
         }
     }
@@ -130,8 +132,14 @@ public class IterableValidationsTest {
                     new ValidatedIterableRecord.Person("Alice"),
                     new ValidatedIterableRecord.Person(null)
             )))).isEqualTo(Validation.create()
-                    .addFieldError(FieldKey.of("friends", 0, "name"), "must not be null")
-                    .addFieldError(FieldKey.of("friends", 2, "name"), "must not be null")
+                    .validateField("friends", friendsValidator -> {
+                        friendsValidator.validateField(0, itemValidator -> {
+                            itemValidator.addFieldError("name", "must not be null");
+                        });
+                        friendsValidator.validateField(2, itemValidator -> {
+                            itemValidator.addFieldError("name", "must not be null");
+                        });
+                    })
                     .finish());
         }
 
@@ -141,8 +149,14 @@ public class IterableValidationsTest {
                     null,
                     new ValidatedIterableRecord.Person(null)
             )))).isEqualTo(Validation.create()
-                    .addFieldError(FieldKey.of("friends", 0), "must not be null")
-                    .addFieldError(FieldKey.of("friends", 1, "name"), "must not be null")
+                    .validateField("friends", friendsValidator -> {
+                        friendsValidator.validateField(0, itemValidator -> {
+                                itemValidator.addRootError("must not be null");
+                        });
+                        friendsValidator.validateField(1, itemValidator -> {
+                                itemValidator.addFieldError("name", "must not be null");
+                        });
+                    })
                     .finish());
         }
     }
@@ -194,9 +208,15 @@ public class IterableValidationsTest {
                     List.of()
             )))).isEqualTo(
                     Validation.create()
-                            .addFieldError(FieldKey.of("scores", 0, 0), "must not be null")
-                            .addFieldError(FieldKey.of("scores", 0, 1), "must not be null")
-                            .addFieldError(FieldKey.of("scores", 1), "must not be empty")
+                            .validateField("scores", scoresValidator -> {
+                                scoresValidator.validateField(0, itemValidator -> {
+                                        itemValidator.addFieldError(0, "must not be null");
+                                        itemValidator.addFieldError(1, "must not be null");
+                                });
+                                scoresValidator.validateField(1, itemValidator -> {
+                                        itemValidator.addRootError("must not be empty");
+                                });
+                            })
                             .finish()
             );
         }
