@@ -546,25 +546,25 @@ class JakartaValidationsTest {
 
         @Test
         void inclusive_atMin_noErrors() {
-            assertThat(inclusiveValidator.validate(new DecimalMinInclusiveRecord(new java.math.BigDecimal("10.5"))))
+            assertThat(inclusiveValidator.validate(new DecimalMinInclusiveRecord(new BigDecimal("10.5"))))
                     .isEqualTo(ValidationErrors.empty());
         }
 
         @Test
         void inclusive_belowMin_hasFieldError() {
-            assertThat(inclusiveValidator.validate(new DecimalMinInclusiveRecord(new java.math.BigDecimal("10.4"))))
+            assertThat(inclusiveValidator.validate(new DecimalMinInclusiveRecord(new BigDecimal("10.4"))))
                     .isEqualTo(ValidationErrors.ofField("value", "must be greater than or equal to {0}", "10.5"));
         }
 
         @Test
         void exclusive_atMin_hasFieldError() {
-            assertThat(exclusiveValidator.validate(new DecimalMinExclusiveRecord(new java.math.BigDecimal("10.5"))))
+            assertThat(exclusiveValidator.validate(new DecimalMinExclusiveRecord(new BigDecimal("10.5"))))
                     .isEqualTo(ValidationErrors.ofField("value", "must be greater than {0}", "10.5"));
         }
 
         @Test
         void exclusive_aboveMin_noErrors() {
-            assertThat(exclusiveValidator.validate(new DecimalMinExclusiveRecord(new java.math.BigDecimal("10.6"))))
+            assertThat(exclusiveValidator.validate(new DecimalMinExclusiveRecord(new BigDecimal("10.6"))))
                     .isEqualTo(ValidationErrors.empty());
         }
     }
@@ -583,25 +583,25 @@ class JakartaValidationsTest {
 
         @Test
         void inclusive_atMax_noErrors() {
-            assertThat(inclusiveValidator.validate(new DecimalMaxInclusiveRecord(new java.math.BigDecimal("10.5"))))
+            assertThat(inclusiveValidator.validate(new DecimalMaxInclusiveRecord(new BigDecimal("10.5"))))
                     .isEqualTo(ValidationErrors.empty());
         }
 
         @Test
         void inclusive_aboveMax_hasFieldError() {
-            assertThat(inclusiveValidator.validate(new DecimalMaxInclusiveRecord(new java.math.BigDecimal("10.6"))))
+            assertThat(inclusiveValidator.validate(new DecimalMaxInclusiveRecord(new BigDecimal("10.6"))))
                     .isEqualTo(ValidationErrors.ofField("value", "must be less than or equal to {0}", "10.5"));
         }
 
         @Test
         void exclusive_atMax_hasFieldError() {
-            assertThat(exclusiveValidator.validate(new DecimalMaxExclusiveRecord(new java.math.BigDecimal("10.5"))))
+            assertThat(exclusiveValidator.validate(new DecimalMaxExclusiveRecord(new BigDecimal("10.5"))))
                     .isEqualTo(ValidationErrors.ofField("value", "must be less than {0}", "10.5"));
         }
 
         @Test
         void exclusive_belowMax_noErrors() {
-            assertThat(exclusiveValidator.validate(new DecimalMaxExclusiveRecord(new java.math.BigDecimal("10.4"))))
+            assertThat(exclusiveValidator.validate(new DecimalMaxExclusiveRecord(new BigDecimal("10.4"))))
                     .isEqualTo(ValidationErrors.empty());
         }
     }
@@ -619,19 +619,19 @@ class JakartaValidationsTest {
 
         @Test
         void validDigits_noErrors() {
-            assertThat(validator.validate(new DigitsRecord(new java.math.BigDecimal("12345.67"))))
+            assertThat(validator.validate(new DigitsRecord(new BigDecimal("12345.67"))))
                     .isEqualTo(ValidationErrors.empty());
         }
 
         @Test
         void tooManyIntegerDigits_hasFieldError() {
-            assertThat(validator.validate(new DigitsRecord(new java.math.BigDecimal("123456.7"))))
+            assertThat(validator.validate(new DigitsRecord(new BigDecimal("123456.7"))))
                     .isEqualTo(ValidationErrors.ofField("value", "numeric value out of bounds ({0} digits, {1} decimal digits expected)", 5, 2));
         }
 
         @Test
         void tooManyFractionDigits_hasFieldError() {
-            assertThat(validator.validate(new DigitsRecord(new java.math.BigDecimal("12345.678"))))
+            assertThat(validator.validate(new DigitsRecord(new BigDecimal("12345.678"))))
                     .isEqualTo(ValidationErrors.ofField("value", "numeric value out of bounds ({0} digits, {1} decimal digits expected)", 5, 2));
         }
     }

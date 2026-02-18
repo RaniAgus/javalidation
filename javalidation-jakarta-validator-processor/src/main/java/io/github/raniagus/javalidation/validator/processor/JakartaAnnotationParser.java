@@ -361,6 +361,11 @@ public final class JakartaAnnotationParser {
     }
 
     public static @Nullable NullUnsafeWriter parseDigitsAnnotation(TypeAdapter type) {
+        NumericKind numericKind = type.getNumericKind();
+        if (numericKind == null) {
+            return null;
+        }
+
         var annotationMirror = type.getAnnotationMirror(Digits.class);
         if (annotationMirror == null) {
             return null;
@@ -370,14 +375,11 @@ public final class JakartaAnnotationParser {
         int integer = getAnnotationIntValue(annotationMirror, "integer", 0);
         int fraction = getAnnotationIntValue(annotationMirror, "fraction", 0);
 
-        // Build regex pattern: optional minus, up to 'integer' digits, optional decimal point and up to 'fraction' digits
-        String pattern = "^-?\\\\d{0," + integer + "}(\\\\.\\\\d{0," + fraction + "})?$";
-
-        return new NullUnsafeWriter.Pattern(
-                pattern,
-                resolveMessage(message, "{integer}", "{fraction}"),
+        return new NullUnsafeWriter.Digits(
                 integer,
-                fraction
+                fraction,
+                numericKind,
+                resolveMessage(message, "{integer}", "{fraction}")
         );
     }
 

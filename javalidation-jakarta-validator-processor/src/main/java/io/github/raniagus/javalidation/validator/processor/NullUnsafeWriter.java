@@ -1,6 +1,5 @@
 package io.github.raniagus.javalidation.validator.processor;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -184,6 +183,48 @@ public interface NullUnsafeWriter extends ValidationWriter {
             return Stream.of(args)
                     .map(arg -> arg instanceof String ? "\"" + arg + "\"" : arg.toString())
                     .collect(Collectors.joining(", ", ",", ""));
+        }
+    }
+
+    record Digits(
+            int integer,
+            int fraction,
+            NumericKind kind,
+            String message
+    ) implements NullUnsafeWriter {
+
+        @Override
+        public Stream<String> imports() {
+            return switch (kind) {
+                case BIG_DECIMAL, NUMBER, CHAR_SEQUENCE -> Stream.of("java.math.BigDecimal");
+                case BIG_INTEGER -> Stream.of("java.math.BigInteger");
+                default -> Stream.empty();
+            };
+        }
+
+        @Override
+        public void writeBodyTo(ValidationOutput out) {
+            if (kind == NumericKind.CHAR_SEQUENCE) {
+                String pattern = "^-?\\\\d{0," + integer + "}(\\\\.\\\\d{0," + fraction + "})?$";
+                out.write("""
+                    if (!%s.toString().matches("%s")) {\
+                    """.formatted(out.getVariable(), pattern));
+            } else {
+                String bdExpr = switch (kind) {
+                    case BIG_DECIMAL, NUMBER -> "new BigDecimal(%s.toString()).stripTrailingZeros()".formatted(out.getVariable());
+                    default -> "new BigDecimal(%s.toString())".formatted(out.getVariable());
+                };
+                out.write("var %s_bd = %s;".formatted(out.getVariable(), bdExpr));
+                out.write("""
+                    if (!(%1$s_bd.precision() - %1$s_bd.scale() <= %2$s && Math.max(%1$s_bd.scale(), 0) <= %3$s)) {\
+                    """.formatted(out.getVariable(), integer, fraction));
+            }
+            out.incrementIndentationLevel();
+            out.write("""
+                %sValidation.addRootError("%s", %s, %s);\
+                """.formatted(out.getVariable(), message, integer, fraction));
+            out.decrementIndentationLevel();
+            out.write("}");
         }
     }
 
