@@ -7,5 +7,7 @@ public interface ValidationWriter {
         return Stream.empty();
     }
 
+    default void writePropertiesTo(ValidationOutput out) {}
+
     void writeBodyTo(ValidationOutput out);
 }

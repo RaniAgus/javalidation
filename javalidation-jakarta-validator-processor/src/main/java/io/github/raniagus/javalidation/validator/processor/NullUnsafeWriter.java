@@ -7,11 +7,6 @@ import org.jspecify.annotations.Nullable;
 
 public interface NullUnsafeWriter extends ValidationWriter {
 
-    default void writePropertiesTo(
-            ValidationOutput out,
-            String field
-    ) {}
-
     record Size(
             String accessor,
             String message,
@@ -241,13 +236,13 @@ public interface NullUnsafeWriter extends ValidationWriter {
         }
 
         @Override
-        public void writePropertiesTo(ValidationOutput out, String field) {
+        public void writePropertiesTo(ValidationOutput out) {
             out.write("""
                     private final Validator<%s%s> %s = new %s();\
                     """.formatted(
                     referredTypeEnclosingClassPrefix,
                     referredTypeName,
-                    validatorProperty(field),
+                    validatorProperty(out.getVariable()),
                     referredValidatorName
             ));
         }
@@ -277,11 +272,13 @@ public interface NullUnsafeWriter extends ValidationWriter {
         }
 
         @Override
-        public void writePropertiesTo(ValidationOutput out, String field) {
+        public void writePropertiesTo(ValidationOutput out) {
+            out.registerVariable(out.getVariable() + "Item");
             if (nullSafeWriter != null) {
-                nullSafeWriter.writePropertiesTo(out, field + "Item");
+                nullSafeWriter.writePropertiesTo(out);
             }
-            nullUnsafeWriters.forEach(writer -> writer.writePropertiesTo(out, field + "Item"));
+            nullUnsafeWriters.forEach(writer -> writer.writePropertiesTo(out));
+            out.removeVariable();
         }
 
         @Override

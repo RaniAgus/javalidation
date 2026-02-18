@@ -15,13 +15,14 @@ public interface FieldWriter extends ValidationWriter {
 
     default void writePropertiesTo(ValidationOutput out) {
         NullSafeWriter nullSafeWriter = nullSafeWriter();
+        out.registerVariable(field());
         if (nullSafeWriter != null) {
-            nullSafeWriter.writePropertiesTo(out, field());
+            nullSafeWriter.writePropertiesTo(out);
         }
-
         for (NullUnsafeWriter writer : nullUnsafeWriters()) {
-            writer.writePropertiesTo(out, field());
+            writer.writePropertiesTo(out);
         }
+        out.removeVariable();
     }
 
     String field();

@@ -2,9 +2,6 @@ package io.github.raniagus.javalidation.validator.processor;
 
 public sealed interface NullSafeWriter extends ValidationWriter {
 
-    default void writePropertiesTo(ValidationOutput out, String field) {
-    }
-
     record NotNull(String message) implements NullSafeWriter {
         @Override
         public void writeBodyTo(ValidationOutput out) {

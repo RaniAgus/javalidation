@@ -11,7 +11,6 @@ public class ValidationOutput {
 
     private final Writer writer;
     private final List<String> variableNames = new ArrayList<>();
-    private final List<Object> keys = new ArrayList<>();
 
     private int indentLevel = 0;
     private String indent = "";
