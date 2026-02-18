@@ -164,36 +164,25 @@ public class Validation {
      * record Person(String name, int age) {}
      * record Request(Person person) {}
      *
-     * Validation validation = Validation.create();
-     * validation.validateField("person", personValidation -> {
-     *     if (request.person() == null) {
-     *         personValidation.addRootError("must not be null");
-     *     } else {
-     *         if (request.person().name() == null) {
-     *             personValidation.addFieldError("name", "must not be null");
+     * ValidationErrors errors = Validation.create()
+     *     .validateField("person", personValidation -> {
+     *         if (request.person() == null) {
+     *             personValidation.addRootError("must not be null");
+     *         } else {
+     *             if (request.person().name() == null) {
+     *                 personValidation.addFieldError("name", "must not be null");
+     *             }
+     *             if (request.person().age() < 18) {
+     *                 personValidation.addFieldError("age", "must be at least 18");
+     *             }
      *         }
-     *         if (request.person().age() < 18) {
-     *             personValidation.addFieldError("age", "must be at least 18");
-     *         }
-     *     }
-     * });
+     *     })
+     *     .finish();
      *
      * // Results in field errors:
      * // - "person": ["must not be null"]  (if person is null)
      * // - "person.name": ["must not be null"]  (if name is null)
      * // - "person.age": ["must be at least 18"]  (if age < 18)
-     * }</pre>
-     * <p>
-     * <b>Nested validation:</b>
-     * <pre>{@code
-     * validation.validateField("address", addressValidation -> {
-     *     addressValidation.validateField("street", streetValidation -> {
-     *         if (street == null) {
-     *             streetValidation.addRootError("required");
-     *         }
-     *     });
-     * });
-     * // Error becomes: "address.street": ["required"]
      * }</pre>
      *
      * @param field the field name to use as prefix (must not be null)

@@ -714,24 +714,19 @@ record Order(
         User user
 ) {}
 
-record User(
-        String name,
-        String email
-) {}
-
 public void validateComplexOrder(Order order) {
     Validation validation = Validation.create();
 
-    // Basic field checks
-    if (order.items().isEmpty()) {
-        validation.addRootError("Order must contain at least one item");
+    // Basic root checks
+    if (order == null) {
+        validation.addRootError("Order is required");
     }
 
-    // Validate items and accumulate errors into the same Validation instance
-    order.items().stream()
-        .map(this::validateItem)
-        .collect(withPrefix("items", withIndex(into(validation))));
-    
+    // Field validation by calling utility method
+    validation.validateField("items", itemsValidation -> {
+        validateItemsList(itemsValidation, order.items());
+    });
+
     // Additional cross-field validation
     double total = order.items().stream().mapToDouble(Item::price).sum();
     if (total > 10000 && order.paymentMethod().equals(PaymentMethod.CASH)) {
@@ -739,28 +734,20 @@ public void validateComplexOrder(Order order) {
             "Cash payments limited to {0} for orders over {1}", 1000, 10000);
     }
 
-    // Namespace validation at a certain field
-    validation.validateField("user", self -> {
-        // self == validation, so we could pass either self or validation to validateUser
-        validateUser(validation, order.user());
-    });
-
     // Throw if any errors accumulated
     validation.check();
 }
 
-public void validateUser(Validation validation, User user) { // Receive a Validation namespaced at "user"
-    if (user == null) {
-        validation.addRootError("User is required"); // Is added to validation at "user" field
+public void validateItemsList(Validation validation, List<Item> items) {
+    // Basic field checks
+    if (items.isEmpty()) {
+        validation.addRootError("Order must contain at least one item"); // "items": ["Order must contain at least one item"]
     }
 
-    if (user.name() == null) {
-        validation.addFieldError("name", "Name is required"); // Is added to validation at "user.name" field
-    }
-
-    if (user.email() == null) {
-        validation.addFieldError("email", "Email is required"); // Is added to validation at "user.email" field
-    }
+    // Validate items and accumulate errors into the same Validation instance
+    items.stream()
+        .map(this::validateItem)
+        .collect(withIndex(into(validation))); // "items[0]": ["Item is required"], ...
 } 
 ```
 
