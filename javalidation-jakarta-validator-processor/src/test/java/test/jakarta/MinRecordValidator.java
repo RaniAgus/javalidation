@@ -10,7 +10,7 @@ import org.jspecify.annotations.NullMarked;
 public class MinRecordValidator implements Validator<MinRecord> {
     @Override
     public void validate(Validation validation, MinRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
             if (!(value >= 10)) {
                 validation.addRootError("must be greater than or equal to {0}", 10);

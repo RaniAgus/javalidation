@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
@@ -139,7 +140,7 @@ public class Validation {
         Objects.requireNonNull(field);
         Objects.requireNonNull(messages);
         if (!messages.isEmpty()) {
-            fieldErrors.computeIfAbsent(field, k -> new ArrayList<>(messages.size()))
+            fieldErrors.computeIfAbsent(field.withPrefix(prefix.toArray()), k -> new ArrayList<>(messages.size()))
                     .addAll(messages);
         }
     }
@@ -166,7 +167,7 @@ public class Validation {
      *
      * Validation validation = Validation.create();
      * 
-     * validation.validateField("person", () -> {
+     * validation.withField("person", () -> {
      *     if (request.person() == null) {
      *         validation.addRootError("must not be null");
      *     } else {
@@ -190,12 +191,90 @@ public class Validation {
      * @return this validation for method chaining
      * @throws NullPointerException if field or runnable is null
      */
-    public Validation validateField(Object field, Runnable runnable) {
+    public Validation withField(Object field, Runnable runnable) {
         Objects.requireNonNull(field);
         Objects.requireNonNull(runnable);
         prefix.add(field);
         runnable.run();
         prefix.removeLast();
+        return this;
+    }
+
+    /**
+     * Validates each element of an iterable within an indexed scoped context.
+     * <p>
+     * For each element, the consumer is executed with a numeric index prefix (0-based).
+     * This mirrors {@link #withField(Object, Runnable)} but for collections, automatically
+     * managing index-based prefixes.
+     * <p>
+     * Root errors added within the consumer become field errors for the element's index.
+     * Field errors added within the consumer are nested under the index with dot notation.
+     * <p>
+     * <b>Basic usage:</b>
+     * <pre>{@code
+     * record Tag(String name) {}
+     * record Request(List<Tag> tags) {}
+     *
+     * Validation validation = Validation.create();
+     *
+     * validation.withEach(request.tags(), tag -> {
+     *     if (tag.name() == null) {
+     *         validation.addRootError("must not be null");
+     *     } else if (tag.name().isBlank()) {
+     *         validation.addFieldError("name", "must not be blank");
+     *     }
+     * });
+     *
+     * // Results in field errors (e.g. if tags[0] is null, tags[1].name is blank):
+     * // - "[0]": ["must not be null"]
+     * // - "[1].name": ["must not be blank"]
+     * }</pre>
+     *
+     * @param items the iterable to validate (must not be null)
+     * @param consumer the validation logic to execute for each element (must not be null)
+     * @param <T> the type of elements in the iterable
+     * @return this validation for method chaining
+     * @throws NullPointerException if items or consumer is null
+     * @see #withEach(Iterable, BiConsumer)
+     */
+    public <T extends @Nullable Object> Validation withEach(Iterable<T> items, Consumer<T> consumer) {
+        return withEach(items, (item, i) -> consumer.accept(item));
+    }
+
+    /**
+     * Validates each element of an iterable within an indexed scoped context, providing the
+     * element's index to the consumer.
+     * <p>
+     * This is an overload of {@link #withEach(Iterable, Consumer)} for cases where the index
+     * is needed in the validation logic, such as referencing the position in an error message
+     * or applying position-dependent rules.
+     * <p>
+     * <b>Example:</b>
+     * <pre>{@code
+     * validation.withEach(request.tags(), (tag, index) -> {
+     *     if (duplicateIndices.contains(index)) {
+     *         validation.addRootError("duplicate of element at index {0}", index);
+     *     }
+     * });
+     * }</pre>
+     *
+     * @param items the iterable to validate (must not be null)
+     * @param consumer the validation logic to execute for each element, receiving the element
+     *                 and its 0-based index (must not be null)
+     * @param <T> the type of elements in the iterable
+     * @return this validation for method chaining
+     * @throws NullPointerException if items or consumer is null
+     * @see #withEach(Iterable, Consumer)
+     */
+    public <T extends @Nullable Object> Validation withEach(Iterable<T> items, BiConsumer<T, Integer> consumer) {
+        Objects.requireNonNull(items);
+        Objects.requireNonNull(consumer);
+        int index = 0;
+        for (T item : items) {
+            prefix.add(index);
+            consumer.accept(item, index++);
+            prefix.removeLast();
+        }
         return this;
     }
 

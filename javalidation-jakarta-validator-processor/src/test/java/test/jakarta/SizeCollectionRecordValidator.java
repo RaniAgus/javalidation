@@ -10,12 +10,11 @@ import org.jspecify.annotations.NullMarked;
 public class SizeCollectionRecordValidator implements Validator<SizeCollectionRecord> {
     @Override
     public void validate(Validation validation, SizeCollectionRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
-            if (value != null) {
-                if (value.size() < 1 || value.size() > 10) {
-                    validation.addRootError("size must be between {0} and {1}", 1, 10);
-                }
+            if (value == null) return;
+            if (value.size() < 1 || value.size() > 10) {
+                validation.addRootError("size must be between {0} and {1}", 1, 10);
             }
         });
     }

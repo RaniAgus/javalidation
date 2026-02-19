@@ -11,12 +11,11 @@ import org.jspecify.annotations.NullMarked;
 public class DecimalMinInclusiveRecordValidator implements Validator<DecimalMinInclusiveRecord> {
     @Override
     public void validate(Validation validation, DecimalMinInclusiveRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
-            if (value != null) {
-                if (!(value.compareTo(new BigDecimal("10.5")) >= 0)) {
-                    validation.addRootError("must be greater than or equal to {0}", "10.5");
-                }
+            if (value == null) return;
+            if (!(value.compareTo(new BigDecimal("10.5")) >= 0)) {
+                validation.addRootError("must be greater than or equal to {0}", "10.5");
             }
         });
     }

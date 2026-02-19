@@ -11,12 +11,11 @@ import org.jspecify.annotations.NullMarked;
 public class EmailRecordValidator implements Validator<EmailRecord> {
     @Override
     public void validate(Validation validation, EmailRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
-            if (value != null) {
-                if (!Objects.toString(value).matches("^[^@]+@[^@]+\\.[^@]+$")) {
-                    validation.addRootError("must be a well-formed email address");
-                }
+            if (value == null) return;
+            if (!Objects.toString(value).matches("^[^@]+@[^@]+\\.[^@]+$")) {
+                validation.addRootError("must be a well-formed email address");
             }
         });
     }

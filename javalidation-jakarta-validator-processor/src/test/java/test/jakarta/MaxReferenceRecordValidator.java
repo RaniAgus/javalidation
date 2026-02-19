@@ -10,12 +10,11 @@ import org.jspecify.annotations.NullMarked;
 public class MaxReferenceRecordValidator implements Validator<MaxReferenceRecord> {
     @Override
     public void validate(Validation validation, MaxReferenceRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
-            if (value != null) {
-                if (!(value <= 100)) {
-                    validation.addRootError("must be less than or equal to {0}", 100);
-                }
+            if (value == null) return;
+            if (!(value <= 100)) {
+                validation.addRootError("must be less than or equal to {0}", 100);
             }
         });
     }

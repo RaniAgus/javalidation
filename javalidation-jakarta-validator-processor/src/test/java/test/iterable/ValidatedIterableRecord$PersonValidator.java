@@ -10,10 +10,11 @@ import org.jspecify.annotations.NullMarked;
 public class ValidatedIterableRecord$PersonValidator implements Validator<ValidatedIterableRecord.Person> {
     @Override
     public void validate(Validation validation, ValidatedIterableRecord.Person root) {
-        validation.validateField("name", () -> {
+        validation.withField("name", () -> {
             var name = root.name();
             if (name == null) {
                 validation.addRootError("must not be null");
+                return;
             }
         });
     }

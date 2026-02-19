@@ -722,7 +722,7 @@ public void validateComplexOrder(Order order) {
     }
 
     // Field validation by calling utility method
-    validation.validateField("items", () -> {
+    validation.withField("items", () -> {
         validateItemsList(validation, order.items());
     });
 
@@ -743,14 +743,19 @@ public void validateItemsList(Validation validation, List<Item> items) {
         validation.addRootError("Order must contain at least one item"); // "items": ["Order must contain at least one item"]
     }
 
-    // Validate items and accumulate errors into the same Validation instance
-    items.stream()
-        .map(this::validateItem)
-        .collect(withIndex(into(validation))); // "items[0]": ["Item is required"], ...
-} 
-```
+    // Validate items and accumulate errors with index
+    validation.withEach(items, (item) -> {
+        if (item == null) {
+            validation.addRootError("Item is required"); // "items[0]", "items[1]", ...
+        }
+    });
 
-The `into()` collector accumulates errors into an existing `Validation` instance, allowing you to combine stream-based validation with imperative validation logic.
+    // Alternative: the same approach but with ResultCollector.into(Validation) for Stream<Result<T>>
+    items.stream()
+            .map(this::validateItemResult) // Must return Result<T>
+            .collect(withIndex(into(validation))); // Mutates Validation instance
+}
+```
 
 ## API Reference
 
@@ -788,15 +793,17 @@ The `into()` collector accumulates errors into an existing `Validation` instance
 
 ### Validation
 
-| Method                                     | Description                           |
-|--------------------------------------------|---------------------------------------|
-| `create()`                                 | Create new empty validation           |
-| `addRootError(String, Object...)`          | Add root-level error                  |
-| `addFieldError(String, String, Object...)` | Add field-specific error              |
-| `addAll(ValidationErrors)`                 | Merge errors                          |
-| `addAll(String, ValidationErrors)`         | Merge errors with prefix              |
-| `check()`                                  | Throw if errors exist                 |
-| `asResult(Supplier)`                       | Convert to Result                     |
+| Method                                      | Description                                                |
+|---------------------------------------------|------------------------------------------------------------|
+| `create()`                                  | Create new empty validation                                |
+| `addRootError(String, Object...)`           | Add root-level error                                       |
+| `addFieldError(Object, String, Object...)`  | Add field-specific error                                   |
+| `addAll(ValidationErrors)`                  | Merge errors                                               |
+| `addAll(ValidationErrors, Object[])`        | Merge errors with prefix                                   |
+| `withField(Object, Runnable)`               | Scope validation under a field prefix                      |
+| `withEach(Iterable, Consumer / BiConsumer)` | Scope validation over a collection (optionally with index) |
+| `check()`                                   | Throw if errors exist                                      |
+| `asResult(Supplier)`                        | Convert to Result                                          |
 
 ### ResultCollector
 

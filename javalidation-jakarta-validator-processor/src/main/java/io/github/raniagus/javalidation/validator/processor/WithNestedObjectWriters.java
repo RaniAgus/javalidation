@@ -13,20 +13,11 @@ public interface WithNestedObjectWriters {
             ValidationOutput out
     ) {
         NullSafeWriter nullSafeWriter = nullSafeWriter();
-        List<NullUnsafeWriter> nullUnsafeWriters = nullUnsafeWriters();
         if (nullSafeWriter != null) {
             nullSafeWriter.writeBodyTo(out);
+        } else {
+            out.write("if (%s == null) return;".formatted(out.getVariable()));
         }
-        if (!nullUnsafeWriters.isEmpty()) {
-            out.write("""
-                if (%s != null) {\
-                """.formatted(out.getVariable()));
-
-            out.incrementIndentationLevel();
-            nullUnsafeWriters.forEach(writer -> writer.writeBodyTo(out));
-            out.decrementIndentationLevel();
-
-            out.write("}");
-        }
+        nullUnsafeWriters().forEach(writer -> writer.writeBodyTo(out));
     }
 }

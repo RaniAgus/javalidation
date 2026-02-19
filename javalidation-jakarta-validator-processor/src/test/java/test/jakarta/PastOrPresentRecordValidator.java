@@ -11,12 +11,11 @@ import org.jspecify.annotations.NullMarked;
 public class PastOrPresentRecordValidator implements Validator<PastOrPresentRecord> {
     @Override
     public void validate(Validation validation, PastOrPresentRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
-            if (value != null) {
-                if (!(value.isAfter(Instant.now()) == false)) {
-                    validation.addRootError("must be a date in the past or in the present");
-                }
+            if (value == null) return;
+            if (!(value.isAfter(Instant.now()) == false)) {
+                validation.addRootError("must be a date in the past or in the present");
             }
         });
     }

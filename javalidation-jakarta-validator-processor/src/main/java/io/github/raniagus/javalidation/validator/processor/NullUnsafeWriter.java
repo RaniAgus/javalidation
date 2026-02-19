@@ -283,11 +283,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
                 return;
             }
 
-            out.write("int %sIndex = 0;".formatted(out.getVariable()));
-            out.write("for (var %sItem : %s) {".formatted(out.getVariable(), out.getVariable()));
-            out.incrementIndentationLevel();
-
-            out.write("validation.validateField(%sIndex++, () -> {".formatted(out.getVariable()));
+            out.write("validation.withEach(%s, %sItem -> {".formatted(out.getVariable(), out.getVariable()));
             out.incrementIndentationLevel();
 
             out.registerVariable(out.getVariable() + "Item");
@@ -296,9 +292,6 @@ public interface NullUnsafeWriter extends ValidationWriter {
 
             out.decrementIndentationLevel();
             out.write("});");
-
-            out.decrementIndentationLevel();
-            out.write("}");
             out.write("");
         }
     }

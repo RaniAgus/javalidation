@@ -10,12 +10,11 @@ import org.jspecify.annotations.NullMarked;
 public class SizeMinOnlyRecordValidator implements Validator<SizeMinOnlyRecord> {
     @Override
     public void validate(Validation validation, SizeMinOnlyRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
-            if (value != null) {
-                if (value.length() < 1 || value.length() > 2147483647) {
-                    validation.addRootError("size must be between {0} and {1}", 1, 2147483647);
-                }
+            if (value == null) return;
+            if (value.length() < 1 || value.length() > 2147483647) {
+                validation.addRootError("size must be between {0} and {1}", 1, 2147483647);
             }
         });
     }

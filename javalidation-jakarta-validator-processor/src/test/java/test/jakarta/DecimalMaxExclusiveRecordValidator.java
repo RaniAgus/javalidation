@@ -11,12 +11,11 @@ import org.jspecify.annotations.NullMarked;
 public class DecimalMaxExclusiveRecordValidator implements Validator<DecimalMaxExclusiveRecord> {
     @Override
     public void validate(Validation validation, DecimalMaxExclusiveRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
-            if (value != null) {
-                if (!(value.compareTo(new BigDecimal("10.5")) < 0)) {
-                    validation.addRootError("must be less than {0}", "10.5");
-                }
+            if (value == null) return;
+            if (!(value.compareTo(new BigDecimal("10.5")) < 0)) {
+                validation.addRootError("must be less than {0}", "10.5");
             }
         });
     }

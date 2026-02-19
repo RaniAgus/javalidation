@@ -11,12 +11,11 @@ import org.jspecify.annotations.NullMarked;
 public class FutureRecordValidator implements Validator<FutureRecord> {
     @Override
     public void validate(Validation validation, FutureRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
-            if (value != null) {
-                if (!(value.isAfter(Instant.now()) == true)) {
-                    validation.addRootError("must be a future date");
-                }
+            if (value == null) return;
+            if (!(value.isAfter(Instant.now()) == true)) {
+                validation.addRootError("must be a future date");
             }
         });
     }

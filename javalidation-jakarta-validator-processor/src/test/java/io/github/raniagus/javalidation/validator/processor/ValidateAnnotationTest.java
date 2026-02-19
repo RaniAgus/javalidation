@@ -81,7 +81,6 @@ class ValidateAnnotationTest {
                         package io.github.raniagus.javalidation.validator;
                         
                         import io.github.raniagus.javalidation.ValidationErrors;
-                        import io.github.raniagus.javalidation.validator.Validator;
                         import java.util.Map;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
@@ -133,6 +132,7 @@ class ValidateAnnotationTest {
                 
                 import io.github.raniagus.javalidation.validator.*;
                 import jakarta.validation.constraints.*;
+                import other.UserAddress;
                 
                 @Validate
                 public record UserRequest(
@@ -144,8 +144,8 @@ class ValidateAnnotationTest {
                 """
         );
 
-        JavaFileObject sourceFile2 = JavaFileObjects.forSourceString("test.UserAddress", """
-                package test;
+        JavaFileObject sourceFile2 = JavaFileObjects.forSourceString("other.UserAddress", """
+                package other;
                 
                 import io.github.raniagus.javalidation.validator.*;
                 import jakarta.validation.constraints.*;
@@ -173,8 +173,8 @@ class ValidateAnnotationTest {
                         import io.github.raniagus.javalidation.validator.Validator;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
-                        import test.UserAddress;
-                        import test.UserAddressValidator;
+                        import other.UserAddress;
+                        import other.UserAddressValidator;
 
                         @NullMarked
                         @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
@@ -183,20 +183,19 @@ class ValidateAnnotationTest {
 
                             @Override
                             public void validate(Validation validation, UserRequest root) {
-                                validation.validateField("address", () -> {
+                                validation.withField("address", () -> {
                                     var address = root.address();
-                                    if (address != null) {
-                                        addressValidator.validate(validation, address);
-                                    }
+                                    if (address == null) return;
+                                    addressValidator.validate(validation, address);
                                 });
                             }
                         }
                         """
                 ));
         assertThat(compilation)
-                .generatedSourceFile("test.UserAddressValidator")
-                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.UserAddressValidator", """
-                        package test;
+                .generatedSourceFile("other.UserAddressValidator")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("other.UserAddressValidator", """
+                        package other;
                         
                         import io.github.raniagus.javalidation.Validation;
                         import io.github.raniagus.javalidation.validator.Validator;
@@ -219,12 +218,11 @@ class ValidateAnnotationTest {
                         package io.github.raniagus.javalidation.validator;
                         
                         import io.github.raniagus.javalidation.ValidationErrors;
-                        import io.github.raniagus.javalidation.validator.Validator;
                         import java.util.Map;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
-                        import test.UserAddress;
-                        import test.UserAddressValidator;
+                        import other.UserAddress;
+                        import other.UserAddressValidator;
                         import test.UserRequest;
                         import test.UserRequestValidator;
 
@@ -310,8 +308,6 @@ class ValidateAnnotationTest {
                         import io.github.raniagus.javalidation.validator.Validator;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
-                        import test.UserRequest;
-                        import test.UserRequest$UserAddressValidator;
 
                         @NullMarked
                         @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
@@ -320,11 +316,10 @@ class ValidateAnnotationTest {
 
                             @Override
                             public void validate(Validation validation, UserRequest root) {
-                                validation.validateField("address", () -> {
+                                validation.withField("address", () -> {
                                     var address = root.address();
-                                    if (address != null) {
-                                        addressValidator.validate(validation, address);
-                                    }
+                                    if (address == null) return;
+                                    addressValidator.validate(validation, address);
                                 });
                             }
                         }
@@ -358,7 +353,6 @@ class ValidateAnnotationTest {
                         package io.github.raniagus.javalidation.validator;
                         
                         import io.github.raniagus.javalidation.ValidationErrors;
-                        import io.github.raniagus.javalidation.validator.Validator;
                         import java.util.Map;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;

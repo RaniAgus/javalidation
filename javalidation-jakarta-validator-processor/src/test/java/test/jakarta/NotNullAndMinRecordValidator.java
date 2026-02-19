@@ -10,15 +10,14 @@ import org.jspecify.annotations.NullMarked;
 public class NotNullAndMinRecordValidator implements Validator<NotNullAndMinRecord> {
     @Override
     public void validate(Validation validation, NotNullAndMinRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
             if (value == null) {
                 validation.addRootError("must not be null");
+                return;
             }
-            if (value != null) {
-                if (!(value >= 10)) {
-                    validation.addRootError("must be greater than or equal to {0}", 10);
-                }
+            if (!(value >= 10)) {
+                validation.addRootError("must be greater than or equal to {0}", 10);
             }
         });
     }

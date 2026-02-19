@@ -10,7 +10,7 @@ import org.jspecify.annotations.NullMarked;
 public class PositivePrimitiveRecordValidator implements Validator<PositivePrimitiveRecord> {
     @Override
     public void validate(Validation validation, PositivePrimitiveRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
             if (!(value > 0)) {
                 validation.addRootError("must be greater than 0");

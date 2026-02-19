@@ -11,12 +11,11 @@ import org.jspecify.annotations.NullMarked;
 public class MaxBigIntegerRecordValidator implements Validator<MaxBigIntegerRecord> {
     @Override
     public void validate(Validation validation, MaxBigIntegerRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
-            if (value != null) {
-                if (!(value.compareTo(new BigInteger("100")) <= 0)) {
-                    validation.addRootError("must be less than or equal to {0}", 100);
-                }
+            if (value == null) return;
+            if (!(value.compareTo(new BigInteger("100")) <= 0)) {
+                validation.addRootError("must be less than or equal to {0}", 100);
             }
         });
     }

@@ -10,10 +10,11 @@ import org.jspecify.annotations.NullMarked;
 public class NotBlankRecordValidator implements Validator<NotBlankRecord> {
     @Override
     public void validate(Validation validation, NotBlankRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
             if (value == null || value.isBlank()) {
                 validation.addRootError("must not be blank");
+                return;
             }
         });
     }

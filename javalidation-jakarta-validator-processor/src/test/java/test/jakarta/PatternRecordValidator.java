@@ -11,12 +11,11 @@ import org.jspecify.annotations.NullMarked;
 public class PatternRecordValidator implements Validator<PatternRecord> {
     @Override
     public void validate(Validation validation, PatternRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
-            if (value != null) {
-                if (!Objects.toString(value).matches("^[a-z]+$")) {
-                    validation.addRootError("must match \"{0}\"", "^[a-z]+$");
-                }
+            if (value == null) return;
+            if (!Objects.toString(value).matches("^[a-z]+$")) {
+                validation.addRootError("must match \"{0}\"", "^[a-z]+$");
             }
         });
     }

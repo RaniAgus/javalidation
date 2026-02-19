@@ -12,13 +12,15 @@ public interface ClassWriter {
         out.write("package %s;".formatted(packageName()));
         out.write("");
 
-        List<String> imports = Stream.concat(
-                imports(),
-                Stream.of(
+        List<String> imports = Stream
+                .concat(imports(), Stream.of(
                         "javax.annotation.processing.Generated",
                         "org.jspecify.annotations.NullMarked"
-                )
-        ).sorted().distinct().toList();
+                ))
+                .filter(s -> !packageName().equals(s.substring(0, s.lastIndexOf('.'))))
+                .sorted()
+                .distinct()
+                .toList();
 
         for (String importStatement : imports) {
             out.write("import %s;".formatted(importStatement));

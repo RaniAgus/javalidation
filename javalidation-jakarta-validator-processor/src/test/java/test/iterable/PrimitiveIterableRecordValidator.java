@@ -11,24 +11,18 @@ public class PrimitiveIterableRecordValidator implements Validator<PrimitiveIter
 
     @Override
     public void validate(Validation validation, PrimitiveIterableRecord root) {
-        validation.validateField("tags", () -> {
+        validation.withField("tags", () -> {
             var tags = root.tags();
             if (tags == null) {
                 validation.addRootError("must not be null");
+                return;
             }
-            if (tags != null) {
-                int tagsIndex = 0;
-                for (var tagsItem : tags) {
-                    validation.validateField(tagsIndex++, () -> {
-                        if (tagsItem != null) {
-                            if (tagsItem.length() < 3 || tagsItem.length() > 10) {
-                                validation.addRootError("size must be between {0} and {1}", 3, 10);
-                            }
-                        }
-                    });
+            validation.withEach(tags, tagsItem -> {
+                if (tagsItem == null) return;
+                if (tagsItem.length() < 3 || tagsItem.length() > 10) {
+                    validation.addRootError("size must be between {0} and {1}", 3, 10);
                 }
-
-            }
+            });
         });
     }
 }

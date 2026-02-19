@@ -10,12 +10,11 @@ import org.jspecify.annotations.NullMarked;
 public class NegativeOrZeroReferenceRecordValidator implements Validator<NegativeOrZeroReferenceRecord> {
     @Override
     public void validate(Validation validation, NegativeOrZeroReferenceRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
-            if (value != null) {
-                if (!(value <= 0)) {
-                    validation.addRootError("must be less than or equal to 0");
-                }
+            if (value == null) return;
+            if (!(value <= 0)) {
+                validation.addRootError("must be less than or equal to 0");
             }
         });
     }

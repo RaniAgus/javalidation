@@ -82,7 +82,7 @@ public class IterableValidationsTest {
             assertThat(validator.validate(new PrimitiveIterableRecord(List.of("ab", "hello", "abcdefghijk"))))
                     .isEqualTo(
                         createValidationErrors(v ->
-                            v.validateField("tags", () -> {
+                            v.withField("tags", () -> {
                                 v.addFieldError(0, "size must be between {0} and {1}", 3, 10);
                                 v.addFieldError(2, "size must be between {0} and {1}", 3, 10);
                             })
@@ -136,11 +136,11 @@ public class IterableValidationsTest {
                     new ValidatedIterableRecord.Person(null)
             )))).isEqualTo(
                 createValidationErrors(v ->
-                    v.validateField("friends", () -> {
-                        v.validateField(0, () -> {
+                    v.withField("friends", () -> {
+                        v.withField(0, () -> {
                             v.addFieldError("name", "must not be null");
                         });
-                        v.validateField(2, () -> {
+                        v.withField(2, () -> {
                             v.addFieldError("name", "must not be null");
                         });
                     })
@@ -155,11 +155,11 @@ public class IterableValidationsTest {
                     new ValidatedIterableRecord.Person(null)
             )))).isEqualTo(
                 createValidationErrors(v ->
-                    v.validateField("friends", () -> {
-                        v.validateField(0, () -> {
+                    v.withField("friends", () -> {
+                        v.withField(0, () -> {
                                 v.addRootError("must not be null");
                         });
-                        v.validateField(1, () -> {
+                        v.withField(1, () -> {
                                 v.addFieldError("name", "must not be null");
                         });
                     })
@@ -215,12 +215,12 @@ public class IterableValidationsTest {
                     List.of()
             )))).isEqualTo(
                     createValidationErrors(v ->
-                        v.validateField("scores", () -> {
-                            v.validateField(0, () -> {
+                        v.withField("scores", () -> {
+                            v.withField(0, () -> {
                                     v.addFieldError(0, "must not be null");
                                     v.addFieldError(1, "must not be null");
                             });
-                            v.validateField(1, () -> {
+                            v.withField(1, () -> {
                                     v.addRootError("must not be empty");
                             });
                         })

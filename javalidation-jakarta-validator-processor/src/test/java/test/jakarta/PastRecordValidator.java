@@ -11,12 +11,11 @@ import org.jspecify.annotations.NullMarked;
 public class PastRecordValidator implements Validator<PastRecord> {
     @Override
     public void validate(Validation validation, PastRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
-            if (value != null) {
-                if (!(value.isBefore(Instant.now()) == true)) {
-                    validation.addRootError("must be a past date");
-                }
+            if (value == null) return;
+            if (!(value.isBefore(Instant.now()) == true)) {
+                validation.addRootError("must be a past date");
             }
         });
     }

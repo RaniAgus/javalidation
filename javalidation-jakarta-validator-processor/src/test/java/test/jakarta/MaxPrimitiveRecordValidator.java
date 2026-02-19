@@ -10,7 +10,7 @@ import org.jspecify.annotations.NullMarked;
 public class MaxPrimitiveRecordValidator implements Validator<MaxPrimitiveRecord> {
     @Override
     public void validate(Validation validation, MaxPrimitiveRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
             if (!(value <= 100)) {
                 validation.addRootError("must be less than or equal to {0}", 100);

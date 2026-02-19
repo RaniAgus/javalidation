@@ -10,12 +10,11 @@ import org.jspecify.annotations.NullMarked;
 public class SizeMapRecordValidator implements Validator<SizeMapRecord> {
     @Override
     public void validate(Validation validation, SizeMapRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
-            if (value != null) {
-                if (value.size() < 1 || value.size() > 10) {
-                    validation.addRootError("size must be between {0} and {1}", 1, 10);
-                }
+            if (value == null) return;
+            if (value.size() < 1 || value.size() > 10) {
+                validation.addRootError("size must be between {0} and {1}", 1, 10);
             }
         });
     }

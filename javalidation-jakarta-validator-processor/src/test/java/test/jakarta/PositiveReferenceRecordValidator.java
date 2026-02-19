@@ -10,12 +10,11 @@ import org.jspecify.annotations.NullMarked;
 public class PositiveReferenceRecordValidator implements Validator<PositiveReferenceRecord> {
     @Override
     public void validate(Validation validation, PositiveReferenceRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
-            if (value != null) {
-                if (!(value > 0)) {
-                    validation.addRootError("must be greater than 0");
-                }
+            if (value == null) return;
+            if (!(value > 0)) {
+                validation.addRootError("must be greater than 0");
             }
         });
     }

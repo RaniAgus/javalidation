@@ -10,10 +10,11 @@ import org.jspecify.annotations.NullMarked;
 public class NotNullRecordValidator implements Validator<NotNullRecord> {
     @Override
     public void validate(Validation validation, NotNullRecord root) {
-        validation.validateField("value", () -> {
+        validation.withField("value", () -> {
             var value = root.value();
             if (value == null) {
                 validation.addRootError("must not be null");
+                return;
             }
         });
     }
