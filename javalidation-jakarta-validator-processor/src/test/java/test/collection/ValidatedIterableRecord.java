@@ -1,4 +1,4 @@
-package test.iterable;
+package test.collection;
 
 import io.github.raniagus.javalidation.validator.*;
 import jakarta.validation.constraints.*;

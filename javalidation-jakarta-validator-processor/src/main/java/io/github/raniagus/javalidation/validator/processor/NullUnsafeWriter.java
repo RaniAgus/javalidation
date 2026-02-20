@@ -287,8 +287,75 @@ public interface NullUnsafeWriter extends ValidationWriter {
             out.incrementIndentationLevel();
 
             out.registerVariable(out.getVariable() + "Item");
-            writeNestedFieldsTo(out);
+            writeNestedFieldsTo(nullSafeWriter, nullUnsafeWriters, out);
             out.removeVariable();
+
+            out.decrementIndentationLevel();
+            out.write("});");
+            out.write("");
+        }
+    }
+
+    record MapWriter(
+            @Nullable NullSafeWriter keyNullSafeWriter,
+            List<NullUnsafeWriter> keyNullUnsafeWriters,
+            @Nullable NullSafeWriter valueNullSafeWriter,
+            List<NullUnsafeWriter> valueNullUnsafeWriters
+    ) implements NullUnsafeWriter, WithNestedObjectWriters {
+
+        @Override
+        public Stream<String> imports() {
+            return Stream.of(
+                    Stream.ofNullable(keyNullSafeWriter).flatMap(ValidationWriter::imports),
+                    keyNullUnsafeWriters.stream().flatMap(ValidationWriter::imports),
+                    Stream.ofNullable(valueNullSafeWriter).flatMap(ValidationWriter::imports),
+                    valueNullUnsafeWriters.stream().flatMap(ValidationWriter::imports)
+            ).flatMap(s -> s);
+        }
+
+        @Override
+        public void writePropertiesTo(ValidationOutput out) {
+            out.registerVariable(out.getVariable() + "Key");
+            if (keyNullSafeWriter != null) {
+                keyNullSafeWriter.writePropertiesTo(out);
+            }
+            keyNullUnsafeWriters.forEach(w -> w.writePropertiesTo(out));
+            out.removeVariable();
+
+            out.registerVariable(out.getVariable() + "Value");
+            if (valueNullSafeWriter != null) {
+                valueNullSafeWriter.writePropertiesTo(out);
+            }
+            valueNullUnsafeWriters.forEach(w -> w.writePropertiesTo(out));
+            out.removeVariable();
+        }
+
+        @Override
+        public void writeBodyTo(ValidationOutput out) {
+            if (keyNullSafeWriter == null && keyNullUnsafeWriters.isEmpty()
+                    && valueNullSafeWriter == null && valueNullUnsafeWriters.isEmpty()) {
+                return;
+            }
+
+            String keyVar = out.getVariable() + "Key";
+            String valueVar = out.getVariable() + "Value";
+
+            out.write("%s.forEach((%s, %s) -> {".formatted(out.getVariable(), keyVar, valueVar));
+            out.incrementIndentationLevel();
+
+            out.registerVariable(keyVar);
+            writeNestedFieldsTo(keyNullSafeWriter, keyNullUnsafeWriters, out);
+            out.removeVariable();
+
+            out.write("validation.withField(%s, () -> {".formatted(keyVar));
+            out.incrementIndentationLevel();
+
+            out.registerVariable(valueVar);
+            writeNestedFieldsTo(valueNullSafeWriter, valueNullUnsafeWriters, out);
+            out.removeVariable();
+
+            out.decrementIndentationLevel();
+            out.write("});");
 
             out.decrementIndentationLevel();
             out.write("});");

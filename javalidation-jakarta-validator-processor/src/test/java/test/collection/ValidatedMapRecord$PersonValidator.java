@@ -1,4 +1,4 @@
-package test.iterable;
+package test.collection;
 
 import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.validator.Validator;
@@ -7,9 +7,9 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
-public class ValidatedIterableRecord$PersonValidator implements Validator<ValidatedIterableRecord.Person> {
+public class ValidatedMapRecord$PersonValidator implements Validator<ValidatedMapRecord.Person> {
     @Override
-    public void validate(Validation validation, ValidatedIterableRecord.Person root) {
+    public void validate(Validation validation, ValidatedMapRecord.Person root) {
         validation.withField("name", () -> {
             var name = root.name();
             if (name == null) {

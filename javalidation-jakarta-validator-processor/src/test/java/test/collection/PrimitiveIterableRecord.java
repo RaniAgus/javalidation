@@ -1,10 +1,10 @@
-package test.iterable;
+package test.collection;
 
 import io.github.raniagus.javalidation.validator.*;
 import jakarta.validation.constraints.*;
 import java.util.List;
 
 @Validate
-public record NestedIterableRecord(
-        List<@NotEmpty List<@NotNull Integer>> scores
+public record PrimitiveIterableRecord(
+        @NotNull List<@Size(min = 3, max = 10) String> tags
 ) {}

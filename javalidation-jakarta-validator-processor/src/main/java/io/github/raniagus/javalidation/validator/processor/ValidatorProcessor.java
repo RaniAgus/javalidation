@@ -6,10 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.NoSuchFileException;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -244,6 +241,23 @@ public class ValidatorProcessor extends AbstractProcessor {
         );
     }
 
+    private @Nullable NullSafeWriter parseNullSafeWriter(TypeMirror type) {
+        return JakartaAnnotationParser.parseNullSafeWriter(new TypeAdapter(type, processingEnv));
+    }
+
+    private List<NullUnsafeWriter> parseNullUnsafeWriters(TypeMirror type) {
+        return Stream.<NullUnsafeWriter>concat(
+                JakartaAnnotationParser.parseNullUnsafeWriters(new TypeAdapter(type, processingEnv)),
+                Stream.of(
+                        parseValidateAnnotation(getReferredType(type)),
+                        parseIterable(type),
+                        parseMap(type)
+                ).filter(Objects::nonNull)
+        ).toList();
+    }
+
+    // -- Iterable --
+
     private @Nullable NullUnsafeWriter parseIterable(TypeMirror fieldType) {
         if (!isIterable(fieldType)) {
             return null;
@@ -264,18 +278,78 @@ public class ValidatorProcessor extends AbstractProcessor {
         return new NullUnsafeWriter.IterableWriter(nullSafeWriter, nullUnsafeWriters);
     }
 
-    private @Nullable NullSafeWriter parseNullSafeWriter(TypeMirror type) {
-        return JakartaAnnotationParser.parseNullSafeWriter(new TypeAdapter(type, processingEnv));
+    private boolean isIterable(TypeMirror type) {
+        Types types = processingEnv.getTypeUtils();
+        Elements elements = processingEnv.getElementUtils();
+
+        TypeElement iterableElement = elements.getTypeElement("java.lang.Iterable");
+        TypeMirror iterableType = types.erasure(iterableElement.asType());
+
+        return types.isAssignable(types.erasure(type), iterableType);
     }
 
-    private List<NullUnsafeWriter> parseNullUnsafeWriters(TypeMirror type) {
-        return Stream.<NullUnsafeWriter>concat(
-                JakartaAnnotationParser.parseNullUnsafeWriters(new TypeAdapter(type, processingEnv)),
-                Stream.of(
-                        parseValidateAnnotation(getReferredType(type)),
-                        parseIterable(type)
-                ).filter(Objects::nonNull)
-        ).toList();
+    private @Nullable TypeMirror getIterableItemType(TypeMirror type) {
+        if (!(type instanceof DeclaredType declared)) {
+            return null;
+        }
+
+        List<? extends TypeMirror> args = declared.getTypeArguments();
+        if (args.isEmpty()) {
+            return null;
+        }
+
+        return args.getFirst();
+    }
+
+    // -- Map --
+
+    private @Nullable NullUnsafeWriter parseMap(TypeMirror fieldType) {
+        if (!isMap(fieldType)) {
+            return null;
+        }
+
+        var mapType = getMapType(fieldType);
+        if (mapType == null) {
+            return null;
+        }
+
+        var keyNullSafeWriter = parseNullSafeWriter(mapType.getKey());
+        var keyNullUnsafeWriters = parseNullUnsafeWriters(mapType.getKey());
+        var valueNullSafeWriter = parseNullSafeWriter(mapType.getValue());
+        var valueNullUnsafeWriters = parseNullUnsafeWriters(mapType.getValue());
+
+        if (keyNullSafeWriter == null && keyNullUnsafeWriters.isEmpty()
+                && valueNullSafeWriter == null && valueNullUnsafeWriters.isEmpty()) {
+            return null;
+        }
+
+        return new NullUnsafeWriter.MapWriter(
+                keyNullSafeWriter, keyNullUnsafeWriters,
+                valueNullSafeWriter, valueNullUnsafeWriters
+        );
+    }
+
+    private boolean isMap(TypeMirror type) {
+        Types types = processingEnv.getTypeUtils();
+        Elements elements = processingEnv.getElementUtils();
+
+        TypeElement mapElement = elements.getTypeElement("java.util.Map");
+        TypeMirror mapType = types.erasure(mapElement.asType());
+
+        return types.isAssignable(types.erasure(type), mapType);
+    }
+
+    private Map.@Nullable Entry<TypeMirror, TypeMirror> getMapType(TypeMirror type) {
+        if (!(type instanceof DeclaredType declared)) {
+            return null;
+        }
+
+        List<? extends TypeMirror> args = declared.getTypeArguments();
+        if (args.size() < 2) {
+            return null;
+        }
+
+        return Map.entry(args.getFirst(), args.get(1));
     }
 
     // -- Utility functions --
@@ -324,16 +398,6 @@ public class ValidatorProcessor extends AbstractProcessor {
                || enclosingElement.getKind() == ElementKind.ENUM;
     }
 
-    private boolean isIterable(TypeMirror type) {
-        Types types = processingEnv.getTypeUtils();
-        Elements elements = processingEnv.getElementUtils();
-
-        TypeElement iterableElement = elements.getTypeElement("java.lang.Iterable");
-        TypeMirror iterableType = types.erasure(iterableElement.asType());
-
-        return types.isAssignable(types.erasure(type), iterableType);
-    }
-
     private @Nullable TypeElement getReferredType(TypeMirror mirror) {
         if (!(mirror instanceof DeclaredType declared)) {
             return null;
@@ -347,17 +411,5 @@ public class ValidatorProcessor extends AbstractProcessor {
         return te;
     }
 
-    private @Nullable TypeMirror getIterableItemType(TypeMirror type) {
-        if (!(type instanceof DeclaredType declared)) {
-            return null;
-        }
-
-        List<? extends TypeMirror> args = declared.getTypeArguments();
-        if (args.isEmpty()) {
-            return null;
-        }
-
-        return args.getFirst();
-    }
 
 }

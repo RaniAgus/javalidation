@@ -72,8 +72,7 @@
             <testResource>
                 <directory>src/test/java</directory>
                 <includes>
-                    <include>test/iterable/*.java</include>
-                    <include>test/jakarta/*.java</include>
+                    <include>test/**/*.java</include>
                 </includes>
             </testResource>
         </testResources>

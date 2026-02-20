@@ -73,7 +73,7 @@ public sealed interface FieldWriter extends ValidationWriter {
     ) implements FieldWriter, WithNestedObjectWriters {
         @Override
         public void writeNestedFieldsTo(ValidationOutput out) {
-            WithNestedObjectWriters.super.writeNestedFieldsTo(out);
+            writeNestedFieldsTo(nullSafeWriter, nullUnsafeWriters, out);
         }
     }
 }

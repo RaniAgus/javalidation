@@ -1,4 +1,4 @@
-package test.iterable;
+package test.collection;
 
 import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.validator.Validator;
@@ -12,7 +12,10 @@ public class NestedIterableRecordValidator implements Validator<NestedIterableRe
     public void validate(Validation validation, NestedIterableRecord root) {
         validation.withField("scores", () -> {
             var scores = root.scores();
-            if (scores == null) return;
+            if (scores == null || scores.isEmpty()) {
+                validation.addRootError("must not be empty");
+                return;
+            }
             validation.withEach(scores, scoresItem -> {
                 if (scoresItem == null || scoresItem.isEmpty()) {
                     validation.addRootError("must not be empty");

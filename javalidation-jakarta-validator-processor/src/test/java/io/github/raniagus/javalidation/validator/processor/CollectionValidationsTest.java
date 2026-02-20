@@ -9,32 +9,33 @@ import io.github.raniagus.javalidation.FieldKey;
 import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.ValidationErrors;
 import io.github.raniagus.javalidation.validator.Validator;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import test.iterable.*;
+import test.collection.*;
 
-public class IterableValidationsTest {
+public class CollectionValidationsTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
             "PrimitiveIterableRecord",
             "ValidatedIterableRecord",
             "NestedIterableRecord",
+            "PrimitiveMapRecord",
+            "ValidatedMapRecord",
+            "NestedMapRecord"
     })
     void givenAnnotatedRecords_WhenAnnotationProcessing_ThenGenerateExpectedFiles(String recordName) {
         assertThat(
                 javac()
                         .withProcessors(new ValidatorProcessor())
-                        .compile(JavaFileObjects.forResource("test/iterable/" + recordName + ".java")))
-                .generatedSourceFile("test.iterable." + recordName + "Validator")
+                        .compile(JavaFileObjects.forResource("test/collection/" + recordName + ".java")))
+                .generatedSourceFile("test.collection." + recordName + "Validator")
                 .hasSourceEquivalentTo(
-                        JavaFileObjects.forResource("test/iterable/" + recordName + "Validator.java"));
+                        JavaFileObjects.forResource("test/collection/" + recordName + "Validator.java"));
     }
 
     @Nested
@@ -173,15 +174,15 @@ public class IterableValidationsTest {
         private final Validator<NestedIterableRecord> validator = new NestedIterableRecordValidator();
 
         @Test
-        void nullScores_noErrors() {
+        void nullScores_hasFieldError() {
             assertThat(validator.validate(new NestedIterableRecord(null)))
-                    .isEqualTo(ValidationErrors.empty());
+                    .isEqualTo(ValidationErrors.ofField("scores", "must not be empty"));
         }
 
         @Test
-        void emptyScores_noErrors() {
+        void emptyScores_noHasFieldError() {
             assertThat(validator.validate(new NestedIterableRecord(List.of())))
-                    .isEqualTo(ValidationErrors.empty());
+                    .isEqualTo(ValidationErrors.ofField("scores", "must not be empty"));
         }
 
         @Test
@@ -226,6 +227,145 @@ public class IterableValidationsTest {
                         })
                     )
             );
+        }
+    }
+
+    @Nested
+    class PrimitiveMapRecordValidatorTest {
+        private final Validator<PrimitiveMapRecord> validator = new PrimitiveMapRecordValidator();
+
+        @Test
+        void nullTags_hasFieldError() {
+            assertThat(validator.validate(new PrimitiveMapRecord(null)))
+                    .isEqualTo(ValidationErrors.ofField("tags", "must not be empty"));
+        }
+
+        @Test
+        void emptyTags_hasFieldError() {
+            assertThat(validator.validate(new PrimitiveMapRecord(Map.of())))
+                    .isEqualTo(ValidationErrors.ofField("tags", "must not be empty"));
+        }
+
+        @Test
+        void validTags_noErrors() {
+            assertThat(validator.validate(new PrimitiveMapRecord(Map.of("key", "value"))))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void nullKey_hasFieldError() {
+            assertThat(validator.validate(new PrimitiveMapRecord(Collections.singletonMap(null, "value"))))
+                    .isEqualTo(ValidationErrors.ofField("tags", "must not be null"));
+        }
+
+        @Test
+        void nullValue_hasFieldError() {
+            assertThat(validator.validate(new PrimitiveMapRecord(Collections.singletonMap("key", null))))
+                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("tags", "key"), "must not be null"));
+        }
+
+        @Test
+        void nullKeyStopsValueValidation() {
+            assertThat(validator.validate(new PrimitiveMapRecord(Collections.singletonMap(null, null))))
+                    .isEqualTo(ValidationErrors.ofField("tags", "must not be null"));
+        }
+
+        @Test
+        void multipleErrors_allReported() {
+            Map<String, String> tags = new LinkedHashMap<>();
+            tags.put("a", null);
+            tags.put("b", "valid");
+            tags.put("c", null);
+
+            assertThat(validator.validate(new PrimitiveMapRecord(tags)))
+                    .isEqualTo(
+                            createValidationErrors(v ->
+                                    v.withField("tags", () -> {
+                                        v.withField("a", () -> v.addRootError("must not be null"));
+                                        v.withField("c", () -> v.addRootError("must not be null"));
+                                    })
+                            )
+                    );
+        }
+    }
+
+
+
+    @Nested
+    class NestedMapRecordValidatorTest {
+        private final Validator<NestedMapRecord> validator = new NestedMapRecordValidator();
+
+        @Test
+        void nullScores_noErrors() {
+            assertThat(validator.validate(new NestedMapRecord(null)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void emptyScores_noErrors() {
+            assertThat(validator.validate(new NestedMapRecord(Map.of())))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void nullOuterKey_hasFieldError() {
+            assertThat(validator.validate(new NestedMapRecord(Collections.singletonMap(null, Map.of()))))
+                    .isEqualTo(ValidationErrors.ofField("scores", "must not be null"));
+        }
+
+        @Test
+        void nullOuterValue_hasFieldError() {
+            assertThat(validator.validate(new NestedMapRecord(Collections.singletonMap("a", null))))
+                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("scores", "a"), "must not be empty"));
+        }
+
+        @Test
+        void emptyInnerMap_hasFieldError() {
+            assertThat(validator.validate(new NestedMapRecord(Map.of("a", Map.of()))))
+                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("scores", "a"), "must not be empty"));
+        }
+
+        @Test
+        void nullInnerKey_hasFieldError() {
+            assertThat(validator.validate(new NestedMapRecord(Map.of("a", Collections.singletonMap(null, 1)))))
+                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("scores", "a"), "must not be null"));
+        }
+
+        @Test
+        void nullInnerValue_hasFieldError() {
+            assertThat(validator.validate(new NestedMapRecord(Map.of("a", Collections.singletonMap("b", null)))))
+                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("scores", "a", "b"), "must not be null"));
+        }
+
+        @Test
+        void validScores_noErrors() {
+            assertThat(validator.validate(new NestedMapRecord(Map.of("a", Map.of("b", 1, "c", 2)))))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void nullOuterKeyStopsInnerValidation() {
+            assertThat(validator.validate(new NestedMapRecord(Collections.singletonMap(null, null))))
+                    .isEqualTo(ValidationErrors.ofField("scores", "must not be null"));
+        }
+
+        @Test
+        void multipleErrors_allReported() {
+            Map<String, Map<String, Integer>> scores = new LinkedHashMap<>();
+            scores.put("a", Collections.singletonMap(null, 1));
+            scores.put("b", Collections.singletonMap("x", null));
+            scores.put("c", null);
+
+            assertThat(validator.validate(new NestedMapRecord(scores)))
+                    .isEqualTo(
+                            createValidationErrors(v ->
+                                    v.withField("scores", () -> {
+                                        v.withField("a", () -> v.addRootError("must not be null"));
+                                        v.withField("b", () -> v.withField("x", () -> v.addRootError("must not be null")));
+                                        v.withField("c", () -> v.addRootError("must not be empty"));
+                                    })
+                            )
+                    );
         }
     }
 
