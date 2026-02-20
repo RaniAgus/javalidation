@@ -635,21 +635,20 @@ Spring automatically formats messages based on the request locale.
 
 **Bean validation**:
 
-When including `javalidation-jakarta-validation*` dependency and annotation processor, `@Valid` annotations are
-automatically validated using `Validations.validate(T)`, which is a compile-time generated service locator for different
+When including `javalidation-jakarta-validation*` dependency and annotation processor, bean validation is
+automatically triggered using `Validators.validate(T)`, which is a compile-time generated service locator for different
 `Validator<T>` instances.
 
-To tell the annotation processor to generate a `Validator<T>`, you need to annotate the class with `@Validate`:
-
+To tell the annotation processor to generate a `Validator<T>`, annotate the record with `@Validate`:
 ```java
 import io.github.raniagus.javalidation.validator.Validate;
 import jakarta.validation.constraints.*;
 
 @Validate
 public record UserDto(
-        @NotBlank String name, 
-        @NotNull @Email String email, 
-        @NotEmpty List<@NotNull OrderDto> orders
+        @NotBlank String name,
+        @NotNull @Email String email,
+        @NotEmpty List orders
 ) {
     @Validate
     public record OrderDto(
@@ -661,19 +660,28 @@ public record UserDto(
 
 > **Important:** Only record classes are supported.
 
-If you'd like to inject the validators manually, you could create each corresponding `@Bean` calling
-`Validators.getValidator(Class)`:
+Unlike Jakarta Bean Validation, constraints on type arguments are validated automatically without needing `@Valid`. To
+opt out of validation for a specific field or type argument, use `@SkipValidate`:
+```java
+@Validate
+public record UserDto(
+        @NotBlank String name,
+        @SkipValidate String internalToken,         // field is not validated
+        @NotEmpty List<@SkipValidate Order> orders  // field is validated, items are not
+) {}
+```
 
+To inject validators manually, create each corresponding `@Bean` using `Validators.getValidator(Class)`:
 ```java
 import io.github.raniagus.javalidation.validator.Validators;
 
 @Bean
-public Validator<UserDto> userValidator() {
+public Validator userValidator() {
     return Validators.getValidator(UserDto.class);
 }
 
 @Bean
-public Validator<OrderDto> orderValidator() {
+public Validator orderValidator() {
     return Validators.getValidator(OrderDto.class);
 }
 ```

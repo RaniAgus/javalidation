@@ -178,7 +178,9 @@ public class ValidatorProcessor extends AbstractProcessor {
 
                     if (recordElement.getKind() != ElementKind.RECORD) {
                         processingEnv.getMessager().printMessage(
-                                Diagnostic.Kind.ERROR, "@Validate can only be applied to records, but it was applied to " + recordElement);
+                                Diagnostic.Kind.ERROR,
+                                "@Validate can only be applied to records, but it was applied to " + recordElement
+                        );
                         return Stream.empty();
                     }
 
@@ -227,7 +229,28 @@ public class ValidatorProcessor extends AbstractProcessor {
         );
     }
 
-    private @Nullable NullUnsafeWriter parseValidateAnnotation(@Nullable Element referredType) {
+    private @Nullable NullSafeWriter parseNullSafeWriter(TypeMirror type) {
+        if (shouldSkip(type)) {
+            return null;
+        }
+        return JakartaAnnotationParser.parseNullSafeWriter(new TypeAdapter(type, processingEnv));
+    }
+
+    private List<NullUnsafeWriter> parseNullUnsafeWriters(TypeMirror type) {
+        if (shouldSkip(type)) {
+            return List.of();
+        }
+
+        return Stream.<NullUnsafeWriter>concat(
+                JakartaAnnotationParser.parseNullUnsafeWriters(new TypeAdapter(type, processingEnv)),
+                Stream.of(parseNested(type), parseIterable(type), parseMap(type)).filter(Objects::nonNull)
+        ).toList();
+    }
+
+    // -- Nested --
+
+    private @Nullable NullUnsafeWriter parseNested(TypeMirror type) {
+        Element referredType = getReferredType(type);
         if (referredType == null || referredType.getAnnotation(Validate.class) == null) {
             return null;
         }
@@ -239,21 +262,6 @@ public class ValidatorProcessor extends AbstractProcessor {
                 getValidatorName(referredType),
                 getValidatorFullName(referredType)
         );
-    }
-
-    private @Nullable NullSafeWriter parseNullSafeWriter(TypeMirror type) {
-        return JakartaAnnotationParser.parseNullSafeWriter(new TypeAdapter(type, processingEnv));
-    }
-
-    private List<NullUnsafeWriter> parseNullUnsafeWriters(TypeMirror type) {
-        return Stream.<NullUnsafeWriter>concat(
-                JakartaAnnotationParser.parseNullUnsafeWriters(new TypeAdapter(type, processingEnv)),
-                Stream.of(
-                        parseValidateAnnotation(getReferredType(type)),
-                        parseIterable(type),
-                        parseMap(type)
-                ).filter(Objects::nonNull)
-        ).toList();
     }
 
     // -- Iterable --
@@ -396,6 +404,11 @@ public class ValidatorProcessor extends AbstractProcessor {
                || enclosingElement.getKind() == ElementKind.RECORD
                || enclosingElement.getKind() == ElementKind.INTERFACE
                || enclosingElement.getKind() == ElementKind.ENUM;
+    }
+
+    private boolean shouldSkip(TypeMirror type) {
+        return type.getAnnotationMirrors().stream()
+                .anyMatch(a -> a.getAnnotationType().asElement().getSimpleName().contentEquals("SkipValidate"));
     }
 
     private @Nullable TypeElement getReferredType(TypeMirror mirror) {
