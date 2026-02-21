@@ -86,7 +86,7 @@ Annotation processor for generating Validator implementations:
 ```
 
 > [!TIP]
-> Mark the `generatedSourcesDirectory` as "Generated Sources Root" in IntelliJ IDEA to debug generated code.
+> Mark `target/generated-sources/annotations` directory as "Generated Sources Root" in IntelliJ to debug generated code.
 
 ### Spring Boot Starter
 
@@ -729,9 +729,9 @@ public class UserDtoValidator implements Validator {
 </details>
 
 > [!IMPORTANT]
-> - Only `record`s and `sealed interface`s with `record` implementations can be annotated with `@Valid`.
+> - Only Records and Sealed Interfaces with all Record implementations can be annotated with `@Valid`.
 > - Groups are not supported yet.
-> - Using `@Valid` annotation on a `Map` key results in undefined field error namespacing behavior.
+> - Using `@Valid` on a `Map` key results in undefined field error namespacing behavior.
 
 #### Full Example
 
