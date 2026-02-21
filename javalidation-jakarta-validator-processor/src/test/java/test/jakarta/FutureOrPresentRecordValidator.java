@@ -15,7 +15,7 @@ public class FutureOrPresentRecordValidator implements Validator<FutureOrPresent
             var value = root.value();
             if (value == null) return;
             if (!(value.isBefore(Instant.now()) == false)) {
-                validation.addRootError("must be a date in the present or in the future");
+                validation.addError("must be a date in the present or in the future");
             }
         });
     }

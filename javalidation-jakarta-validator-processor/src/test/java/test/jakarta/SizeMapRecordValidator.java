@@ -14,7 +14,7 @@ public class SizeMapRecordValidator implements Validator<SizeMapRecord> {
             var value = root.value();
             if (value == null) return;
             if (value.size() < 1 || value.size() > 10) {
-                validation.addRootError("size must be between {0} and {1}", 1, 10);
+                validation.addError("size must be between {0} and {1}", 1, 10);
             }
         });
     }

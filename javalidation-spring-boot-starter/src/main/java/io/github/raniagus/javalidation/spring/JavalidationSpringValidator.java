@@ -56,10 +56,10 @@ public class JavalidationSpringValidator implements Validator {
     public static ValidationErrors toValidationErrors(Errors errors) {
         Validation validation = Validation.create();
         for (ObjectError error : errors.getGlobalErrors()) {
-            validation.addRootError(Objects.toString(error.getDefaultMessage()));
+            validation.addError(Objects.toString(error.getDefaultMessage()));
         }
         for (FieldError error : errors.getFieldErrors()) {
-            validation.addFieldError(error.getField(), Objects.toString(error.getDefaultMessage()));
+            validation.addErrorAt(error.getField(), Objects.toString(error.getDefaultMessage()));
         }
         return validation.finish();
     }

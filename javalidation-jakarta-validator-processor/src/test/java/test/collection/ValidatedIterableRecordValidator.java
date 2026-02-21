@@ -15,12 +15,12 @@ public class ValidatedIterableRecordValidator implements Validator<ValidatedIter
         validation.withField("friends", () -> {
             var friends = root.friends();
             if (friends == null) {
-                validation.addRootError("must not be null");
+                validation.addError("must not be null");
                 return;
             }
             validation.withEach(friends, friendsItem -> {
                 if (friendsItem == null) {
-                    validation.addRootError("must not be null");
+                    validation.addError("must not be null");
                     return;
                 }
                 friendsItemValidator.validate(validation, friendsItem);

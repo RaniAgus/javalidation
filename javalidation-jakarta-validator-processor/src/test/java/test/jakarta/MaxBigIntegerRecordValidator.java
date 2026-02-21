@@ -15,7 +15,7 @@ public class MaxBigIntegerRecordValidator implements Validator<MaxBigIntegerReco
             var value = root.value();
             if (value == null) return;
             if (!(value.compareTo(new BigInteger("100")) <= 0)) {
-                validation.addRootError("must be less than or equal to {0}", 100);
+                validation.addError("must be less than or equal to {0}", 100);
             }
         });
     }

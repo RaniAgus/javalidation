@@ -15,7 +15,7 @@ public class DecimalMaxExclusiveRecordValidator implements Validator<DecimalMaxE
             var value = root.value();
             if (value == null) return;
             if (!(value.compareTo(new BigDecimal("10.5")) < 0)) {
-                validation.addRootError("must be less than {0}", "10.5");
+                validation.addError("must be less than {0}", "10.5");
             }
         });
     }

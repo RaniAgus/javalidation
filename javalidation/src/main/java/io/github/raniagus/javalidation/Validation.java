@@ -34,10 +34,10 @@ import org.jspecify.annotations.Nullable;
  * Validation validation = Validation.create();
  *
  * if (user.name() == null || user.name().isEmpty()) {
- *     validation.addFieldError("name", "Name is required");
+ *     validation.addErrorAt("name", "Name is required");
  * }
  * if (user.age() < 18) {
- *     validation.addFieldError("age", "Must be 18 or older");
+ *     validation.addErrorAt("age", "Must be 18 or older");
  * }
  *
  * // Convert to Result
@@ -81,7 +81,7 @@ public class Validation {
      * <p>
      * The message supports MessageFormat placeholders ({0}, {1}, etc.) for internationalization:
      * <pre>{@code
-     * validation.addRootError("User must be at least {0} years old", 18);
+     * validation.addError("User must be at least {0} years old", 18);
      * }</pre>
      *
      * @param message the error message template (must not be null)
@@ -89,7 +89,7 @@ public class Validation {
      * @return this validation for method chaining
      * @throws NullPointerException if message is null
      */
-    public Validation addRootError(String message, Object... args) {
+    public Validation addError(String message, Object... args) {
         Objects.requireNonNull(message);
         if (prefix.isEmpty()) {
             rootErrors.add(new TemplateString(message, args));
@@ -117,9 +117,9 @@ public class Validation {
      * <p>
      * The message supports MessageFormat placeholders for internationalization:
      * <pre>{@code
-     * validation.addFieldError("age", "Must be at least {0}", 18);
-     * validation.addFieldError("email", "Invalid email format");
-     * validation.addFieldError("email", "Email already exists");  // second error for same field
+     * validation.addErrorAt("age", "Must be at least {0}", 18);
+     * validation.addErrorAt("email", "Invalid email format");
+     * validation.addErrorAt("email", "Email already exists");  // second error for same field
      * }</pre>
      *
      * @param field the field name (must not be null)
@@ -128,7 +128,7 @@ public class Validation {
      * @return this validation for method chaining
      * @throws NullPointerException if field or message is null
      */
-    public Validation addFieldError(Object field, String message, Object... args) {
+    public Validation addErrorAt(Object field, String message, Object... args) {
         Objects.requireNonNull(field);
         Objects.requireNonNull(message);
         fieldErrors.computeIfAbsent(FieldKey.of(prefix, field), k -> new ArrayList<>(1))
@@ -169,13 +169,13 @@ public class Validation {
      * 
      * validation.withField("person", () -> {
      *     if (request.person() == null) {
-     *         validation.addRootError("must not be null");
+     *         validation.addError("must not be null");
      *     } else {
      *         if (request.person().name() == null) {
-     *             validation.addFieldError("name", "must not be null");
+     *             validation.addErrorAt("name", "must not be null");
      *         }
      *         if (request.person().age() < 18) {
-     *             validation.addFieldError("age", "must be at least 18");
+     *             validation.addErrorAt("age", "must be at least 18");
      *         }
      *     }
      * });
@@ -219,9 +219,9 @@ public class Validation {
      *
      * validation.withEach(request.tags(), tag -> {
      *     if (tag.name() == null) {
-     *         validation.addRootError("must not be null");
+     *         validation.addError("must not be null");
      *     } else if (tag.name().isBlank()) {
-     *         validation.addFieldError("name", "must not be blank");
+     *         validation.addErrorAt("name", "must not be blank");
      *     }
      * });
      *
@@ -253,7 +253,7 @@ public class Validation {
      * <pre>{@code
      * validation.withEach(request.tags(), (tag, index) -> {
      *     if (duplicateIndices.contains(index)) {
-     *         validation.addRootError("duplicate of element at index {0}", index);
+     *         validation.addError("duplicate of element at index {0}", index);
      *     }
      * });
      * }</pre>
@@ -398,7 +398,7 @@ public class Validation {
      * <pre>{@code
      * Validation validation = Validation.create();
      * if (user.age() < 18) {
-     *     validation.addFieldError("age", "Must be 18 or older");
+     *     validation.addErrorAt("age", "Must be 18 or older");
      * }
      * return validation.asResult(user);
      * }</pre>
@@ -434,7 +434,7 @@ public class Validation {
     public <T extends @Nullable Object> Result<T> asResult(Supplier<T> supplier) {
         ValidationErrors errors = finish();
         if (errors.isNotEmpty()) {
-            return Result.err(errors);
+            return Result.error(errors);
         }
         return Result.of(supplier);
     }
@@ -448,7 +448,7 @@ public class Validation {
      * <pre>{@code
      * Validation validation = Validation.create();
      * if (user.age() < 18) {
-     *     validation.addFieldError("age", "Must be 18 or older");
+     *     validation.addErrorAt("age", "Must be 18 or older");
      * }
      * validation.check();  // throws if errors exist
      * // Continue with valid user...

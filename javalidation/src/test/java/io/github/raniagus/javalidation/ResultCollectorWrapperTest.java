@@ -36,8 +36,8 @@ class ResultCollectorWrapperTest {
         @Test
         void givenFailingResults_whenWithIndexToListOrThrow_thenThrowsExceptionWithIndexedErrors() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("field", "error");
-            Result<String> result3 = Result.err("root");
+            Result<String> result2 = Result.errorAt("field", "error");
+            Result<String> result3 = Result.error("root");
 
             Stream<Result<String>> stream = Stream.of(result1, result2, result3);
 
@@ -56,8 +56,8 @@ class ResultCollectorWrapperTest {
         @Test
         void givenFailingResults_whenWithIndexToResultList_thenReturnsErrWithIndexedErrors() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("field", "error");
-            Result<String> result3 = Result.err("root");
+            Result<String> result2 = Result.errorAt("field", "error");
+            Result<String> result3 = Result.error("root");
 
             var result = Stream.of(result1, result2, result3)
                     .collect(withIndex(toResultList()));
@@ -77,7 +77,7 @@ class ResultCollectorWrapperTest {
         @Test
         void givenFailingResults_whenWithIndexToPartitioned_thenReturnsPartitionedWithIndexedErrors() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("field", "error");
+            Result<String> result2 = Result.errorAt("field", "error");
             Result<String> result3 = Result.ok("value3");
 
             var partitioned = Stream.of(result1, result2, result3)
@@ -92,9 +92,9 @@ class ResultCollectorWrapperTest {
 
         @Test
         void givenMultipleFailingResults_whenWithIndex_thenIndexesIncrement() {
-            Result<String> result1 = Result.err("field", "error1");
-            Result<String> result2 = Result.err("field", "error2");
-            Result<String> result3 = Result.err("field", "error3");
+            Result<String> result1 = Result.errorAt("field", "error1");
+            Result<String> result2 = Result.errorAt("field", "error2");
+            Result<String> result3 = Result.errorAt("field", "error3");
 
             var result = Stream.of(result1, result2, result3)
                     .collect(withIndex(toResultList()));
@@ -115,9 +115,9 @@ class ResultCollectorWrapperTest {
         @Test
         void givenResultsWithRootErrors_whenWithIndex_thenConvertsRootErrorsToIndexedFields() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("root error 2");
+            Result<String> result2 = Result.error("root error 2");
             Result<String> result3 = Result.ok("value3");
-            Result<String> result4 = Result.err("root error 4");
+            Result<String> result4 = Result.error("root error 4");
 
             var result = Stream.of(result1, result2, result3, result4)
                     .collect(withIndex(toResultList()));
@@ -153,8 +153,8 @@ class ResultCollectorWrapperTest {
         @Test
         void givenFailingResults_whenWithPrefixToListOrThrow_thenThrowsExceptionWithPrefixedErrors() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("field", "error");
-            Result<String> result3 = Result.err("root");
+            Result<String> result2 = Result.errorAt("field", "error");
+            Result<String> result3 = Result.error("root");
 
             Stream<Result<String>> stream = Stream.of(result1, result2, result3);
 
@@ -173,8 +173,8 @@ class ResultCollectorWrapperTest {
         @Test
         void givenFailingResults_whenWithPrefixToResultList_thenReturnsErrWithPrefixedErrors() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("field", "error");
-            Result<String> result3 = Result.err("root");
+            Result<String> result2 = Result.errorAt("field", "error");
+            Result<String> result3 = Result.error("root");
 
             var result = Stream.of(result1, result2, result3)
                     .collect(withPrefix("order", toResultList()));
@@ -194,7 +194,7 @@ class ResultCollectorWrapperTest {
         @Test
         void givenFailingResults_whenWithPrefixToPartitioned_thenReturnsPartitionedWithPrefixedErrors() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("price", "must be positive");
+            Result<String> result2 = Result.errorAt("price", "must be positive");
             Result<String> result3 = Result.ok("value3");
 
             var partitioned = Stream.of(result1, result2, result3)
@@ -209,7 +209,7 @@ class ResultCollectorWrapperTest {
 
         @Test
         void givenNestedPrefix_whenWithPrefix_thenConcatenatesWithDot() {
-            Result<String> result1 = Result.err("field", "error");
+            Result<String> result1 = Result.errorAt("field", "error");
 
             var result = Stream.of(result1)
                     .collect(withPrefix("items", toResultList()));
@@ -230,8 +230,8 @@ class ResultCollectorWrapperTest {
         @Test
         void givenWithPrefixAndWithIndex_whenToListOrThrow_thenAppliesBothPrefixAndIndex() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("field", "error");
-            Result<String> result3 = Result.err("root");
+            Result<String> result2 = Result.errorAt("field", "error");
+            Result<String> result3 = Result.error("root");
 
             Stream<Result<String>> stream = Stream.of(result1, result2, result3);
 
@@ -250,9 +250,9 @@ class ResultCollectorWrapperTest {
         @Test
         void givenWithPrefixAndWithIndex_whenToResultList_thenAppliesBothPrefixAndIndex() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("price", "must be positive");
+            Result<String> result2 = Result.errorAt("price", "must be positive");
             Result<String> result3 = Result.ok("value3");
-            Result<String> result4 = Result.err("name", "required");
+            Result<String> result4 = Result.errorAt("name", "required");
 
             var result = Stream.of(result1, result2, result3, result4)
                     .collect(withPrefix("items", withIndex(toResultList())));
@@ -272,9 +272,9 @@ class ResultCollectorWrapperTest {
         @Test
         void givenWithPrefixAndWithIndex_whenToPartitioned_thenAppliesBothPrefixAndIndex() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("field", "error2");
+            Result<String> result2 = Result.errorAt("field", "error2");
             Result<String> result3 = Result.ok("value3");
-            Result<String> result4 = Result.err("field", "error4");
+            Result<String> result4 = Result.errorAt("field", "error4");
 
             var partitioned = Stream.of(result1, result2, result3, result4)
                     .collect(withPrefix("users", withIndex(toPartitioned())));
@@ -291,7 +291,7 @@ class ResultCollectorWrapperTest {
 
         @Test
         void givenMultiplePrefixes_whenChained_thenConcatenatesDirectly() {
-            Result<String> result1 = Result.err("field", "error");
+            Result<String> result1 = Result.errorAt("field", "error");
 
             // Note: Chaining withPrefix() directly concatenates without dots
             // The dot is added when converting to field errors in Validation.addAll()
@@ -310,8 +310,8 @@ class ResultCollectorWrapperTest {
         @Test
         void givenNestedPrefixesWithIndex_whenChained_thenAppliesAllCorrectly() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("name", "too short");
-            Result<String> result3 = Result.err("age", "too young");
+            Result<String> result2 = Result.errorAt("name", "too short");
+            Result<String> result3 = Result.errorAt("age", "too young");
 
             // Note: Chaining withPrefix() directly concatenates without dots
             // Use dot notation in the prefix string if needed: "request.users"
@@ -333,7 +333,7 @@ class ResultCollectorWrapperTest {
         @Test
         void givenRootErrors_whenWithPrefixAndWithIndex_thenConvertsToIndexedPrefixedFields() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("invalid");
+            Result<String> result2 = Result.error("invalid");
             Result<String> result3 = Result.ok("value3");
 
             var result = Stream.of(result1, result2, result3)

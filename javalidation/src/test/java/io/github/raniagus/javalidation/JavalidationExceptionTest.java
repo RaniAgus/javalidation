@@ -8,14 +8,14 @@ class JavalidationExceptionTest {
 
     @Test
     void givenSingleFieldError_whenGetMessage_thenReturnsErrorCount() {
-        var exception = JavalidationException.ofField("email", "Invalid email format");
+        var exception = JavalidationException.at("email", "Invalid email format");
 
         assertThat(exception.getMessage()).isEqualTo("Validation failed with 1 error(s)");
     }
 
     @Test
     void givenSingleRootError_whenGetMessage_thenReturnsErrorCount() {
-        var exception = JavalidationException.ofRoot("Something went wrong");
+        var exception = JavalidationException.of("Something went wrong");
 
         assertThat(exception.getMessage()).isEqualTo("Validation failed with 1 error(s)");
     }
@@ -23,10 +23,10 @@ class JavalidationExceptionTest {
     @Test
     void givenMultipleErrors_whenGetMessage_thenReturnsTotalCount() {
         var validation = Validation.create();
-        validation.addRootError("Invalid request");
-        validation.addFieldError("name", "Name is required");
-        validation.addFieldError("age", "Must be at least 18");
-        validation.addFieldError("age", "Cannot be negative");
+        validation.addError("Invalid request");
+        validation.addErrorAt("name", "Name is required");
+        validation.addErrorAt("age", "Must be at least 18");
+        validation.addErrorAt("age", "Cannot be negative");
 
         var exception = JavalidationException.of(validation.finish());
 
@@ -35,7 +35,7 @@ class JavalidationExceptionTest {
 
     @Test
     void givenException_whenGetErrors_thenReturnsValidationErrors() {
-        var errors = ValidationErrors.ofField("email", "Invalid format");
+        var errors = ValidationErrors.at("email", "Invalid format");
         var exception = JavalidationException.of(errors);
 
         assertThat(exception.getErrors()).isEqualTo(errors);
@@ -50,7 +50,7 @@ class JavalidationExceptionTest {
 
     @Test
     void givenFieldErrorWithArgs_whenGetMessage_thenReturnsErrorCount() {
-        var exception = JavalidationException.ofField("age", "Must be at least {0}", 18);
+        var exception = JavalidationException.at("age", "Must be at least {0}", 18);
 
         assertThat(exception.getMessage()).isEqualTo("Validation failed with 1 error(s)");
     }
@@ -58,10 +58,10 @@ class JavalidationExceptionTest {
     @Test
     void givenMultipleFieldsWithMultipleErrors_whenGetMessage_thenReturnsTotalCount() {
         var validation = Validation.create();
-        validation.addFieldError("email", "Required");
-        validation.addFieldError("email", "Invalid format");
-        validation.addFieldError("name", "Required");
-        validation.addFieldError("age", "Too young");
+        validation.addErrorAt("email", "Required");
+        validation.addErrorAt("email", "Invalid format");
+        validation.addErrorAt("name", "Required");
+        validation.addErrorAt("age", "Too young");
 
         var exception = JavalidationException.of(validation.finish());
 

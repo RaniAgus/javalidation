@@ -72,7 +72,7 @@ class ResultSerializerTest {
 
     @Test
     void givenErrWithRootError_whenSerialize_thenWritesTypeAndErrors() {
-        Result<String> result = Result.err("Invalid input");
+        Result<String> result = Result.error("Invalid input");
 
         String json = mapper.writeValueAsString(result);
 
@@ -83,7 +83,7 @@ class ResultSerializerTest {
 
     @Test
     void givenErrWithFieldError_whenSerialize_thenWritesTypeAndErrors() {
-        Result<String> result = Result.err("email", "Invalid format");
+        Result<String> result = Result.errorAt("email", "Invalid format");
 
         String json = mapper.writeValueAsString(result);
 
@@ -95,11 +95,11 @@ class ResultSerializerTest {
     @Test
     void givenErrWithMultipleErrors_whenSerialize_thenWritesAllErrors() {
         ValidationErrors errors = Validation.create()
-                .addRootError("Global error")
-                .addFieldError("name", "Required")
-                .addFieldError("age", "Must be positive")
+                .addError("Global error")
+                .addErrorAt("name", "Required")
+                .addErrorAt("age", "Must be positive")
                 .finish();
-        Result<String> result = Result.err(errors);
+        Result<String> result = Result.error(errors);
 
         String json = mapper.writeValueAsString(result);
 

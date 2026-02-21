@@ -8,6 +8,6 @@ public record PartitionedResult<T extends @Nullable Object>(T value, ValidationE
     }
 
     public Result<T> toResult() {
-        return errors.isEmpty() ? Result.ok(value) : Result.err(errors);
+        return errors.isEmpty() ? Result.ok(value) : Result.error(errors);
     }
 }

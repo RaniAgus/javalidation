@@ -15,7 +15,7 @@ public class DecimalMinExclusiveRecordValidator implements Validator<DecimalMinE
             var value = root.value();
             if (value == null) return;
             if (!(value.compareTo(new BigDecimal("10.5")) > 0)) {
-                validation.addRootError("must be greater than {0}", "10.5");
+                validation.addError("must be greater than {0}", "10.5");
             }
         });
     }

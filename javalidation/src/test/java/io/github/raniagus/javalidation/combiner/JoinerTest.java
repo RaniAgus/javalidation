@@ -28,8 +28,8 @@ class JoinerTest {
 
     @Test
     void givenTwoErrResults_whenCombine_thenAccumulatesErrors() {
-        Result<String> result1 = Result.err(ErrorStrings.ERROR_1);
-        Result<Integer> result2 = Result.err(ErrorStrings.ERROR_2);
+        Result<String> result1 = Result.error(ErrorStrings.ERROR_1);
+        Result<Integer> result2 = Result.error(ErrorStrings.ERROR_2);
 
         Result<Person> combined = result1
                 .and(result2)
@@ -60,9 +60,9 @@ class JoinerTest {
 
     @Test
     void givenThreeErrResults_whenCombine_thenAccumulatesErrors() {
-        Result<Integer> result1 = Result.err(ErrorStrings.ERROR_1);
-        Result<Integer> result2 = Result.err(ErrorStrings.ERROR_2);
-        Result<Integer> result3 = Result.err(ErrorStrings.ERROR_3);
+        Result<Integer> result1 = Result.error(ErrorStrings.ERROR_1);
+        Result<Integer> result2 = Result.error(ErrorStrings.ERROR_2);
+        Result<Integer> result3 = Result.error(ErrorStrings.ERROR_3);
 
         Result<Integer> combined = result1
                 .and(result2)
@@ -96,10 +96,10 @@ class JoinerTest {
 
     @Test
     void givenFourErrResults_whenCombine_thenAccumulatesErrors() {
-        Result<Integer> result1 = Result.err(ErrorStrings.ERROR_1);
-        Result<Integer> result2 = Result.err(ErrorStrings.ERROR_2);
-        Result<Integer> result3 = Result.err(ErrorStrings.ERROR_3);
-        Result<Integer> result4 = Result.err(ErrorStrings.ERROR_4);
+        Result<Integer> result1 = Result.error(ErrorStrings.ERROR_1);
+        Result<Integer> result2 = Result.error(ErrorStrings.ERROR_2);
+        Result<Integer> result3 = Result.error(ErrorStrings.ERROR_3);
+        Result<Integer> result4 = Result.error(ErrorStrings.ERROR_4);
 
         Result<Integer> combined = result1
                 .and(result2)
@@ -136,11 +136,11 @@ class JoinerTest {
 
     @Test
     void givenFiveErrResults_whenCombine_thenAccumulatesErrors() {
-        Result<Integer> result1 = Result.err(ErrorStrings.ERROR_1);
-        Result<Integer> result2 = Result.err(ErrorStrings.ERROR_2);
-        Result<Integer> result3 = Result.err(ErrorStrings.ERROR_3);
-        Result<Integer> result4 = Result.err(ErrorStrings.ERROR_4);
-        Result<Integer> result5 = Result.err(ErrorStrings.ERROR_5);
+        Result<Integer> result1 = Result.error(ErrorStrings.ERROR_1);
+        Result<Integer> result2 = Result.error(ErrorStrings.ERROR_2);
+        Result<Integer> result3 = Result.error(ErrorStrings.ERROR_3);
+        Result<Integer> result4 = Result.error(ErrorStrings.ERROR_4);
+        Result<Integer> result5 = Result.error(ErrorStrings.ERROR_5);
 
         Result<Integer> combined = result1
                 .and(result2)
@@ -180,12 +180,12 @@ class JoinerTest {
 
     @Test
     void givenSixErrResults_whenCombine_thenAccumulatesErrors() {
-        Result<Integer> result1 = Result.err(ErrorStrings.ERROR_1);
-        Result<Integer> result2 = Result.err(ErrorStrings.ERROR_2);
-        Result<Integer> result3 = Result.err(ErrorStrings.ERROR_3);
-        Result<Integer> result4 = Result.err(ErrorStrings.ERROR_4);
-        Result<Integer> result5 = Result.err(ErrorStrings.ERROR_5);
-        Result<Integer> result6 = Result.err(ErrorStrings.ERROR_6);
+        Result<Integer> result1 = Result.error(ErrorStrings.ERROR_1);
+        Result<Integer> result2 = Result.error(ErrorStrings.ERROR_2);
+        Result<Integer> result3 = Result.error(ErrorStrings.ERROR_3);
+        Result<Integer> result4 = Result.error(ErrorStrings.ERROR_4);
+        Result<Integer> result5 = Result.error(ErrorStrings.ERROR_5);
+        Result<Integer> result6 = Result.error(ErrorStrings.ERROR_6);
 
         Result<Integer> combined = result1
                 .and(result2)
@@ -228,13 +228,13 @@ class JoinerTest {
 
     @Test
     void givenSevenErrResults_whenCombine_thenAccumulatesErrors() {
-        Result<Integer> result1 = Result.err(ErrorStrings.ERROR_1);
-        Result<Integer> result2 = Result.err(ErrorStrings.ERROR_2);
-        Result<Integer> result3 = Result.err(ErrorStrings.ERROR_3);
-        Result<Integer> result4 = Result.err(ErrorStrings.ERROR_4);
-        Result<Integer> result5 = Result.err(ErrorStrings.ERROR_5);
-        Result<Integer> result6 = Result.err(ErrorStrings.ERROR_6);
-        Result<Integer> result7 = Result.err(ErrorStrings.ERROR_7);
+        Result<Integer> result1 = Result.error(ErrorStrings.ERROR_1);
+        Result<Integer> result2 = Result.error(ErrorStrings.ERROR_2);
+        Result<Integer> result3 = Result.error(ErrorStrings.ERROR_3);
+        Result<Integer> result4 = Result.error(ErrorStrings.ERROR_4);
+        Result<Integer> result5 = Result.error(ErrorStrings.ERROR_5);
+        Result<Integer> result6 = Result.error(ErrorStrings.ERROR_6);
+        Result<Integer> result7 = Result.error(ErrorStrings.ERROR_7);
 
         Result<Integer> combined = result1
                 .and(result2)
@@ -280,14 +280,14 @@ class JoinerTest {
 
     @Test
     void givenEightErrResults_whenCombine_thenAccumulatesErrors() {
-        Result<Integer> result1 = Result.err(ErrorStrings.ERROR_1);
-        Result<Integer> result2 = Result.err(ErrorStrings.ERROR_2);
-        Result<Integer> result3 = Result.err(ErrorStrings.ERROR_3);
-        Result<Integer> result4 = Result.err(ErrorStrings.ERROR_4);
-        Result<Integer> result5 = Result.err(ErrorStrings.ERROR_5);
-        Result<Integer> result6 = Result.err(ErrorStrings.ERROR_6);
-        Result<Integer> result7 = Result.err(ErrorStrings.ERROR_7);
-        Result<Integer> result8 = Result.err(ErrorStrings.ERROR_8);
+        Result<Integer> result1 = Result.error(ErrorStrings.ERROR_1);
+        Result<Integer> result2 = Result.error(ErrorStrings.ERROR_2);
+        Result<Integer> result3 = Result.error(ErrorStrings.ERROR_3);
+        Result<Integer> result4 = Result.error(ErrorStrings.ERROR_4);
+        Result<Integer> result5 = Result.error(ErrorStrings.ERROR_5);
+        Result<Integer> result6 = Result.error(ErrorStrings.ERROR_6);
+        Result<Integer> result7 = Result.error(ErrorStrings.ERROR_7);
+        Result<Integer> result8 = Result.error(ErrorStrings.ERROR_8);
 
         Result<Integer> combined = result1
                 .and(result2)
@@ -336,15 +336,15 @@ class JoinerTest {
 
     @Test
     void givenNineErrResults_whenCombine_thenAccumulatesErrors() {
-        Result<Integer> result1 = Result.err(ErrorStrings.ERROR_1);
-        Result<Integer> result2 = Result.err(ErrorStrings.ERROR_2);
-        Result<Integer> result3 = Result.err(ErrorStrings.ERROR_3);
-        Result<Integer> result4 = Result.err(ErrorStrings.ERROR_4);
-        Result<Integer> result5 = Result.err(ErrorStrings.ERROR_5);
-        Result<Integer> result6 = Result.err(ErrorStrings.ERROR_6);
-        Result<Integer> result7 = Result.err(ErrorStrings.ERROR_7);
-        Result<Integer> result8 = Result.err(ErrorStrings.ERROR_8);
-        Result<Integer> result9 = Result.err(ErrorStrings.ERROR_9);
+        Result<Integer> result1 = Result.error(ErrorStrings.ERROR_1);
+        Result<Integer> result2 = Result.error(ErrorStrings.ERROR_2);
+        Result<Integer> result3 = Result.error(ErrorStrings.ERROR_3);
+        Result<Integer> result4 = Result.error(ErrorStrings.ERROR_4);
+        Result<Integer> result5 = Result.error(ErrorStrings.ERROR_5);
+        Result<Integer> result6 = Result.error(ErrorStrings.ERROR_6);
+        Result<Integer> result7 = Result.error(ErrorStrings.ERROR_7);
+        Result<Integer> result8 = Result.error(ErrorStrings.ERROR_8);
+        Result<Integer> result9 = Result.error(ErrorStrings.ERROR_9);
 
         Result<Integer> combined = result1
                 .and(result2)
@@ -396,16 +396,16 @@ class JoinerTest {
 
     @Test
     void givenTenErrResults_whenCombine_thenAccumulatesErrors() {
-        Result<Integer> result1 = Result.err(ErrorStrings.ERROR_1);
-        Result<Integer> result2 = Result.err(ErrorStrings.ERROR_2);
-        Result<Integer> result3 = Result.err(ErrorStrings.ERROR_3);
-        Result<Integer> result4 = Result.err(ErrorStrings.ERROR_4);
-        Result<Integer> result5 = Result.err(ErrorStrings.ERROR_5);
-        Result<Integer> result6 = Result.err(ErrorStrings.ERROR_6);
-        Result<Integer> result7 = Result.err(ErrorStrings.ERROR_7);
-        Result<Integer> result8 = Result.err(ErrorStrings.ERROR_8);
-        Result<Integer> result9 = Result.err(ErrorStrings.ERROR_9);
-        Result<Integer> result10 = Result.err(ErrorStrings.ERROR_10);
+        Result<Integer> result1 = Result.error(ErrorStrings.ERROR_1);
+        Result<Integer> result2 = Result.error(ErrorStrings.ERROR_2);
+        Result<Integer> result3 = Result.error(ErrorStrings.ERROR_3);
+        Result<Integer> result4 = Result.error(ErrorStrings.ERROR_4);
+        Result<Integer> result5 = Result.error(ErrorStrings.ERROR_5);
+        Result<Integer> result6 = Result.error(ErrorStrings.ERROR_6);
+        Result<Integer> result7 = Result.error(ErrorStrings.ERROR_7);
+        Result<Integer> result8 = Result.error(ErrorStrings.ERROR_8);
+        Result<Integer> result9 = Result.error(ErrorStrings.ERROR_9);
+        Result<Integer> result10 = Result.error(ErrorStrings.ERROR_10);
 
         Result<Integer> combined = result1
                 .and(result2)

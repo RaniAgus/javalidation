@@ -14,7 +14,7 @@ public class PositiveOrZeroReferenceRecordValidator implements Validator<Positiv
             var value = root.value();
             if (value == null) return;
             if (!(value >= 0)) {
-                validation.addRootError("must be greater than or equal to 0");
+                validation.addError("must be greater than or equal to 0");
             }
         });
     }

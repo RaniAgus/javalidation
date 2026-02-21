@@ -13,7 +13,7 @@ public class NegativeOrZeroPrimitiveRecordValidator implements Validator<Negativ
         validation.withField("value", () -> {
             var value = root.value();
             if (!(value <= 0)) {
-                validation.addRootError("must be less than or equal to 0");
+                validation.addError("must be less than or equal to 0");
             }
         });
     }

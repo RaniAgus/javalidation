@@ -13,7 +13,7 @@ public class MinRecordValidator implements Validator<MinRecord> {
         validation.withField("value", () -> {
             var value = root.value();
             if (!(value >= 10)) {
-                validation.addRootError("must be greater than or equal to {0}", 10);
+                validation.addError("must be greater than or equal to {0}", 10);
             }
         });
     }

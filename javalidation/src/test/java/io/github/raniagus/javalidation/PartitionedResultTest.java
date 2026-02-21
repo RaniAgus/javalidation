@@ -16,7 +16,7 @@ class PartitionedResultTest {
 
     @Test
     void givenNonEmptyErrors_whenHasErrors_thenReturnsTrue() {
-        var errors = ValidationErrors.ofRoot("error");
+        var errors = ValidationErrors.of("error");
         var partitioned = new PartitionedResult<>("value", errors);
 
         assertThat(partitioned.hasErrors()).isTrue();
@@ -33,7 +33,7 @@ class PartitionedResultTest {
 
     @Test
     void givenNonEmptyErrors_whenToResult_thenReturnsErr() {
-        var errors = ValidationErrors.ofRoot("validation failed");
+        var errors = ValidationErrors.of("validation failed");
         var partitioned = new PartitionedResult<>("value", errors);
 
         var result = partitioned.toResult();

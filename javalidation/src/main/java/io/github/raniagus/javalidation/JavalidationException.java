@@ -29,10 +29,10 @@ package io.github.raniagus.javalidation;
  * <b>Creating directly:</b>
  * <pre>{@code
  * // Single root error
- * throw JavalidationException.ofRoot("Invalid request");
+ * throw JavalidationException.of("Invalid request");
  *
  * // Single field error
- * throw JavalidationException.ofField("email", "Invalid email format");
+ * throw JavalidationException.at("email", "Invalid email format");
  *
  * // From accumulated errors
  * throw JavalidationException.of(validationErrors);
@@ -67,8 +67,8 @@ public class JavalidationException extends RuntimeException {
      * @param message the error message template
      * @param args arguments for the message template
      */
-    public static JavalidationException ofRoot(String message, Object... args) {
-        return new JavalidationException(ValidationErrors.ofRoot(message, args));
+    public static JavalidationException of(String message, Object... args) {
+        return new JavalidationException(ValidationErrors.of(message, args));
     }
 
     /**
@@ -76,12 +76,12 @@ public class JavalidationException extends RuntimeException {
      * <p>
      * The message supports MessageFormat placeholders.
      *
-     * @param field the field name
+     * @param field the field name or identifier
      * @param message the error message template
      * @param args arguments for the message template
      */
-    public static JavalidationException ofField(String field, String message, Object... args) {
-        return new JavalidationException(ValidationErrors.ofField(field, message, args));
+    public static JavalidationException at(Object field, String message, Object... args) {
+        return new JavalidationException(ValidationErrors.at(field, message, args));
     }
 
     /**

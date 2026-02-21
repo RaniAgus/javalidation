@@ -15,7 +15,7 @@ public class PastRecordValidator implements Validator<PastRecord> {
             var value = root.value();
             if (value == null) return;
             if (!(value.isBefore(Instant.now()) == true)) {
-                validation.addRootError("must be a past date");
+                validation.addError("must be a past date");
             }
         });
     }

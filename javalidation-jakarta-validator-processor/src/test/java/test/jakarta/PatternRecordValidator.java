@@ -14,7 +14,7 @@ public class PatternRecordValidator implements Validator<PatternRecord> {
             var value = root.value();
             if (value == null) return;
             if (!value.toString().matches("^[a-z]+$")) {
-                validation.addRootError("must match \"{0}\"", "^[a-z]+$");
+                validation.addError("must match \"{0}\"", "^[a-z]+$");
             }
         });
     }

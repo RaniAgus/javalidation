@@ -14,7 +14,7 @@ public class EmailRecordValidator implements Validator<EmailRecord> {
             var value = root.value();
             if (value == null) return;
             if (!value.toString().matches("^[^@]+@[^@]+\\.[^@]+$")) {
-                validation.addRootError("must be a well-formed email address");
+                validation.addError("must be a well-formed email address");
             }
         });
     }

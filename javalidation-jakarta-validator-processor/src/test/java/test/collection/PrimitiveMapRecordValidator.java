@@ -13,17 +13,17 @@ public class PrimitiveMapRecordValidator implements Validator<PrimitiveMapRecord
         validation.withField("tags", () -> {
             var tags = root.tags();
             if (tags == null || tags.isEmpty()) {
-                validation.addRootError("must not be empty");
+                validation.addError("must not be empty");
                 return;
             }
             tags.forEach((tagsKey, tagsValue) -> {
                 if (tagsKey == null) {
-                    validation.addRootError("must not be null");
+                    validation.addError("must not be null");
                     return;
                 }
                 validation.withField(tagsKey, () -> {
                     if (tagsValue == null) {
-                        validation.addRootError("must not be null");
+                        validation.addError("must not be null");
                         return;
                     }
                 });

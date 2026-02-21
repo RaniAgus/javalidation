@@ -16,8 +16,8 @@ class JavalidationSpringValidatorTest {
         record Value(String field) {}
 
         Validation validation = Validation.create();
-        validation.addRootError("root error");
-        validation.addFieldError("field", "error");
+        validation.addError("root error");
+        validation.addErrorAt("field", "error");
 
         Errors errors = new SimpleErrors(new Value("test"));
         validator.toErrors(validation.finish(), errors);

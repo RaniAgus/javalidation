@@ -32,8 +32,8 @@ class ValidationCollectorTest {
         void givenFailingResults_whenInto_thenValidationContainsAllErrors() {
             Validation validation = Validation.create();
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("field", "error");
-            Result<String> result3 = Result.err("root");
+            Result<String> result2 = Result.errorAt("field", "error");
+            Result<String> result3 = Result.error("root");
 
             validation = Stream.of(result1, result2, result3)
                     .collect(into(validation));
@@ -65,8 +65,8 @@ class ValidationCollectorTest {
         void givenFailingResults_whenIntoWithPrefix_thenValidationContainsAllErrors() {
             Validation validation = Validation.create();
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("field", "error");
-            Result<String> result3 = Result.err("root");
+            Result<String> result2 = Result.errorAt("field", "error");
+            Result<String> result3 = Result.error("root");
 
             validation = Stream.of(result1, result2, result3)
                     .collect(withPrefix("items", into(validation)));

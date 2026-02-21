@@ -45,7 +45,7 @@ public class CollectionValidationsTest {
         @Test
         void nullTags_hasFieldError() {
             assertThat(validator.validate(new PrimitiveIterableRecord(null)))
-                    .isEqualTo(ValidationErrors.ofField("tags", "must not be null"));
+                    .isEqualTo(ValidationErrors.at("tags", "must not be null"));
         }
 
         @Test
@@ -63,13 +63,13 @@ public class CollectionValidationsTest {
         @Test
         void tagTooShort_hasFieldError() {
             assertThat(validator.validate(new PrimitiveIterableRecord(List.of("ab"))))
-                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("tags", 0), "size must be between {0} and {1}", 3, 10));
+                    .isEqualTo(ValidationErrors.at(FieldKey.of("tags", 0), "size must be between {0} and {1}", 3, 10));
         }
 
         @Test
         void tagTooLong_hasFieldError() {
             assertThat(validator.validate(new PrimitiveIterableRecord(List.of("abcdefghijk"))))
-                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("tags", 0), "size must be between {0} and {1}", 3, 10));
+                    .isEqualTo(ValidationErrors.at(FieldKey.of("tags", 0), "size must be between {0} and {1}", 3, 10));
         }
 
         @Test
@@ -84,8 +84,8 @@ public class CollectionValidationsTest {
                     .isEqualTo(
                         createValidationErrors(v ->
                             v.withField("tags", () -> {
-                                v.addFieldError(0, "size must be between {0} and {1}", 3, 10);
-                                v.addFieldError(2, "size must be between {0} and {1}", 3, 10);
+                                v.addErrorAt(0, "size must be between {0} and {1}", 3, 10);
+                                v.addErrorAt(2, "size must be between {0} and {1}", 3, 10);
                             })
                         )
                     );
@@ -99,7 +99,7 @@ public class CollectionValidationsTest {
         @Test
         void nullFriends_hasFieldError() {
             assertThat(validator.validate(new ValidatedIterableRecord(null)))
-                    .isEqualTo(ValidationErrors.ofField("friends", "must not be null"));
+                    .isEqualTo(ValidationErrors.at("friends", "must not be null"));
         }
 
         @Test
@@ -119,14 +119,14 @@ public class CollectionValidationsTest {
         @Test
         void nullFriendItem_hasFieldError() {
             assertThat(validator.validate(new ValidatedIterableRecord(Collections.singletonList(null))))
-                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("friends", 0), "must not be null"));
+                    .isEqualTo(ValidationErrors.at(FieldKey.of("friends", 0), "must not be null"));
         }
 
         @Test
         void friendWithNullName_hasNestedFieldError() {
             assertThat(validator.validate(new ValidatedIterableRecord(List.of(
                     new ValidatedIterableRecord.Person(null)
-            )))).isEqualTo(ValidationErrors.ofField(FieldKey.of("friends", 0, "name"), "must not be null"));
+            )))).isEqualTo(ValidationErrors.at(FieldKey.of("friends", 0, "name"), "must not be null"));
         }
 
         @Test
@@ -139,10 +139,10 @@ public class CollectionValidationsTest {
                 createValidationErrors(v ->
                     v.withField("friends", () -> {
                         v.withField(0, () -> {
-                            v.addFieldError("name", "must not be null");
+                            v.addErrorAt("name", "must not be null");
                         });
                         v.withField(2, () -> {
-                            v.addFieldError("name", "must not be null");
+                            v.addErrorAt("name", "must not be null");
                         });
                     })
                 )
@@ -158,10 +158,10 @@ public class CollectionValidationsTest {
                 createValidationErrors(v ->
                     v.withField("friends", () -> {
                         v.withField(0, () -> {
-                                v.addRootError("must not be null");
+                                v.addError("must not be null");
                         });
                         v.withField(1, () -> {
-                                v.addFieldError("name", "must not be null");
+                                v.addErrorAt("name", "must not be null");
                         });
                     })
                 )
@@ -176,31 +176,31 @@ public class CollectionValidationsTest {
         @Test
         void nullScores_hasFieldError() {
             assertThat(validator.validate(new NestedIterableRecord(null)))
-                    .isEqualTo(ValidationErrors.ofField("scores", "must not be empty"));
+                    .isEqualTo(ValidationErrors.at("scores", "must not be empty"));
         }
 
         @Test
         void emptyScores_noHasFieldError() {
             assertThat(validator.validate(new NestedIterableRecord(List.of())))
-                    .isEqualTo(ValidationErrors.ofField("scores", "must not be empty"));
+                    .isEqualTo(ValidationErrors.at("scores", "must not be empty"));
         }
 
         @Test
         void emptyInnerList_hasFieldError() {
             assertThat(validator.validate(new NestedIterableRecord(List.of(List.of()))))
-                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("scores", 0), "must not be empty"));
+                    .isEqualTo(ValidationErrors.at(FieldKey.of("scores", 0), "must not be empty"));
         }
 
         @Test
         void nullInnerList_hasFieldError() {
             assertThat(validator.validate(new NestedIterableRecord(Collections.singletonList(null))))
-                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("scores", 0), "must not be empty"));
+                    .isEqualTo(ValidationErrors.at(FieldKey.of("scores", 0), "must not be empty"));
         }
 
         @Test
         void nullItemInInnerList_hasFieldError() {
             assertThat(validator.validate(new NestedIterableRecord(List.of(Collections.singletonList(null)))))
-                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("scores", 0, 0), "must not be null"));
+                    .isEqualTo(ValidationErrors.at(FieldKey.of("scores", 0, 0), "must not be null"));
         }
 
         @Test
@@ -218,11 +218,11 @@ public class CollectionValidationsTest {
                     createValidationErrors(v ->
                         v.withField("scores", () -> {
                             v.withField(0, () -> {
-                                    v.addFieldError(0, "must not be null");
-                                    v.addFieldError(1, "must not be null");
+                                    v.addErrorAt(0, "must not be null");
+                                    v.addErrorAt(1, "must not be null");
                             });
                             v.withField(1, () -> {
-                                    v.addRootError("must not be empty");
+                                    v.addError("must not be empty");
                             });
                         })
                     )
@@ -237,13 +237,13 @@ public class CollectionValidationsTest {
         @Test
         void nullTags_hasFieldError() {
             assertThat(validator.validate(new PrimitiveMapRecord(null)))
-                    .isEqualTo(ValidationErrors.ofField("tags", "must not be empty"));
+                    .isEqualTo(ValidationErrors.at("tags", "must not be empty"));
         }
 
         @Test
         void emptyTags_hasFieldError() {
             assertThat(validator.validate(new PrimitiveMapRecord(Map.of())))
-                    .isEqualTo(ValidationErrors.ofField("tags", "must not be empty"));
+                    .isEqualTo(ValidationErrors.at("tags", "must not be empty"));
         }
 
         @Test
@@ -255,19 +255,19 @@ public class CollectionValidationsTest {
         @Test
         void nullKey_hasFieldError() {
             assertThat(validator.validate(new PrimitiveMapRecord(Collections.singletonMap(null, "value"))))
-                    .isEqualTo(ValidationErrors.ofField("tags", "must not be null"));
+                    .isEqualTo(ValidationErrors.at("tags", "must not be null"));
         }
 
         @Test
         void nullValue_hasFieldError() {
             assertThat(validator.validate(new PrimitiveMapRecord(Collections.singletonMap("key", null))))
-                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("tags", "key"), "must not be null"));
+                    .isEqualTo(ValidationErrors.at(FieldKey.of("tags", "key"), "must not be null"));
         }
 
         @Test
         void nullKeyStopsValueValidation() {
             assertThat(validator.validate(new PrimitiveMapRecord(Collections.singletonMap(null, null))))
-                    .isEqualTo(ValidationErrors.ofField("tags", "must not be null"));
+                    .isEqualTo(ValidationErrors.at("tags", "must not be null"));
         }
 
         @Test
@@ -281,8 +281,8 @@ public class CollectionValidationsTest {
                     .isEqualTo(
                             createValidationErrors(v ->
                                     v.withField("tags", () -> {
-                                        v.withField("a", () -> v.addRootError("must not be null"));
-                                        v.withField("c", () -> v.addRootError("must not be null"));
+                                        v.withField("a", () -> v.addError("must not be null"));
+                                        v.withField("c", () -> v.addError("must not be null"));
                                     })
                             )
                     );
@@ -310,31 +310,31 @@ public class CollectionValidationsTest {
         @Test
         void nullOuterKey_hasFieldError() {
             assertThat(validator.validate(new NestedMapRecord(Collections.singletonMap(null, Map.of()))))
-                    .isEqualTo(ValidationErrors.ofField("scores", "must not be null"));
+                    .isEqualTo(ValidationErrors.at("scores", "must not be null"));
         }
 
         @Test
         void nullOuterValue_hasFieldError() {
             assertThat(validator.validate(new NestedMapRecord(Collections.singletonMap("a", null))))
-                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("scores", "a"), "must not be empty"));
+                    .isEqualTo(ValidationErrors.at(FieldKey.of("scores", "a"), "must not be empty"));
         }
 
         @Test
         void emptyInnerMap_hasFieldError() {
             assertThat(validator.validate(new NestedMapRecord(Map.of("a", Map.of()))))
-                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("scores", "a"), "must not be empty"));
+                    .isEqualTo(ValidationErrors.at(FieldKey.of("scores", "a"), "must not be empty"));
         }
 
         @Test
         void nullInnerKey_hasFieldError() {
             assertThat(validator.validate(new NestedMapRecord(Map.of("a", Collections.singletonMap(null, 1)))))
-                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("scores", "a"), "must not be null"));
+                    .isEqualTo(ValidationErrors.at(FieldKey.of("scores", "a"), "must not be null"));
         }
 
         @Test
         void nullInnerValue_hasFieldError() {
             assertThat(validator.validate(new NestedMapRecord(Map.of("a", Collections.singletonMap("b", null)))))
-                    .isEqualTo(ValidationErrors.ofField(FieldKey.of("scores", "a", "b"), "must not be null"));
+                    .isEqualTo(ValidationErrors.at(FieldKey.of("scores", "a", "b"), "must not be null"));
         }
 
         @Test
@@ -346,7 +346,7 @@ public class CollectionValidationsTest {
         @Test
         void nullOuterKeyStopsInnerValidation() {
             assertThat(validator.validate(new NestedMapRecord(Collections.singletonMap(null, null))))
-                    .isEqualTo(ValidationErrors.ofField("scores", "must not be null"));
+                    .isEqualTo(ValidationErrors.at("scores", "must not be null"));
         }
 
         @Test
@@ -360,9 +360,9 @@ public class CollectionValidationsTest {
                     .isEqualTo(
                             createValidationErrors(v ->
                                     v.withField("scores", () -> {
-                                        v.withField("a", () -> v.addRootError("must not be null"));
-                                        v.withField("b", () -> v.withField("x", () -> v.addRootError("must not be null")));
-                                        v.withField("c", () -> v.addRootError("must not be empty"));
+                                        v.withField("a", () -> v.addError("must not be null"));
+                                        v.withField("b", () -> v.withField("x", () -> v.addError("must not be null")));
+                                        v.withField("c", () -> v.addError("must not be empty"));
                                     })
                             )
                     );

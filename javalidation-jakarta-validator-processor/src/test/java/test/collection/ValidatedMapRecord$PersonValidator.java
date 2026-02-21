@@ -13,7 +13,7 @@ public class ValidatedMapRecord$PersonValidator implements Validator<ValidatedMa
         validation.withField("name", () -> {
             var name = root.name();
             if (name == null) {
-                validation.addRootError("must not be null");
+                validation.addError("must not be null");
                 return;
             }
         });

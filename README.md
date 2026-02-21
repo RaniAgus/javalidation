@@ -15,7 +15,7 @@ fully i18n-compatible `Result<T>` with accumulated `ValidationErrors`.
 
 **Type Safety & Composition:**
 - **Type-safe error handling**: `Result<T>` sealed type (`Ok`/`Err`) ensures exhaustive handling at compile-time without `ClassCastException` risk
-- **Rich functional API**: `map`, `flatMap`, `filter`, `fold`, and applicative combiners for composing validations
+- **Rich functional API**: `map`, `flatMap`, `ensure`, `fold`, and applicative combiners for composing validations
 - **Nested validation**: Prefix support for validating hierarchical data structures
 
 **Integrations & i18n:**
@@ -111,9 +111,9 @@ import io.github.raniagus.javalidation.*;
 record Person(String name, int age, String email) {}
 
 // Validate multiple fields and accumulate ALL errors
-Result<Person> result = validateName(name).withPrefix("name")
-    .and(validateAge(age).withPrefix("age"))
-    .and(validateEmail(email).withPrefix("email"))
+Result<Person> result = validateName(name)
+    .and(validateAge(age))
+    .and(validateEmail(email))
     .combine(Person::new);
 
 // Handle result with pattern matching
@@ -128,19 +128,19 @@ Person validPerson = result.getOrThrow();
 // Individual field validators
 static Result<String> validateName(String name) {
     return Result.ok(name)
-        .filter(n -> n != null && !n.isEmpty(), "Name is required")
-        .filter(n -> n.length() >= 2, "Name must be at least {0} characters", 2);
+        .ensureAt(n -> n != null && !n.isEmpty(), "name", "Name is required")
+        .ensureAt(n -> n.length() >= 2, "name", "Name must be at least {0} characters", 2);
 }
 
 static Result<Integer> validateAge(int age) {
     return Result.ok(age)
-        .filter(a -> a >= 18, "Must be {0} or older", 18)
-        .filter(a -> a <= 120, "Age must be less than {0}", 120);
+        .ensureAt(a -> a >= 18, "age", "Must be {0} or older", 18)
+        .ensureAt(a -> a <= 120, "age", "Age must be less than {0}", 120);
 }
 
 static Result<String> validateEmail(String email) {
     return Result.ok(email)
-        .filter(e -> e != null && e.contains("@"), "Invalid email format");
+        .ensureAt(e -> e != null && e.contains("@"), "email", "Invalid email format");
 }
 ```
 
@@ -158,7 +158,7 @@ static Result<String> validateEmail(String email) {
 ```java
 // Create results
 Result<String> success = Result.ok("value");
-Result<String> failure = Result.err("email", "Invalid format");
+Result<String> failure = Result.error("email", "Invalid format");
 
 // Extract values
 String value = success.getOrThrow();              // "value"
@@ -170,7 +170,7 @@ Result<Integer> age = Result.ok("25")
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
-            throw JavalidationException.ofRoot("Not a valid number: {0}", value);
+            throw JavalidationException.of("Not a valid number: {0}", value);
         }
     });  // Ok(25)
 
@@ -190,17 +190,17 @@ An immutable collection of validation errors with two categories:
 
 ```java
 // Root-level errors (not tied to specific fields)
-ValidationErrors rootError = ValidationErrors.ofRoot("User validation failed");
+ValidationErrors rootError = ValidationErrors.of("User validation failed");
 
 // Field-specific errors
-ValidationErrors fieldError = ValidationErrors.ofField("email", "Invalid email format");
+ValidationErrors fieldError = ValidationErrors.at("email", "Invalid email format");
 
 // With parameters
-ValidationErrors withParams = ValidationErrors.ofField("age", "Must be at least {0}", 18);
+ValidationErrors withParams = ValidationErrors.at("age", "Must be at least {0}", 18);
 
 // Multiple errors
-ValidationErrors errors = ValidationErrors.ofField("email", "Invalid format")
-    .mergeWith(ValidationErrors.ofField("age", "Too young"));
+ValidationErrors errors = ValidationErrors.at("email", "Invalid format")
+    .mergeWith(ValidationErrors.at("age", "Too young"));
 ```
 
 ### Error Accumulation
@@ -255,47 +255,47 @@ This design enables **type-safe error accumulation for business validation** whi
 
 ## Common Patterns
 
-### Business Rules Validation
+### Functional Validation composition
 
 Use `Result<T>` and functional composition for pure validation without side effects:
 
 #### Simple POJO Validation
 
 ```java
-record Person(String name, int age, String email, String password) {}
+record Person(String name, int age, String email, String password, Address contactAddress) {}
 
-static Result<String> validateName(String name) {
-    return Result.ok(name)
-        .filter(n -> n != null && !n.isEmpty(), "Name is required")
-        .filter(n -> n.length() >= 2, "Name must be at least 2 characters")
-        .filter(n -> n.length() <= 50, "Name must not exceed 50 characters");
+static Result<String> validateName(String fieldName, String value) {
+    return Result.ok(value)
+        .ensureAt(n -> n != null && !n.isEmpty(), fieldName, "Name is required")
+        .ensureAt(n -> n.length() >= 2, fieldName, "Name must be at least 2 characters")
+        .ensureAt(n -> n.length() <= 50, fieldName, "Name must not exceed 50 characters");
 }
 
-static Result<Integer> validateAge(int age) {
-    return Result.ok(age)
-        .filter(a -> a >= 18, "Must be at least 18 years old")
-        .filter(a -> a <= 120, "Age cannot exceed 120");
+static Result<Integer> validateAge(String fieldName, int value) {
+    return Result.ok(value)
+        .ensureAt(a -> a >= 18, fieldName, "Must be at least 18 years old")
+        .ensureAt(a -> a <= 120, fieldName, "Age cannot exceed 120");
 }
 
-static Result<String> validateEmail(String email) {
-    return Result.ok(email)
-        .filter(e -> e != null && !e.isEmpty(), "Email is required")
-        .filter(e -> e.matches("^[^@]+@[^@]+\\.[^@]+$"), "Invalid email format");
+static Result<String> validateEmail(String fieldName, String value) {
+    return Result.ok(value)
+        .ensureAt(e -> e != null && !e.isEmpty(), fieldName, "Email is required")
+        .ensureAt(e -> e.matches("^[^@]+@[^@]+\\.[^@]+$"), fieldName, "Invalid email format");
 }
 
-static Result<String> validatePassword(String password) {
-    return Result.ok(password)
-        .filter(p -> p != null && p.length() >= 8, "Password must be at least 8 characters")
-        .filter(p -> p.matches(".*[A-Z].*"), "Password must contain uppercase letter")
-        .filter(p -> p.matches(".*[0-9].*"), "Password must contain a number");
+static Result<String> validatePassword(String fieldName, String value) {
+    return Result.ok(value)
+        .ensureAt(p -> p != null && p.length() >= 8, fieldName, "Password must be at least 8 characters")
+        .ensureAt(p -> p.matches(".*[A-Z].*"), fieldName, "Password must contain uppercase letter")
+        .ensureAt(p -> p.matches(".*[0-9].*"), fieldName, "Password must contain a number");
 }
 
 // Combine all validations
-static Result<Person> validatePerson(String name, int age, String email, String password) {
-    return validateName(name).withPrefix("name")
-        .and(validateAge(age).withPrefix("age"))
-        .and(validateEmail(email).withPrefix("email"))
-        .and(validatePassword(password).withPrefix("password"))
+static Result<Person> validatePerson(String name, int age, String email, String password, String street, String city, String zipCode) {
+    return validateName("name", name)
+        .and(validateAge("age", age))
+        .and(validateEmail("email", email))
+        .and(validatePassword("password", password))
         .combine(Person::new);
 }
 ```
@@ -305,28 +305,26 @@ static Result<Person> validatePerson(String name, int age, String email, String 
 Use `withPrefix()` to namespace errors for nested structures:
 
 ```java
-record Address(String street, String city, String zipCode) {}
-record Person(String name, Address contactAddress) {}
+record Message(Person from, Person to, String text) {}
 
-static Result<Address> validateAddress(String street, String city, String zipCode) {
-    return validateStreet(street)
-        .and(validateCity(city))
-        .and(validateZipCode(zipCode))
-        .combine((s, c, z) -> new Address(s, c, z)); // Combine up to 10 results!
+static Result<Message> validateMessage(Result<Person> from, Result<Person> to, String text) {
+    return from.withPrefix("from")
+        .and(to.withPrefix("to"))
+        .and(validateText("text", text))
+        .combine(Message::new);
 }
 
-static Result<Person> validatePersonWithAddress(String name, String street, String city, String zipCode) {
-    return validateName(name)
-        .and(validateAddress(street, city, zipCode).withPrefix("contactAddress"))
-        .combine((n, a) -> new Person(n, a));
-}
-
-// Errors become: "contactAddress.street", "contactAddress.city", "contactAddress.zipCode"
+// Allows reusing the same validation logic for different fields with different names:
+Result<Message> result = validateMessage(
+        validatePerson(fromName, fromAge, fromEmail),
+        validatePerson(toName, toAge, toEmail),
+        messageText
+);
 ```
 
 #### Collection Validation
 
-Use `ResultCollector.toResultList()` with `withIndex()` for automatic indexing:
+Use `ResultCollector.toResultList()` with `withIndex()` for automatic indexing and `withPrefix()` for nested collections:
 
 ```java
 import static io.github.raniagus.javalidation.ResultCollector.*;
@@ -343,9 +341,9 @@ static Result<Item> validateItem(Item item) {
 // Validate all items in a collection
 static Result<List<Item>> validateItems(List<Item> items) {
     return Result.ok(items)
-            .filter(i -> i != null && !i.isEmpty(), "Order must contain at least one item")
+            .ensure(i -> i != null && !i.isEmpty(), "Order must contain at least one item")
             .flatMap(i -> i.stream()
-                    .map(YourClass::validateItem)
+                    .map(this::validateItem)
                     .collect(withIndex(toResultList()))
             );
 }
@@ -354,9 +352,9 @@ static Result<List<Item>> validateItems(List<Item> items) {
 // For nested collections with a custom prefix:
 static Result<Order> validateOrder(Order order) {
     Result<List<Item>> itemsResult = Result.ok(order.items())
-            .filterField(i -> i != null && !i.isEmpty(), "items", "Order must contain a list of items")
+            .ensureAt(i -> i != null && !i.isEmpty(), "items", "Order must contain a list of items")
             .flatMap(i -> i.stream()
-                .map(YourClass::validateItem)
+                .map(this::validateItem)
                 .collect(withPrefix("items", withIndex(toResultList())))
             );
 
@@ -365,9 +363,9 @@ static Result<Order> validateOrder(Order order) {
 // Errors become: "items[0].name", "items[1].price", "items[2].name"
 ```
 
-### Internal Checks
+### Imperative Checks
 
-Use `JavalidationException` for imperative validation with side effects (database queries, external API calls):
+Use `JavalidationException` for imperative validation where you want to stop the execution immediately:
 
 #### Throwing Validation Errors
 
@@ -375,7 +373,7 @@ Use `JavalidationException` for imperative validation with side effects (databas
 public User findUserByEmail(String email) {
     User user = database.findByEmail(email);
     if (user == null) {
-        throw JavalidationException.ofField("email", "User not found");
+        throw JavalidationException.at("email", "User not found");
     }
     return user;
 }
@@ -383,7 +381,7 @@ public User findUserByEmail(String email) {
 public void checkInventory(String productId, int quantity) {
     int available = inventoryService.getAvailable(productId);
     if (quantity > available) {
-        throw JavalidationException.ofField("quantity", 
+        throw JavalidationException.at("quantity", 
             "Only {0} units available", available);
     }
 }
@@ -399,9 +397,9 @@ public void processOrder(Order order) {
 }
 ```
 
-#### Stream Collections with Imperative Validation
+#### Stream Collections
 
-Use `toListOrThrow()` to validate collections imperatively:
+Use `toListOrThrow()` to collect stream results imperatively:
 
 ```java
 import static io.github.raniagus.javalidation.ResultCollector.*;
@@ -415,11 +413,11 @@ public List<User> validateAndProcessUsers(List<User> users) {
 
 private User validateAndCreateUser(User user) {
     if (userRepository.existsByEmail(user.email())) {
-        throw JavalidationException.ofField("email", "Email already registered");
+        throw JavalidationException.at("email", "Email already registered");
     }
 
     if (!emailVerificationService.verify(user.email())) {
-        throw JavalidationException.ofField("email", "Email could not be verified");
+        throw JavalidationException.at("email", "Email could not be verified");
     }
 
     return database.create(user);
@@ -430,7 +428,7 @@ private User validateAndCreateUser(User user) {
 // "users[2].email": ["Email already registered"]
 ```
 
-For more complex scenarios with imperative state validation that require not throwing an exception on the first error,
+For more complex scenarios with imperative state validation that ensure not throwing an exception on the first error,
 please check the [Advanced Patterns](#advanced-patterns) section.
 
 ## Full Example
@@ -440,8 +438,7 @@ Combining business rules validation and internal checks in a REST API:
 ```java
 // Controller
 public void registerUser(Context ctx) {
-    String contentType = ctx.getHttpHeader("Content-Type");
-    if (contentType == null || !contentType.startsWith("application/json")) {
+    if (!startsWith(ctx.getHeader("Content-Type"), "application/json")) {
         // 415 Unsupported Media Type: Request body is not JSON
         return ctx.status(415).body("Invalid Content-Type");
     }
@@ -474,13 +471,13 @@ public void registerUser(Context ctx) {
 // Business rules validator
 public class UserValidator {
     public Result<User> validateRegistrationRequest(UserRegistrationRequest request) {
-        return validateName(request.name())
-            .and(validateAge(request.age()))
-            .and(validateEmail(request.email()))
-            .and(validatePassword(request.password()))
+        return validateName("name", request.name())
+            .and(validateAge("age", request.age()))
+            .and(validateEmail("email", request.email()))
+            .and(validatePassword("password", request.password()))
             .combine(User::new);
     }
-    
+
     // validateName(), validateAge(), etc. from Business Rules section
 }
 
@@ -489,12 +486,12 @@ public class UserService {
     public User createUser(User user) {
         // Check if email already exists (database query)
         if (userRepository.existsByEmail(user.getEmail())) {
-            throw JavalidationException.ofField("email", "Email already registered");
+            throw JavalidationException.at("email", "Email already registered");
         }
 
         // Check external validation service
         if (!emailVerificationService.verify(user.getEmail())) {
-            throw JavalidationException.ofField("email", "Email could not be verified");
+            throw JavalidationException.at("email", "Email could not be verified");
         }
 
         return userRepository.save(user);
@@ -583,7 +580,7 @@ JsonMapper mapper = JsonMapper.builder()
 Result<User> success = Result.ok(new User("Alice", 30));
 // {"ok": true, "value": {"name": "Alice", "age": 30}}
 
-Result<User> failure = Result.err("email", "Invalid format");
+Result<User> failure = Result.error("email", "Invalid format");
 // {"ok": false, "errors": {"fieldErrors": {"email": ["Invalid format"]}}}
 ```
 
@@ -617,9 +614,9 @@ Use message keys in validation:
 ```java
 Result<User> validateUser(String name, String age) {
     return Result.ok(name)
-            .filterField(n -> n != null && !n.isEmpty(), "name", "user.name.required")
+            .ensureAt(n -> n != null && !n.isEmpty(), "name", "user.name.required")
             .and(Result.ok(age)
-                    .filterField(a -> a >= 18, "age", "user.age.minimum", 18))
+                    .ensureAt(a -> a >= 18, "age", "user.age.minimum", 18))
             .combine(User::new);
 }
 ```
@@ -673,7 +670,7 @@ public class UserDtoValidator implements Validator {
         validation.withField("name", () -> {
             var name = root.name();
             if (name == null || name.isBlank()) {
-                validation.addRootError("must not be blank");
+                validation.addError("must not be blank");
                 return;
             }
         });
@@ -681,18 +678,18 @@ public class UserDtoValidator implements Validator {
             var email = root.email();
             if (email == null) return;
             if (!email.toString().matches("^[^@]+@[^@]+\\.[^@]+$")) {
-                validation.addRootError("must be a well-formed email address");
+                validation.addError("must be a well-formed email address");
             }
         });
         validation.withField("orders", () -> {
             var orders = root.orders();
             if (orders == null || orders.isEmpty()) {
-                validation.addRootError("must not be empty");
+                validation.addError("must not be empty");
                 return;
             }
             validation.withEach(orders, ordersItem -> {
                 if (ordersItem == null) {
-                    validation.addRootError("must not be null");
+                    validation.addError("must not be null");
                     return;
                 }
                 ordersItemValidator.validate(validation, ordersItem);
@@ -701,21 +698,21 @@ public class UserDtoValidator implements Validator {
         validation.withField("inventory", () -> {
             var inventory = root.inventory();
             if (inventory == null) {
-                validation.addRootError("must not be null");
+                validation.addError("must not be null");
                 return;
             }
             inventory.forEach((inventoryKey, inventoryValue) -> {
                 if (inventoryKey == null || inventoryKey.isBlank()) {
-                    validation.addRootError("must not be blank");
+                    validation.addError("must not be blank");
                     return;
                 }
                 validation.withField(inventoryKey, () -> {
                     if (inventoryValue == null) {
-                        validation.addRootError("must not be null");
+                        validation.addError("must not be null");
                         return;
                     }
                     if (!(inventoryValue >= 0)) {
-                        validation.addRootError("must be greater than or equal to {0}", 0);
+                        validation.addError("must be greater than or equal to {0}", 0);
                     }
                 });
             });
@@ -731,17 +728,16 @@ public class UserDtoValidator implements Validator {
 > - Constraints on `Map` keys are validated, but using a `@Validate`-annotated record as a key results in undefined
 > field error namespacing behavior.
 > - Groups are not supported yet.
-
-Unlike Jakarta Bean Validation, constraints on type arguments are validated automatically without needing `@Valid`. To
-opt out of validation for a specific field or type argument, use `@SkipValidate`:
-```java
-@Validate
-public record UserDto(
-        @NotBlank String name,
-        @SkipValidate String internalToken,         // field is not validated
-        @NotEmpty List<@SkipValidate Order> orders  // field is validated, items are not
-) {}
-```
+> - Unlike Jakarta Bean Validation, constraints on type arguments are validated automatically without needing `@Valid`. To
+> opt out of validation for a specific field or type argument, use `@SkipValidate`:
+> ```java
+> @Validate
+> public record UserDto(
+>         @NotBlank String name,
+>         @SkipValidate String internalToken,         // field is not validated
+>         @NotEmpty List<@SkipValidate Order> orders  // field is validated, items are not
+> ) {}
+> ```
 
 #### Full Example
 
@@ -822,7 +818,7 @@ public void validateComplexOrder(Order order) {
 
     // Basic root checks
     if (order == null) {
-        validation.addRootError("Order is required");
+        validation.addError("Order is required");
     }
 
     // Field validation by calling utility method
@@ -833,7 +829,7 @@ public void validateComplexOrder(Order order) {
     // Additional cross-field validation
     double total = order.items().stream().mapToDouble(Item::price).sum();
     if (total > 10000 && order.paymentMethod().equals(PaymentMethod.CASH)) {
-        validation.addFieldError("paymentMethod", 
+        validation.addErrorAt("paymentMethod", 
             "Cash payments limited to {0} for orders over {1}", 1000, 10000);
     }
 
@@ -844,13 +840,13 @@ public void validateComplexOrder(Order order) {
 public void validateItemsList(Validation validation, List<Item> items) {
     // Basic field checks
     if (items.isEmpty()) {
-        validation.addRootError("Order must contain at least one item"); // "items": ["Order must contain at least one item"]
+        validation.addError("Order must contain at least one item"); // "items": ["Order must contain at least one item"]
     }
 
     // Validate items and accumulate errors with index
     validation.withEach(items, (item) -> {
         if (item == null) {
-            validation.addRootError("Item is required"); // "items[0]", "items[1]", ...
+            validation.addError("Item is required"); // "items[0]", "items[1]", ...
         }
     });
 
@@ -865,24 +861,24 @@ public void validateItemsList(Validation validation, List<Item> items) {
 
 ### Result<T>
 
-| Method                                              | Description                               |
-|-----------------------------------------------------|-------------------------------------------|
-| `of(Supplier<T>)`/ `of(Runnable)`                   | Wrap supplier or runnable in try-catch    |
-| `ok(T)`                                             | Create successful result                  |
-| `err(String, Object...)`                            | Create failed result with root error      |
-| `err(String, String, Object...)`                    | Create failed result with field error     |
-| `err(ValidationErrors)`                             | Create failed result from existing errors |
-| `map(Function)`                                     | Transform success value                   |
-| `flatMap(Function)`                                 | Chain validations                         |
-| `filter(Predicate, String, Object...)`              | Conditional validation                    |
-| `filterField(Predicate, String, String, Object...)` | Conditional validation (for fields)       |
-| `check(BiConsumer)`                                 | Add imperative validation logic           |
-| `and(Result)`                                       | Start applicative combiner chain          |
-| `or(Result)` / `or(Supplier)`                       | Provide fallback                          |
-| `fold(Function, Function)`                          | Handle both cases                         |
-| `getOrThrow()`                                      | Extract value or throw                    |
-| `getOrElse(T)` / `getOrElse(Supplier)`              | Extract value or default                  |
-| `withPrefix(String)`                                | Namespace errors for nested objects       |
+| Method                                           | Description                               |
+|--------------------------------------------------|-------------------------------------------|
+| `of(Supplier<T>)`/ `of(Runnable)`                | Wrap supplier or runnable in try-catch    |
+| `ok(T)`                                          | Create successful result                  |
+| `error(String, Object...)`                       | Create failed result with root error      |
+| `errorAt(String, String, Object...)`             | Create failed result with field error     |
+| `error(ValidationErrors)`                        | Create failed result from existing errors |
+| `map(Function)`                                  | Transform success value                   |
+| `flatMap(Function)`                              | Chain validations                         |
+| `ensure(Predicate, String, Object...)`           | Conditional validation                    |
+| `ensureAt(Predicate, Object, String, Object...)` | Conditional validation (for fields)       |
+| `check(BiConsumer)`                              | Add imperative validation logic           |
+| `and(Result)`                                    | Start applicative combiner chain          |
+| `or(Result)` / `or(Supplier)`                    | Provide fallback                          |
+| `fold(Function, Function)`                       | Handle both cases                         |
+| `getOrThrow()`                                   | Extract value or throw                    |
+| `getOrElse(T)` / `getOrElse(Supplier)`           | Extract value or default                  |
+| `withPrefix(String)`                             | Namespace errors for nested objects       |
 
 ### ValidationErrors
 
@@ -901,8 +897,8 @@ public void validateItemsList(Validation validation, List<Item> items) {
 | Method                                      | Description                                                |
 |---------------------------------------------|------------------------------------------------------------|
 | `create()`                                  | Create new empty validation                                |
-| `addRootError(String, Object...)`           | Add root-level error                                       |
-| `addFieldError(Object, String, Object...)`  | Add field-specific error                                   |
+| `addError(String, Object...)`           | Add root-level error                                       |
+| `addErrorAt(Object, String, Object...)`  | Add field-specific error                                   |
 | `addAll(ValidationErrors)`                  | Merge errors                                               |
 | `addAll(ValidationErrors, Object[])`        | Merge errors with prefix                                   |
 | `withField(Object, Runnable)`               | Scope validation under a field prefix                      |
@@ -928,8 +924,8 @@ public void validateItemsList(Validation validation, List<Item> items) {
 
 | Method                                      | Description                       |
 |---------------------------------------------|-----------------------------------|
-| `ofRoot(String, Object...)`                 | Create with root error            |
-| `ofField(String, String, Object...)`        | Create with field error           |
+| `of(String, Object...)`                 | Create with root error            |
+| `at(String, String, Object...)`        | Create with field error           |
 | `of(ValidationErrors)`                      | Create from ValidationErrors      |
 | `getErrors()`                               | Get accumulated errors            |
 

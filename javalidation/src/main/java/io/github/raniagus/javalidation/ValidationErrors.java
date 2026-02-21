@@ -22,16 +22,16 @@ import java.util.stream.Collectors;
  * <b>Creating validation errors:</b>
  * <pre>{@code
  * // Single root error
- * ValidationErrors errors = ValidationErrors.ofRoot("Invalid input");
+ * ValidationErrors errors = ValidationErrors.of("Invalid input");
  *
  * // Single field error
- * ValidationErrors errors = ValidationErrors.ofField("email", "Invalid email format");
+ * ValidationErrors errors = ValidationErrors.at("email", "Invalid email format");
  *
  * // Build complex errors
  * ValidationErrors errors = Validation.create()
- *     .addRootError("User validation failed")
- *     .addFieldError("name", "Name is required")
- *     .addFieldError("age", "Must be at least {0}", 18)
+ *     .addError("User validation failed")
+ *     .addErrorAt("name", "Name is required")
+ *     .addErrorAt("age", "Must be at least {0}", 18)
  *     .finish();
  * }</pre>
  * <p>
@@ -90,14 +90,14 @@ public record ValidationErrors(
      * <p>
      * The message supports MessageFormat placeholders ({0}, {1}, etc.):
      * <pre>{@code
-     * ValidationErrors errors = ValidationErrors.ofRoot("User must be at least {0} years old", 18);
+     * ValidationErrors errors = ValidationErrors.of("User must be at least {0} years old", 18);
      * }</pre>
      *
      * @param message the error message template
      * @param args optional arguments for the message template
      * @return validation errors containing the single root error
      */
-    public static ValidationErrors ofRoot(String message, Object... args) {
+    public static ValidationErrors of(String message, Object... args) {
         return new ValidationErrors(List.of(new TemplateString(message, args)), Map.of());
     }
 
@@ -106,16 +106,16 @@ public record ValidationErrors(
      * <p>
      * The message supports MessageFormat placeholders:
      * <pre>{@code
-     * ValidationErrors errors = ValidationErrors.ofField("age", "Must be at least {0}", 18);
+     * ValidationErrors errors = ValidationErrors.at("age", "Must be at least {0}", 18);
      * }</pre>
      *
-     * @param field the field name
+     * @param field the field name or identifier
      * @param message the error message template
      * @param args optional arguments for the message template
      * @return validation errors containing the single field error
      */
-    public static ValidationErrors ofField(String field, String message, Object... args) {
-        return ofField(FieldKey.of(field), message, args);
+    public static ValidationErrors at(Object field, String message, Object... args) {
+        return at(FieldKey.of(field), message, args);
     }
 
     /**
@@ -124,7 +124,7 @@ public record ValidationErrors(
      * <p>
      * The message supports MessageFormat placeholders:
      * <pre>{@code
-     * ValidationErrors errors = ValidationErrors.ofField(FieldKey.of("age"), "Must be at least {0}", 18);
+     * ValidationErrors errors = ValidationErrors.at(FieldKey.of("age"), "Must be at least {0}", 18);
      * }</pre>
      *
      * @param field the field key
@@ -132,7 +132,7 @@ public record ValidationErrors(
      * @param args optional arguments for the message template
      * @return validation errors containing the single field error
      */
-    public static ValidationErrors ofField(FieldKey field, String message, Object... args) {
+    public static ValidationErrors at(FieldKey field, String message, Object... args) {
         return new ValidationErrors(List.of(), Map.of(field, List.of(new TemplateString(message, args))));
     }
 

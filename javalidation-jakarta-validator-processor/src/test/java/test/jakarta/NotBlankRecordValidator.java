@@ -13,7 +13,7 @@ public class NotBlankRecordValidator implements Validator<NotBlankRecord> {
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null || value.isBlank()) {
-                validation.addRootError("must not be blank");
+                validation.addError("must not be blank");
                 return;
             }
         });

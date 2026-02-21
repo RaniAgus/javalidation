@@ -13,7 +13,7 @@ public class PositivePrimitiveRecordValidator implements Validator<PositivePrimi
         validation.withField("value", () -> {
             var value = root.value();
             if (!(value > 0)) {
-                validation.addRootError("must be greater than 0");
+                validation.addError("must be greater than 0");
             }
         });
     }

@@ -13,7 +13,7 @@ public class NotEmptyRecordValidator implements Validator<NotEmptyRecord> {
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null || value.isEmpty()) {
-                validation.addRootError("must not be empty");
+                validation.addError("must not be empty");
                 return;
             }
         });

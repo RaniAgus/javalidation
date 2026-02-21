@@ -13,11 +13,11 @@ public class NotNullAndMinRecordValidator implements Validator<NotNullAndMinReco
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) {
-                validation.addRootError("must not be null");
+                validation.addError("must not be null");
                 return;
             }
             if (!(value >= 10)) {
-                validation.addRootError("must be greater than or equal to {0}", 10);
+                validation.addError("must be greater than or equal to {0}", 10);
             }
         });
     }

@@ -16,7 +16,7 @@ public class DigitsRecordValidator implements Validator<DigitsRecord> {
             if (value == null) return;
             var value_bd = new BigDecimal(value.toString()).stripTrailingZeros();
             if (!(value_bd.precision() - value_bd.scale() <= 5 && Math.max(value_bd.scale(), 0) <= 2)) {
-                validation.addRootError("numeric value out of bounds ({0} digits, {1} decimal digits expected)", 5, 2);
+                validation.addError("numeric value out of bounds ({0} digits, {1} decimal digits expected)", 5, 2);
             }
         });
     }

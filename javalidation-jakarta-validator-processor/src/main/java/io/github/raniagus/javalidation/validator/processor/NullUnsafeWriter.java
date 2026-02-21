@@ -20,7 +20,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
                     """.formatted(out.getVariable(), accessor, min, max));
             out.incrementIndentationLevel();
             out.write("""
-                    validation.addRootError("%s", %d, %d);\
+                    validation.addError("%s", %d, %d);\
                     """.formatted(message, min, max));
             out.decrementIndentationLevel();
             out.write("}");
@@ -35,7 +35,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
                     """.formatted(out.getVariable(), value));
             out.incrementIndentationLevel();
             out.write("""
-                    validation.addRootError("%s");\
+                    validation.addError("%s");\
                     """.formatted(message));
             out.decrementIndentationLevel();
             out.write("}");
@@ -72,7 +72,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
                     """.formatted(comparison));
             out.incrementIndentationLevel();
             out.write("""
-                    validation.addRootError("%s"%s);\
+                    validation.addError("%s"%s);\
                     """.formatted(message, formatArg()));
             out.decrementIndentationLevel();
             out.write("}");
@@ -119,7 +119,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
                 """.formatted(normalized(out.getVariable()), accessor, now(), result));
             out.incrementIndentationLevel();
             out.write("""
-                validation.addRootError("%s");\
+                validation.addError("%s");\
                 """.formatted(message));
             out.decrementIndentationLevel();
             out.write("}");
@@ -162,7 +162,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
                     """.formatted(out.getVariable(), regex));
             out.incrementIndentationLevel();
             out.write("""
-                    validation.addRootError("%s"%s);\
+                    validation.addError("%s"%s);\
                     """.formatted(message, formatArgs()));
             out.decrementIndentationLevel();
             out.write("}");
@@ -211,7 +211,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
             }
             out.incrementIndentationLevel();
             out.write("""
-                validation.addRootError("%s", %s, %s);\
+                validation.addError("%s", %s, %s);\
                 """.formatted(message, integer, fraction));
             out.decrementIndentationLevel();
             out.write("}");

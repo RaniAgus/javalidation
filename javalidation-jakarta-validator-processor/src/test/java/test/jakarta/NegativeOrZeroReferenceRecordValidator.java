@@ -14,7 +14,7 @@ public class NegativeOrZeroReferenceRecordValidator implements Validator<Negativ
             var value = root.value();
             if (value == null) return;
             if (!(value <= 0)) {
-                validation.addRootError("must be less than or equal to 0");
+                validation.addError("must be less than or equal to 0");
             }
         });
     }

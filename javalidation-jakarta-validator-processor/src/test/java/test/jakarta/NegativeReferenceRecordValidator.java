@@ -14,7 +14,7 @@ public class NegativeReferenceRecordValidator implements Validator<NegativeRefer
             var value = root.value();
             if (value == null) return;
             if (!(value < 0)) {
-                validation.addRootError("must be less than 0");
+                validation.addError("must be less than 0");
             }
         });
     }

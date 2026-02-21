@@ -46,8 +46,8 @@ class ListResultCollectorTest {
         @Test
         void givenFailingResults_whenToListOrThrow_thenThrowsExceptionWithAllErrors() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("field", "error");
-            Result<String> result3 = Result.err("root");
+            Result<String> result2 = Result.errorAt("field", "error");
+            Result<String> result3 = Result.error("root");
 
             Stream<Result<String>> stream = Stream.of(result1, result2, result3);
 
@@ -63,8 +63,8 @@ class ListResultCollectorTest {
         @Test
         void givenFailingResults_whenToListOrThrowWithCapacity_thenThrowsExceptionWithAllErrors() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("field", "error");
-            Result<String> result3 = Result.err("root");
+            Result<String> result2 = Result.errorAt("field", "error");
+            Result<String> result3 = Result.error("root");
 
             Stream<Result<String>> stream = Stream.of(result1, result2, result3);
 
@@ -79,8 +79,8 @@ class ListResultCollectorTest {
 
         @Test
         void givenOnlyFailingResults_whenToListOrThrow_thenThrowsException() {
-            Result<String> result1 = Result.err("field1", "error1");
-            Result<String> result2 = Result.err("field2", "error2");
+            Result<String> result1 = Result.errorAt("field1", "error1");
+            Result<String> result2 = Result.errorAt("field2", "error2");
 
             Stream<Result<String>> stream = Stream.of(result1, result2);
 
@@ -127,8 +127,8 @@ class ListResultCollectorTest {
         @Test
         void givenFailingResults_whenToResultList_thenReturnsErrWithAllErrors() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("field", "error");
-            Result<String> result3 = Result.err("root");
+            Result<String> result2 = Result.errorAt("field", "error");
+            Result<String> result3 = Result.error("root");
 
             var result = Stream.of(result1, result2, result3)
                     .collect(toResultList());
@@ -145,8 +145,8 @@ class ListResultCollectorTest {
         @Test
         void givenFailingResults_whenToResultListWithCapacity_thenReturnsErrWithAllErrors() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("field", "error");
-            Result<String> result3 = Result.err("root");
+            Result<String> result2 = Result.errorAt("field", "error");
+            Result<String> result3 = Result.error("root");
 
             var result = Stream.of(result1, result2, result3)
                     .collect(toResultList(3));
@@ -162,8 +162,8 @@ class ListResultCollectorTest {
 
         @Test
         void givenOnlyFailingResults_whenToResultList_thenReturnsErrResult() {
-            Result<String> result1 = Result.err("field1", "error1");
-            Result<String> result2 = Result.err("field2", "error2");
+            Result<String> result1 = Result.errorAt("field1", "error1");
+            Result<String> result2 = Result.errorAt("field2", "error2");
 
             var result = Stream.of(result1, result2)
                     .collect(toResultList());
@@ -213,8 +213,8 @@ class ListResultCollectorTest {
         @Test
         void givenFailingResults_whenToPartitioned_thenReturnsValidValuesAndErrors() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("field", "error");
-            Result<String> result3 = Result.err("root");
+            Result<String> result2 = Result.errorAt("field", "error");
+            Result<String> result3 = Result.error("root");
 
             var partitioned = Stream.of(result1, result2, result3)
                     .collect(toPartitioned());
@@ -229,8 +229,8 @@ class ListResultCollectorTest {
         @Test
         void givenFailingResults_whenToPartitionedWithCapacity_thenReturnsValidValuesAndErrors() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("field", "error");
-            Result<String> result3 = Result.err("root");
+            Result<String> result2 = Result.errorAt("field", "error");
+            Result<String> result3 = Result.error("root");
 
             var partitioned = Stream.of(result1, result2, result3)
                     .collect(toPartitioned(3));
@@ -244,8 +244,8 @@ class ListResultCollectorTest {
 
         @Test
         void givenOnlyFailingResults_whenToPartitioned_thenReturnsEmptyListAndErrors() {
-            Result<String> result1 = Result.err("field1", "error1");
-            Result<String> result2 = Result.err("field2", "error2");
+            Result<String> result1 = Result.errorAt("field1", "error1");
+            Result<String> result2 = Result.errorAt("field2", "error2");
 
             var partitioned = Stream.of(result1, result2)
                     .collect(toPartitioned());
@@ -263,9 +263,9 @@ class ListResultCollectorTest {
         @Test
         void givenMixedResults_whenToPartitioned_thenReturnsBothValidValuesAndErrors() {
             Result<String> result1 = Result.ok("value1");
-            Result<String> result2 = Result.err("field2", "error2");
+            Result<String> result2 = Result.errorAt("field2", "error2");
             Result<String> result3 = Result.ok("value3");
-            Result<String> result4 = Result.err("field4", "error4");
+            Result<String> result4 = Result.errorAt("field4", "error4");
 
             var partitioned = Stream.of(result1, result2, result3, result4)
                     .collect(toPartitioned());

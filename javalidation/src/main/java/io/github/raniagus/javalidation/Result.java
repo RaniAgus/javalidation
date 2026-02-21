@@ -53,7 +53,7 @@ import org.jspecify.annotations.Nullable;
  * Result<Integer> result = Result.ok(42);
  * int value = result.getOrThrow();  // 42
  *
- * Result<String> error = Result.err("Invalid input");
+ * Result<String> error = Result.error("Invalid input");
  * error.getOrThrow();  // throws JavalidationException
  * }</pre>
  * <p>
@@ -61,7 +61,7 @@ import org.jspecify.annotations.Nullable;
  * <pre>{@code
  * Result.ok(10)
  *     .map(x -> x * 2)                    // Ok(20)
- *     .filter(x -> x > 15, "Too small")   // Ok(20)
+ *     .ensure(x -> x > 15, "Too small")   // Ok(20)
  *     .flatMap(x -> validateAge(x))       // chains validation
  *     .fold(
  *         success -> "Valid: " + success,
@@ -112,7 +112,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * <p>
      * Example:
      * <pre>{@code
-     * Result<String> result = Result.err("Invalid input");
+     * Result<String> result = Result.error("Invalid input");
      * result.getOrThrow();  // throws JavalidationException
      * ValidationErrors errors = result.getErrors();  // get accumulated errors
      * }</pre>
@@ -134,8 +134,8 @@ public sealed interface Result<T extends @Nullable Object> {
      * Result<Integer> ok = Result.ok(42);
      * int value = ok.getOrThrow();  // 42
      *
-     * Result<Integer> err = Result.err("Invalid");
-     * err.getOrThrow();  // throws JavalidationException
+     * Result<Integer> error = Result.error("Invalid");
+     * error.getOrThrow();  // throws JavalidationException
      * }</pre>
      *
      * @return the success value if this is {@link Ok}
@@ -230,7 +230,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * <pre>{@code
      * Result<User> user = findUserInCache(id)
      *     .or(() -> findUserInDatabase(id))
-     *     .or(() -> Result.err("User not found"));
+     *     .or(() -> Result.error("User not found"));
      * }</pre>
      *
      * @param supplier supplies the fallback result (only called if this is {@link Err})
@@ -281,7 +281,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * Result<User> user = Result.ok(userId)
      *     .map(id -> findUserOrThrow(id));  // JavalidationException caught → Err
      *
-     * Result<Integer> error = Result.err("Invalid");
+     * Result<Integer> error = Result.error("Invalid");
      * Result<String> stillError = error.map(a -> "Age: " + a);  // Err(...)
      * }</pre>
      *
@@ -489,10 +489,10 @@ public sealed interface Result<T extends @Nullable Object> {
      * Result<Person> result = Result.ok(person)
      *     .check((p, v) -> {
      *         if (p.age() < 18) {
-     *             v.addFieldError("age", "Must be 18 or older");
+     *             v.addErrorAt("age", "Must be 18 or older");
      *         }
      *         if (p.name().length() < 2) {
-     *             v.addFieldError("name", "Name too short");
+     *             v.addErrorAt("name", "Name too short");
      *         }
      *     });
      * }</pre>
@@ -507,7 +507,7 @@ public sealed interface Result<T extends @Nullable Object> {
                 predicate.accept(value, validation);
                 yield validation.asResult(value);
             }
-            case Err<T> err -> err;
+            case Err<T> error -> error;
         };
     }
 
@@ -517,15 +517,15 @@ public sealed interface Result<T extends @Nullable Object> {
      * If this result is {@link Ok} and the predicate returns {@code false}, returns {@link Err} with
      * the given error message. Otherwise, preserves the current state.
      * <p>
-     * <b>Note on chaining:</b> Chaining multiple {@code filter()} calls creates a fail-fast pipeline
-     * where the first failed filter stops execution. To accumulate multiple validation errors,
+     * <b>Note on chaining:</b> Chaining multiple {@code ensure()} calls creates a fail-fast pipeline
+     * where the first failed ensure stops execution. To accumulate multiple validation errors,
      * use {@link #check(BiConsumer)} or combine separate {@link Result}s with {@link #and(Result)}.
      * <p>
      * Example:
      * <pre>{@code
-     * // Single filter (or fail-fast chain for single field)
+     * // Single ensure (or fail-fast chain for single field)
      * Result<Integer> result = Result.ok(15)
-     *     .filter(age -> age >= 18, "Must be 18 or older");  // Err("Must be 18 or older")
+     *     .ensure(age -> age >= 18, "Must be 18 or older");  // Err("Must be 18 or older")
      * }</pre>
      *
      * @param predicate the condition to test
@@ -535,10 +535,10 @@ public sealed interface Result<T extends @Nullable Object> {
      * @see #check(BiConsumer)
      * @see #and(Result)
      */
-    default Result<T> filter(Predicate<T> predicate, String message, Object... args) {
+    default Result<T> ensure(Predicate<T> predicate, String message, Object... args) {
         return check((value, validation) -> {
             if (!predicate.test(value)) {
-                validation.addRootError(message, args);
+                validation.addError(message, args);
             }
         });
     }
@@ -549,7 +549,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * If this result is {@link Ok} and the predicate returns {@code false}, returns {@link Err} with
      * the given field error. Otherwise, preserves the current state.
      * <p>
-     * <b>Note on chaining:</b> Chaining multiple {@code filter()} calls on the same field creates
+     * <b>Note on chaining:</b> Chaining multiple {@code ensure()} calls on the same field creates
      * a fail-fast pipeline. To accumulate errors for multiple fields, validate each field separately
      * and combine results with {@link #and(Result)}.
      * <p>
@@ -557,22 +557,22 @@ public sealed interface Result<T extends @Nullable Object> {
      * <pre>{@code
      * // Single field validation (chaining OK for same field, stops at first error)
      * Result<String> name = Result.ok(user)
-     *     .filterField(u -> u.name() != null, "name", "Required")
-     *     .filterField(u -> u.name().length() >= 2, "name", "Too short");
+     *     .ensureAt(u -> u.name() != null, "name", "Required")
+     *     .ensureAt(u -> u.name().length() >= 2, "name", "Too short");
      * }</pre>
      *
      * @param predicate the condition to test
-     * @param field the field name for the error
+     * @param field the field name or index for the error
      * @param message the error message template (supports MessageFormat placeholders)
      * @param args arguments for the message template
      * @return this result if the predicate passes or this is already {@link Err}, otherwise a new {@link Err}
      * @see #check(BiConsumer)
      * @see #and(Result)
      */
-    default Result<T> filterField(Predicate<T> predicate, String field, String message, Object... args) {
+    default Result<T> ensureAt(Predicate<T> predicate, Object field, String message, Object... args) {
         return check((value, validation) -> {
             if (!predicate.test(value)) {
-                validation.addFieldError(field, message, args);
+                validation.addErrorAt(field, message, args);
             }
         });
     }
@@ -679,7 +679,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * <pre>{@code
      * Result<Void> result = Result.of(() -> {
      *     Validation.create()
-     *         .addFieldError("field", "error")
+     *         .addErrorAt("field", "error")
      *         .check();  // throws if errors present
      * });
      * }</pre>
@@ -719,16 +719,17 @@ public sealed interface Result<T extends @Nullable Object> {
      * <p>
      * Example:
      * <pre>{@code
-     * Result<User> result = Result.err("User not found");
-     * Result<Integer> ageResult = Result.err("Invalid age: must be positive");
+     * Result<User> result = Result.error("User not found");
+     * Result<Integer> ageResult = Result.error("Invalid age: must be positive");
      * }</pre>
      *
      * @param message the error message template (supports MessageFormat placeholders like {0}, {1})
+     * @param args arguments for the message template
      * @param <T> the type parameter (phantom type, as no value exists)
      * @return an {@link Err} result containing the error
      */
-    static <T extends @Nullable Object> Result<T> err(String message) {
-        return new Err<>(ValidationErrors.ofRoot(message));
+    static <T extends @Nullable Object> Result<T> error(String message, Object... args) {
+        return new Err<>(ValidationErrors.of(message, args));
     }
 
     /**
@@ -736,17 +737,18 @@ public sealed interface Result<T extends @Nullable Object> {
      * <p>
      * Example:
      * <pre>{@code
-     * Result<User> result = Result.err("email", "Invalid email format");
-     * Result<Integer> ageResult = Result.err("age", "Must be at least {0}", 18);
+     * Result<User> result = Result.errorAt("email", "Invalid email format");
+     * Result<Integer> ageResult = Result.errorAt("age", "Must be at least {0}", 18);
      * }</pre>
      *
-     * @param field the field name
+     * @param field the field name or identifier
      * @param message the error message template (supports MessageFormat placeholders)
+     * @param args arguments for the message template
      * @param <T> the type parameter (phantom type, as no value exists)
      * @return an {@link Err} result containing the field error
      */
-    static <T extends @Nullable Object> Result<T> err(String field, String message) {
-        return new Err<>(ValidationErrors.ofField(field, message));
+    static <T extends @Nullable Object> Result<T> errorAt(Object field, String message, Object... args) {
+        return new Err<>(ValidationErrors.at(field, message, args));
     }
 
     /**
@@ -755,14 +757,14 @@ public sealed interface Result<T extends @Nullable Object> {
      * Example:
      * <pre>{@code
      * ValidationErrors errors = ValidationErrors.of("Invalid input");
-     * Result<User> result = Result.err(errors);
+     * Result<User> result = Result.error(errors);
      * }</pre>
      *
      * @param errors the validation errors
      * @param <T> the type parameter (phantom type, as no value exists)
      * @return an {@link Err} result containing the errors
      */
-    static <T extends @Nullable Object> Result<T> err(ValidationErrors errors) {
+    static <T extends @Nullable Object> Result<T> error(ValidationErrors errors) {
         return new Err<>(errors);
     }
 

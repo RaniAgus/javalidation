@@ -10,22 +10,22 @@ import org.junit.jupiter.api.Test;
 
 class ValidationTest {
 
-    // -- addRootError --
+    // -- addError --
 
     @Test
-    void givenMessage_whenAddRootError_thenAddsError() {
+    void givenMessage_whenAddError_thenAddsError() {
         var validation = Validation.create()
-                .addRootError("error message");
+                .addError("error message");
 
         var errors = validation.finish();
         assertThat(errors.rootErrors()).containsExactly(TemplateString.of("error message"));
     }
 
     @Test
-    void givenMultipleCalls_whenAddRootError_thenAccumulatesErrors() {
+    void givenMultipleCalls_whenAddError_thenAccumulatesErrors() {
         var validation = Validation.create()
-                .addRootError("error 1")
-                .addRootError("error 2");
+                .addError("error 1")
+                .addError("error 2");
 
         var errors = validation.finish();
         assertThat(errors.rootErrors()).containsExactly(
@@ -35,19 +35,19 @@ class ValidationTest {
     }
 
     @Test
-    void givenNullMessage_whenAddRootError_thenThrowsNullPointerException() {
+    void givenNullMessage_whenAddError_thenThrowsNullPointerException() {
         var validation = Validation.create();
 
-        assertThatThrownBy(() -> validation.addRootError(null))
+        assertThatThrownBy(() -> validation.addError(null))
                 .isInstanceOf(NullPointerException.class);
     }
 
-    // -- addFieldError --
+    // -- addErrorAt --
 
     @Test
     void givenFieldAndMessage_whenAddFieldError_thenAddsError() {
         var validation = Validation.create()
-                .addFieldError("field", "error message");
+                .addErrorAt("field", "error message");
 
         var errors = validation.finish();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("field"));
@@ -57,8 +57,8 @@ class ValidationTest {
     @Test
     void givenSameFieldMultipleTimes_whenAddFieldError_thenAccumulatesErrors() {
         var validation = Validation.create()
-                .addFieldError("field", "error 1")
-                .addFieldError("field", "error 2");
+                .addErrorAt("field", "error 1")
+                .addErrorAt("field", "error 2");
 
         var errors = validation.finish();
         assertThat(errors.fieldErrors().get(FieldKey.of("field"))).containsExactly(
@@ -70,8 +70,8 @@ class ValidationTest {
     @Test
     void givenDifferentFields_whenAddFieldError_thenAddsToEachField() {
         var validation = Validation.create()
-                .addFieldError("field1", "error 1")
-                .addFieldError("field2", "error 2");
+                .addErrorAt("field1", "error 1")
+                .addErrorAt("field2", "error 2");
 
         var errors = validation.finish();
         assertThat(errors.fieldErrors()).containsOnlyKeys(FieldKey.of("field1"), FieldKey.of("field2"));
@@ -81,7 +81,7 @@ class ValidationTest {
     void givenNullMessage_whenAddFieldError_thenThrowsNullPointerException() {
         var validation = Validation.create();
 
-        assertThatThrownBy(() -> validation.addFieldError("field", null))
+        assertThatThrownBy(() -> validation.addErrorAt("field", null))
                 .isInstanceOf(NullPointerException.class);
     }
 
@@ -90,9 +90,9 @@ class ValidationTest {
     @Test
     void givenValidation_whenAddAll_thenAddsAllErrors() {
         var validation = Validation.create()
-                .addFieldError("field", "error");
+                .addErrorAt("field", "error");
         var validation2 = Validation.create()
-                .addRootError("root error");
+                .addError("root error");
 
         var validation3 = Validation.create()
                 .addAll(validation)
@@ -106,9 +106,9 @@ class ValidationTest {
     @Test
     void givenValidation_whenAddAllScoped_thenAddsAllErrors() {
         var validation = Validation.create()
-                .addFieldError("field", "error");
+                .addErrorAt("field", "error");
         var validation2 = Validation.create()
-                .addRootError("root error");
+                .addError("root error");
 
         var validation3 = Validation.create();
         validation3.withField("parent", () -> {
@@ -130,7 +130,7 @@ class ValidationTest {
 
     @Test
     void givenValidationErrors_whenAddAll_thenAddsAllErrors() {
-        var validationErrors = ValidationErrors.ofField("field", "error");
+        var validationErrors = ValidationErrors.at("field", "error");
         var validation = Validation.create()
                 .addAll(validationErrors);
 
@@ -150,7 +150,7 @@ class ValidationTest {
 
     @Test
     void givenFieldErrors_whenAddAllWithPrefix_thenPrefixesFieldNames() {
-        var validationErrors = ValidationErrors.ofField("field", "error");
+        var validationErrors = ValidationErrors.at("field", "error");
         var validation = Validation.create()
                 .addAll(validationErrors, new Object[]{"root"});
 
@@ -160,7 +160,7 @@ class ValidationTest {
 
     @Test
     void givenRootErrors_whenAddAllWithPrefix_thenConvertsToFieldErrors() {
-        var validationErrors = ValidationErrors.ofRoot("root error");
+        var validationErrors = ValidationErrors.of("root error");
         var validation = Validation.create()
                 .addAll(validationErrors, new Object[]{"prefix"});
 
@@ -173,7 +173,7 @@ class ValidationTest {
     @Test
     void givenErrors_whenFinish_thenReturnsValidationErrors() {
         var validation = Validation.create()
-                .addFieldError("field", "error");
+                .addErrorAt("field", "error");
 
         var errors = validation.finish();
         assertThat(errors).isNotNull();
@@ -201,7 +201,7 @@ class ValidationTest {
     @Test
     void givenErrors_whenAsResult_thenReturnsErr() {
         var validation = Validation.create()
-                .addFieldError("field", "error");
+                .addErrorAt("field", "error");
 
         var result = validation.asResult(() -> "value");
         assertThatThrownBy(result::getOrThrow)
@@ -213,7 +213,7 @@ class ValidationTest {
         var validation = Validation.create();
 
         var result = validation.asResult(() -> {
-            throw JavalidationException.ofRoot("error");
+            throw JavalidationException.of("error");
         });
         assertThatThrownBy(result::getOrThrow)
                 .isInstanceOf(JavalidationException.class);
@@ -231,7 +231,7 @@ class ValidationTest {
     @Test
     void givenErrors_whenCheck_thenThrowsValidationException() {
         var validation = Validation.create()
-                .addFieldError("field", "error");
+                .addErrorAt("field", "error");
 
         assertThatThrownBy(validation::check)
                 .isInstanceOf(JavalidationException.class);
@@ -250,7 +250,7 @@ class ValidationTest {
     @Test
     void givenErrors_whenCheckAndGet_thenThrowsValidationException() {
         var validation = Validation.create()
-                .addFieldError("field", "error");
+                .addErrorAt("field", "error");
 
         assertThatThrownBy(() -> validation.checkAndGet(() -> "value"))
                 .isInstanceOf(JavalidationException.class);
@@ -268,7 +268,7 @@ class ValidationTest {
 
         validation.withField("person", () -> {
             if (request.person() == null) {
-                validation.addRootError("must not be null");
+                validation.addError("must not be null");
             }
         });
 
@@ -288,10 +288,10 @@ class ValidationTest {
 
         validation.withField("person", () -> {
             if (request.person().name() == null) {
-                validation.addFieldError("name", "must not be null");
+                validation.addErrorAt("name", "must not be null");
             }
             if (request.person().age() < 18) {
-                validation.addFieldError("age", "must be at least 18");
+                validation.addErrorAt("age", "must be at least 18");
             }
         });
 
@@ -312,7 +312,7 @@ class ValidationTest {
 
         validation.withField("address", () -> {
             validation.withField("street", () -> {
-                validation.addRootError("required");
+                validation.addError("required");
             });
         });
 
@@ -361,7 +361,7 @@ class ValidationTest {
 
         validation.withEach(tags, tag -> {
             if (tag.name() == null) {
-                validation.addRootError("must not be null");
+                validation.addError("must not be null");
             }
         });
 
@@ -380,9 +380,9 @@ class ValidationTest {
 
         validation.withEach(tags, tag -> {
             if (tag.name() == null) {
-                validation.addFieldError("name", "must not be null");
+                validation.addErrorAt("name", "must not be null");
             } else if (tag.name().isBlank()) {
-                validation.addFieldError("name", "must not be blank");
+                validation.addErrorAt("name", "must not be blank");
             }
         });
 
@@ -402,7 +402,7 @@ class ValidationTest {
         var validation = Validation.create();
 
         validation.withEach(List.of(), item -> {
-            validation.addRootError("should not be called");
+            validation.addError("should not be called");
         });
 
         var errors = validation.finish();
@@ -431,7 +431,7 @@ class ValidationTest {
         validation.withField("tags", () -> {
             validation.withEach(tags, tag -> {
                 if (tag.name() == null) {
-                    validation.addRootError("must not be null");
+                    validation.addError("must not be null");
                 }
             });
         });
@@ -451,10 +451,10 @@ class ValidationTest {
 
         validation.withEach(tags, tag -> {
             if (tag.name() == null) {
-                validation.addFieldError("name", "must not be null");
+                validation.addErrorAt("name", "must not be null");
             }
             if (tag.color() == null) {
-                validation.addFieldError("color", "must not be null");
+                validation.addErrorAt("color", "must not be null");
             }
         });
 

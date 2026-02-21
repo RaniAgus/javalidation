@@ -15,7 +15,7 @@ public class PastOrPresentRecordValidator implements Validator<PastOrPresentReco
             var value = root.value();
             if (value == null) return;
             if (!(value.isAfter(Instant.now()) == false)) {
-                validation.addRootError("must be a date in the past or in the present");
+                validation.addError("must be a date in the past or in the present");
             }
         });
     }

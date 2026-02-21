@@ -19,7 +19,7 @@ class ResultTest {
     @Test
     void givenSupplierThrowingValidationException_whenOf_thenReturnsErr() {
         var result = Result.of(() -> {
-            throw JavalidationException.ofRoot("error");
+            throw JavalidationException.of("error");
         });
 
         assertThatThrownBy(result::getOrThrow)
@@ -62,7 +62,7 @@ class ResultTest {
         var result = Result.combine(
                 () -> 42,
                 Result.ok(1),
-                Result.err("invalid"),
+                Result.error("invalid"),
                 Result.ok(3)
         );
 
@@ -74,8 +74,8 @@ class ResultTest {
     void givenMultipleErrResults_whenCombine_thenAccumulatesErrors() {
         var result = Result.combine(
                 () -> 42,
-                Result.err("error1"),
-                Result.err("field", "error2")
+                Result.error("error1"),
+                Result.errorAt("field", "error2")
         );
 
         var errors = result.getErrors();
@@ -94,7 +94,7 @@ class ResultTest {
 
     @Test
     void givenErr_whenGetOrThrow_thenThrowsValidationException() {
-        var result = Result.<Integer>err("Invalid value");
+        var result = Result.<Integer>error("Invalid value");
 
         assertThatThrownBy(result::getOrThrow)
                 .isInstanceOf(JavalidationException.class);
@@ -111,7 +111,7 @@ class ResultTest {
 
     @Test
     void givenErr_whenGetErrors_thenReturnsErrors() {
-        var result = Result.<String>err("field", "error message");
+        var result = Result.<String>errorAt("field", "error message");
 
         var errors = result.getErrors();
         assertThat(errors.isEmpty()).isFalse();
@@ -141,14 +141,14 @@ class ResultTest {
 
     @Test
     void givenErr_whenGetOrElse_thenReturnsDefaultValue() {
-        var result = Result.<Integer>err("invalid");
+        var result = Result.<Integer>error("invalid");
 
         assertThat(result.getOrElse(100)).isEqualTo(100);
     }
 
     @Test
     void givenErr_whenGetOrElseWithSupplier_thenCallsSupplier() {
-        var result = Result.<Integer>err("invalid");
+        var result = Result.<Integer>error("invalid");
 
         assertThat(result.getOrElse(() -> 100)).isEqualTo(100);
     }
@@ -164,7 +164,7 @@ class ResultTest {
 
     @Test
     void givenErr_whenWithPrefix_thenPrefixesErrorField() {
-        var result = Result.<String>err("field", "error").withPrefix("root");
+        var result = Result.<String>errorAt("field", "error").withPrefix("root");
 
         var errors = result.getErrors();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("root", "field"));
@@ -179,7 +179,7 @@ class ResultTest {
 
     @Test
     void givenErr_whenWithPrefixVarargs_thenBuildsPrefix() {
-        var result = Result.<String>err("field", "error").withPrefix("root", "sub");
+        var result = Result.<String>errorAt("field", "error").withPrefix("root", "sub");
 
         var errors = result.getErrors();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("root", "sub", "field"));
@@ -198,7 +198,7 @@ class ResultTest {
 
     @Test
     void givenFirstErr_whenAnd_thenPropagatesError() {
-        var result = Result.<Integer>err("first error")
+        var result = Result.<Integer>error("first error")
                 .and(Result.ok("hello"))
                 .combine((num, str) -> num + str.length());
 
@@ -209,7 +209,7 @@ class ResultTest {
     @Test
     void givenSecondErr_whenAnd_thenPropagatesError() {
         var result = Result.ok(5)
-                .and(Result.<String>err("second error"))
+                .and(Result.<String>error("second error"))
                 .combine((num, str) -> num + str.length());
 
         assertThatThrownBy(result::getOrThrow)
@@ -232,7 +232,7 @@ class ResultTest {
 
     @Test
     void givenErrResult_whenOrWithSupplier_thenCallsSupplierAndReturnsOk() {
-        var result = Result.<Integer>err("initial error")
+        var result = Result.<Integer>error("initial error")
                 .or(() -> Result.ok(100));
 
         assertThat(result.getOrThrow()).isEqualTo(100);
@@ -240,8 +240,8 @@ class ResultTest {
 
     @Test
     void givenErrResult_whenOrWithSupplierReturningErr_thenMergesErrors() {
-        var result = Result.<Integer>err("first", "error1")
-                .or(() -> Result.err("second", "error2"));
+        var result = Result.<Integer>errorAt("first", "error1")
+                .or(() -> Result.errorAt("second", "error2"));
 
         var errors = result.getErrors();
         assertThat(errors.fieldErrors()).hasSize(2);
@@ -250,8 +250,8 @@ class ResultTest {
 
     @Test
     void givenMultipleErrResults_whenOrChained_thenAppliesFallbackChain() {
-        var result = Result.<String>err("cache-miss")
-                .or(() -> Result.err("db-miss"))
+        var result = Result.<String>error("cache-miss")
+                .or(() -> Result.error("db-miss"))
                 .or(() -> Result.ok("default-value"));
 
         assertThat(result.getOrThrow()).isEqualTo("default-value");
@@ -269,7 +269,7 @@ class ResultTest {
 
     @Test
     void givenErrResult_whenOrWithEagerResult_thenReturnsEagerOk() {
-        var result = Result.<Integer>err("initial error")
+        var result = Result.<Integer>error("initial error")
                 .or(Result.ok(100));
 
         assertThat(result.getOrThrow()).isEqualTo(100);
@@ -277,8 +277,8 @@ class ResultTest {
 
     @Test
     void givenErrResult_whenOrWithEagerErr_thenMergesErrors() {
-        var result = Result.<Integer>err("field1", "error1")
-                .or(Result.err("field2", "error2"));
+        var result = Result.<Integer>errorAt("field1", "error1")
+                .or(Result.errorAt("field2", "error2"));
 
         var errors = result.getErrors();
         assertThat(errors.fieldErrors()).hasSize(2);
@@ -296,7 +296,7 @@ class ResultTest {
 
     @Test
     void givenErr_whenMap_thenPreservesError() {
-        var result = Result.<Integer>err("invalid").map(x -> x * 2);
+        var result = Result.<Integer>error("invalid").map(x -> x * 2);
 
         assertThatThrownBy(result::getOrThrow)
                 .isInstanceOf(JavalidationException.class);
@@ -305,7 +305,7 @@ class ResultTest {
     @Test
     void givenOk_whenMapThrowsJavalidationException_thenCatchesAndReturnsErr() {
         var result = Result.ok(5).map(x -> {
-            throw JavalidationException.ofRoot("error in mapper");
+            throw JavalidationException.of("error in mapper");
         });
 
         assertThat(result).isInstanceOf(Result.Err.class);
@@ -334,7 +334,7 @@ class ResultTest {
 
     @Test
     void givenErr_whenMapErr_thenTransformsErrors() {
-        var originalError = Result.<String>err("field", "message");
+        var originalError = Result.<String>errorAt("field", "message");
         var result = originalError.mapErr(errors -> errors.withPrefix("prefix"));
 
         var errors = result.getErrors();
@@ -355,7 +355,7 @@ class ResultTest {
 
     @Test
     void givenErr_whenBimap_thenAppliesErrorFunction() {
-        var result = Result.<Integer>err("age", "invalid")
+        var result = Result.<Integer>errorAt("age", "invalid")
                 .bimap(
                         x -> x * 2,
                         errors -> errors.withPrefix("user")
@@ -382,7 +382,7 @@ class ResultTest {
     @Test
     void givenErr_whenPeek_thenSkipsAction() {
         var box = new int[1];
-        var result = Result.<Integer>err("error")
+        var result = Result.<Integer>error("error")
                 .peek(value -> box[0] = value);
 
         assertThat(box[0]).isEqualTo(0);
@@ -395,11 +395,11 @@ class ResultTest {
     @Test
     void givenErr_whenPeekErr_thenExecutesActionAndReturnsSameInstance() {
         var box = new int[1];
-        var err = Result.<Integer>err("field", "error");
+        var error = Result.<Integer>error("field", "error");
 
-        var result = err.peekErr(errors -> box[0] = errors.count());
+        var result = error.peekErr(errors -> box[0] = errors.count());
 
-        assertThat(result).isSameAs(err);
+        assertThat(result).isSameAs(error);
         assertThat(box[0]).isEqualTo(1);
     }
 
@@ -424,7 +424,7 @@ class ResultTest {
 
     @Test
     void givenOk_whenFlatMapReturnsErr_thenPropagatesError() {
-        var result = Result.ok(5).flatMap(x -> Result.err("failed"));
+        var result = Result.ok(5).flatMap(x -> Result.error("failed"));
 
         assertThatThrownBy(result::getOrThrow)
                 .isInstanceOf(JavalidationException.class);
@@ -432,7 +432,7 @@ class ResultTest {
 
     @Test
     void givenErr_whenFlatMap_thenSkipsFunctionAndPreservesError() {
-        var result = Result.<Integer>err("initial error").flatMap(x -> Result.ok(x * 2));
+        var result = Result.<Integer>error("initial error").flatMap(x -> Result.ok(x * 2));
 
         assertThatThrownBy(result::getOrThrow)
                 .isInstanceOf(JavalidationException.class);
@@ -441,7 +441,7 @@ class ResultTest {
     @Test
     void givenOk_whenFlatMapThrowsJavalidationException_thenCatchesAndReturnsErr() {
         var result = Result.ok(5).flatMap(x -> {
-            throw JavalidationException.ofRoot("error in flatMap");
+            throw JavalidationException.of("error in flatMap");
         });
 
         assertThat(result).isInstanceOf(Result.Err.class);
@@ -473,7 +473,7 @@ class ResultTest {
 
     @Test
     void givenErr_whenFlatMapErrRecoversWithOk_thenReturnsOk() {
-        var result = Result.<Integer>err("cache-miss")
+        var result = Result.<Integer>error("cache-miss")
                 .flatMapErr(errors -> Result.ok(100));
 
         assertThat(result.getOrThrow()).isEqualTo(100);
@@ -481,8 +481,8 @@ class ResultTest {
 
     @Test
     void givenErr_whenFlatMapErrReturnsAnotherErr_thenReturnsNewErr() {
-        var result = Result.<Integer>err("first", "error1")
-                .flatMapErr(errors -> Result.err("second", "error2"));
+        var result = Result.<Integer>errorAt("first", "error1")
+                .flatMapErr(errors -> Result.errorAt("second", "error2"));
 
         var resultErrors = result.getErrors();
         assertThat(resultErrors.fieldErrors()).containsKey(FieldKey.of("second"));
@@ -491,8 +491,8 @@ class ResultTest {
 
     @Test
     void givenErr_whenFlatMapErrChained_thenAppliesFallbackChain() {
-        var result = Result.<String>err("Cache miss")
-                .flatMapErr(e1 -> Result.err("Database miss"))
+        var result = Result.<String>error("Cache miss")
+                .flatMapErr(e1 -> Result.error("Database miss"))
                 .flatMapErr(e2 -> Result.ok("Default value"));
 
         assertThat(result.getOrThrow()).isEqualTo("Default value");
@@ -512,7 +512,7 @@ class ResultTest {
 
     @Test
     void givenErr_whenFold_thenAppliesFailureFunction() {
-        var result = Result.<Integer>err("invalid").fold(
+        var result = Result.<Integer>error("invalid").fold(
                 x -> "success: " + x,
                 errors -> "failure: " + errors.rootErrors().size()
         );
@@ -526,7 +526,7 @@ class ResultTest {
     void givenOkAndValidPredicate_whenCheck_thenReturnsOk() {
         var result = Result.ok(42).check((value, validation) -> {
             if (value < 0) {
-                validation.addRootError("Value must be positive");
+                validation.addError("Value must be positive");
             }
         });
 
@@ -537,7 +537,7 @@ class ResultTest {
     void givenOkAndFailingPredicate_whenCheck_thenReturnsErr() {
         var result = Result.ok(-5).check((value, validation) -> {
             if (value < 0) {
-                validation.addRootError("Value must be positive");
+                validation.addError("Value must be positive");
             }
         });
 
@@ -550,7 +550,7 @@ class ResultTest {
     void givenOkAndFieldError_whenCheck_thenAddsFieldError() {
         var result = Result.ok("test").check((value, validation) -> {
             if (value.length() < 5) {
-                validation.addFieldError("username", "Username must be at least 5 characters");
+                validation.addErrorAt("username", "Username must be at least 5 characters");
             }
         });
 
@@ -560,9 +560,9 @@ class ResultTest {
 
     @Test
     void givenErr_whenCheck_thenPreservesError() {
-        var result = Result.<Integer>err("field", "initial error")
+        var result = Result.<Integer>errorAt("field", "initial error")
                 .check((value, validation) -> {
-                    validation.addRootError("This should not be executed");
+                    validation.addError("This should not be executed");
                 });
 
         var errors = result.getErrors();
@@ -574,28 +574,28 @@ class ResultTest {
     void givenOkAndMultipleFailingValidations_whenCheck_thenAccumulatesErrors() {
         var result = Result.ok(150).check((value, validation) -> {
             if (value > 10) {
-                validation.addRootError("Value must not exceed 10");
+                validation.addError("Value must not exceed 10");
             }
             if (value > 100) {
-                validation.addRootError("Value must not exceed 100");
+                validation.addError("Value must not exceed 100");
             }
         });
 
         assertThat(result.getErrors().rootErrors()).hasSize(2);
     }
 
-    // -- filter --
+    // -- ensure --
 
     @Test
     void givenOkAndPassingPredicate_whenFilter_thenReturnsOk() {
-        var result = Result.ok(42).filter(x -> x > 0, "Value must be positive");
+        var result = Result.ok(42).ensure(x -> x > 0, "Value must be positive");
 
         assertThat(result.getOrThrow()).isEqualTo(42);
     }
 
     @Test
     void givenOkAndFailingPredicate_whenFilter_thenReturnsErr() {
-        var result = Result.ok(-5).filter(x -> x > 0, "Value must be positive");
+        var result = Result.ok(-5).ensure(x -> x > 0, "Value must be positive");
 
         assertThatThrownBy(result::getOrThrow)
                 .isInstanceOf(JavalidationException.class);
@@ -604,18 +604,18 @@ class ResultTest {
 
     @Test
     void givenErr_whenFilter_thenPreservesError() {
-        var result = Result.<Integer>err("initial", "error")
-                .filter(x -> x > 0, "Value must be positive");
+        var result = Result.<Integer>errorAt("initial", "error")
+                .ensure(x -> x > 0, "Value must be positive");
 
         var errors = result.getErrors();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("initial"));
     }
 
-    // -- filterField --
+    // -- ensureAt --
 
     @Test
     void givenOkAndPassingPredicate_whenFilterWithField_thenReturnsOk() {
-        var result = Result.ok("hello").filterField(
+        var result = Result.ok("hello").ensureAt(
                 s -> s.length() >= 5,
                 "length",
                 "Must be at least 5 characters"
@@ -626,7 +626,7 @@ class ResultTest {
 
     @Test
     void givenOkAndFailingPredicate_whenFilterWithField_thenReturnsFieldErr() {
-        var result = Result.ok("hi").filterField(
+        var result = Result.ok("hi").ensureAt(
                 s -> s.length() >= 5,
                 "username",
                 "Must be at least 5 characters"
@@ -637,6 +637,6 @@ class ResultTest {
     }
 
     private void raiseJavalidationException() {
-        throw JavalidationException.ofRoot("error");
+        throw JavalidationException.of("error");
     }
 }
