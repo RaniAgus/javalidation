@@ -56,7 +56,7 @@ For Jackson 3.x serialization support:
 </dependency>
 ```
 
-### Jakarta Validation API + Processor (Experimental)
+### Jakarta Validation API + Processor
 
 For Bean Validation support:
 
@@ -433,43 +433,46 @@ private User validateAndCreateUser(User user) {
 For more complex scenarios with imperative state validation that require not throwing an exception on the first error,
 please check the [Advanced Patterns](#advanced-patterns) section.
 
-## Real-World Example
+## Full Example
 
 Combining business rules validation and internal checks in a REST API:
 
 ```java
-@RestController
-@RequestMapping("/api/users")
-public class UserController {
-    
-    @Autowired
-    private UserValidator validator;
-    
-    @Autowired
-    private UserService userService;
-    
-    @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody UserRegistrationRequest request) {
+// Controller
+void routes(Application app) {
+    UserValidator validator = new UserValidator();
+    UserService userService = new UserService(/* ... */);
+
+    app.post("/api/users/register", ctx -> {
+        String contentType = ctx.getHttpHeader("Content-Type");
+        if (contentType == null || !contentType.startsWith("application/json")) {
+            // 415 Unsupported Media Type: Request body is not JSON
+            return ctx.status(415).body("Invalid Content-Type");
+        }
+
         try {
+            UserRegistrationRequest request = ctx.bodyAsClass(UserRegistrationRequest.class);
             return switch (validator.validateRegistrationRequest(request)) {
-                case Result.Ok(User user) -> ResponseEntity.ok(userService.createUser(user));
+                case Result.Ok(User user) -> ctx.ok(userService.createUser(user));
 
                 // 422 Unprocessable Content: Request is well-formed but violates business rules
-                case Result.Err(ValidationErrors errors) -> ResponseEntity.status(422).body(errors);
+                case Result.Err(ValidationErrors errors) -> ctx.status(422).body(errors);
             };
         } catch (JavalidationException e) {
             // 409 Conflict: Request is valid but conflicts with the current state
-            return ResponseEntity.status(409).body(e.getErrors());
+            return ctx.status(409).body(e.getErrors());
+        } catch (JsonProcessingException e) {
+            // 400 Bad Request: Request is malformed for specified Content-Type
+            return ctx.status(400).body("Invalid request format");
         } catch (Exception e) {
             // 500: Unexpected error - log and alert
             logger.error("Unexpected error during registration", e);
-            return ResponseEntity.status(500).body("Internal server error");
+            return ctx.status(500).body("Internal server error");
         }
-    }
+    });
 }
 
 // Business rules validator
-@Component
 public class UserValidator {
     public Result<User> validateRegistrationRequest(UserRegistrationRequest request) {
         return validateName(request.name())
@@ -483,7 +486,6 @@ public class UserValidator {
 }
 
 // Service with internal checks
-@Service
 public class UserService {
     public User createUser(User user) {
         // Check if email already exists (database query)
@@ -500,12 +502,6 @@ public class UserService {
     }
 }
 ```
-
-**Error handling strategy:**
-- **400 Bad Request**: Malformed requests (invalid JSON) – Handled on deserialization layer
-- **422 Unprocessable Content**: Business rule violations (malformed email, weak password)
-- **409 Conflict**: State conflicts (email already registered, verification failed)
-- **500 Internal Server Error**: Unexpected bugs (NullPointerException, SQLException)
 
 ## Integrations
 
@@ -601,7 +597,6 @@ io.github.raniagus.javalidation:
   key-notation: property_path # Choose how to serialize field keys (property_path, dots or brackets) 
   use-message-source: true    # Use Spring MessageSource for i18n (default: true)
   flatten-errors: false       # Flatten JSON error structure (default: false)
-  
 ```
 
 **Internationalization:**
@@ -635,9 +630,9 @@ Spring automatically formats messages based on the request locale.
 
 **Bean validation**:
 
-When including `javalidation-jakarta-validation*` dependency and annotation processor, bean validation is
-automatically triggered using `Validators.validate(T)`, which is a compile-time generated service locator for different
-`Validator<T>` instances.
+When including `javalidation-jakarta-validator` dependency and `javalidation-jakarta-validator-processor`, bean
+validation is autoconfigured to use `Validators.validate(T)`, which is a compile-time generated service locator for
+different `Validator<T>` instances, to generate `BindingResult`s or throw `ValidationException`s.
 
 To tell the annotation processor to generate a `Validator<T>`, annotate the record with `@Validate`:
 ```java
@@ -747,18 +742,28 @@ public record UserDto(
 ) {}
 ```
 
-To inject validators manually, create each corresponding `@Bean` using `Validators.getValidator(Class)`:
-```java
-import io.github.raniagus.javalidation.validator.Validators;
+### Spring Boot Example
 
-@Bean
-public Validator userValidator() {
-    return Validators.getValidator(UserDto.class);
+```java
+@PostMapping("/register")
+public ResponseEntity<?> registerUser(@RequestBody @Valid UserRegistrationRequest request, BindingResult bindingResult) {
+    return ResponseEntity.ok(userService.createUser(user));
 }
 
-@Bean
-public Validator orderValidator() {
-    return Validators.getValidator(OrderDto.class);
+@ExceptionHandler(MethodArgumentNotValidException.class)
+public ResponseEntity<?> handleValidation(MethodArgumentNotValidException e) {
+    return ResponseEntity.status(422).body(JavalidationSpringValidator.toValidationErrors(e.getBindingResult()));
+}
+
+@ExceptionHandler(JavalidationException.class)
+public ResponseEntity<?> handleJavalidation(JavalidationException e) {
+    return ResponseEntity.status(409).body(e.getErrors());
+}
+
+@ExceptionHandler(Exception.class)
+public ResponseEntity<?> handleUnexpectedError(Exception e) {
+    logger.error("Unexpected error during registration", e);
+    return ResponseEntity.status(500).body("Internal server error");
 }
 ```
 
