@@ -253,16 +253,14 @@ Result<User> result = Result.ok(userId)
 
 This design enables **type-safe error accumulation for business validation** while preserving **fail-fast debugging for programming errors**.
 
-## Common Patterns
-
-### Functional Validation composition
+## Functional Validation composition
 
 Use `Result<T>` and functional composition for pure validation without side effects:
 
-#### Simple POJO Validation
+### Simple POJO Validation
 
 ```java
-record Person(String name, int age, String email, String password, Address contactAddress) {}
+record Person(String name, int age, String email, String password) {}
 
 static Result<String> validateName(String fieldName, String value) {
     return Result.ok(value)
@@ -291,7 +289,7 @@ static Result<String> validatePassword(String fieldName, String value) {
 }
 
 // Combine all validations
-static Result<Person> validatePerson(String name, int age, String email, String password, String street, String city, String zipCode) {
+static Result<Person> validatePerson(String name, int age, String email, String password) {
     return validateName("name", name)
         .and(validateAge("age", age))
         .and(validateEmail("email", email))
@@ -300,7 +298,7 @@ static Result<Person> validatePerson(String name, int age, String email, String 
 }
 ```
 
-#### Nested Object Validation
+### Nested Object Validation
 
 Use `withPrefix()` to namespace errors for nested structures:
 
@@ -314,7 +312,11 @@ static Result<Message> validateMessage(Result<Person> from, Result<Person> to, S
         .combine(Message::new);
 }
 
-// Allows reusing the same validation logic for different fields with different names:
+
+// Allows reusing an existing validation
+Result<Person> result = validatePerson(name, age, email);
+
+// With nested validation
 Result<Message> result = validateMessage(
         validatePerson(fromName, fromAge, fromEmail),
         validatePerson(toName, toAge, toEmail),
@@ -322,7 +324,7 @@ Result<Message> result = validateMessage(
 );
 ```
 
-#### Collection Validation
+### Collection Validation
 
 Use `ResultCollector.toResultList()` with `withIndex()` for automatic indexing and `withPrefix()` for nested collections:
 
@@ -332,42 +334,35 @@ import static io.github.raniagus.javalidation.ResultCollector.*;
 record Order(List<Item> items) {}
 record Item(String name, double price) {}
 
-static Result<Item> validateItem(Item item) {
-    return validateItemName(item.name())
-        .and(validatePrice(item.price()))
-        .combine((name, price) -> item);
+public Result<Order> validateOrder(Order order) {
+    return Result.ok(order)
+            .flatMap(o -> validateItems("items", o.items()))
+            .map(Order::new);
 }
 
-// Validate all items in a collection
-static Result<List<Item>> validateItems(List<Item> items) {
+public Result<List<Item>> validateItems(String fieldName, List<Item> items) {
     return Result.ok(items)
-            .ensure(i -> i != null && !i.isEmpty(), "Order must contain at least one item")
+            .ensureAt(i -> i != null && !i.isEmpty(), fieldName, "Order must contain at least one item")
             .flatMap(i -> i.stream()
                     .map(this::validateItem)
-                    .collect(withIndex(toResultList()))
+                    .collect(withPrefix(fieldName, withIndex(toResultList())))
             );
 }
-// Errors are automatically indexed: "[0].name", "[1].price", "[2].name"
 
-// For nested collections with a custom prefix:
-static Result<Order> validateOrder(Order order) {
-    Result<List<Item>> itemsResult = Result.ok(order.items())
-            .ensureAt(i -> i != null && !i.isEmpty(), "items", "Order must contain a list of items")
-            .flatMap(i -> i.stream()
-                .map(this::validateItem)
-                .collect(withPrefix("items", withIndex(toResultList())))
-            );
-
-    return itemsResult.map(Order::new);
+public Result<Item> validateItem(Item item) {
+    return validateItemName(item.name())
+            .and(validatePrice(item.price()))
+            .combine((name, price) -> item);
 }
-// Errors become: "items[0].name", "items[1].price", "items[2].name"
+
+// Example Output: { "items[0].name": ["Name is required"], "items[1].price": ["Price must be a positive number"] }
 ```
 
-### Imperative Checks
+## Imperative Validation
+
+### Throwing Errors
 
 Use `JavalidationException` for imperative validation where you want to stop the execution immediately:
-
-#### Throwing Validation Errors
 
 ```java
 public User findUserByEmail(String email) {
@@ -397,7 +392,7 @@ public void processOrder(Order order) {
 }
 ```
 
-#### Stream Collections
+### Collecting Stream Results
 
 Use `toListOrThrow()` to collect stream results imperatively:
 
@@ -478,7 +473,7 @@ public class UserValidator {
             .combine(User::new);
     }
 
-    // validateName(), validateAge(), etc. from Business Rules section
+    // validateName(), validateAge(), etc.
 }
 
 // Service with internal checks
@@ -788,16 +783,19 @@ Process valid items even when some fail validation:
 import static io.github.raniagus.javalidation.ResultCollector.*;
 
 public ProcessOrderResult processOrder(Order order) {
-    var partitioned = items.stream()
+    PartitionedResult<List<Item>> partitioned = order.items().stream()
             .map(this::validateItem)
             .collect(withIndex(toPartitioned()));
 
     // Continue with valid items
-    List<Item> validItems = partitioned.value();
-    processValidItems(validItems);
+    processValidItems(partitioned.value());
 
     // Return partial success with errors for invalid items
     return new ProcessOrderResult(partitioned.errors());
+}
+
+public Result<Item> validateItem(Item item) {
+    // ...
 }
 ```
 
@@ -897,8 +895,8 @@ public void validateItemsList(Validation validation, List<Item> items) {
 | Method                                      | Description                                                |
 |---------------------------------------------|------------------------------------------------------------|
 | `create()`                                  | Create new empty validation                                |
-| `addError(String, Object...)`           | Add root-level error                                       |
-| `addErrorAt(Object, String, Object...)`  | Add field-specific error                                   |
+| `addError(String, Object...)`               | Add root-level error                                       |
+| `addErrorAt(Object, String, Object...)`     | Add field-specific error                                   |
 | `addAll(ValidationErrors)`                  | Merge errors                                               |
 | `addAll(ValidationErrors, Object[])`        | Merge errors with prefix                                   |
 | `withField(Object, Runnable)`               | Scope validation under a field prefix                      |
@@ -922,12 +920,12 @@ public void validateItemsList(Validation validation, List<Item> items) {
 
 ### JavalidationException
 
-| Method                                      | Description                       |
-|---------------------------------------------|-----------------------------------|
-| `of(String, Object...)`                 | Create with root error            |
-| `at(String, String, Object...)`        | Create with field error           |
-| `of(ValidationErrors)`                      | Create from ValidationErrors      |
-| `getErrors()`                               | Get accumulated errors            |
+| Method                          | Description                       |
+|---------------------------------|-----------------------------------|
+| `of(String, Object...)`         | Create with root error            |
+| `at(String, String, Object...)` | Create with field error           |
+| `of(ValidationErrors)`          | Create from ValidationErrors      |
+| `getErrors()`                   | Get accumulated errors            |
 
 ## License
 
