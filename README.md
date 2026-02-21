@@ -343,7 +343,7 @@ static Result<Item> validateItem(Item item) {
 // Validate all items in a collection
 static Result<List<Item>> validateItems(List<Item> items) {
     return Result.ok(items)
-            .filter(i -> !i.isEmpty(), "Order must contain at least one item")
+            .filter(i -> i != null && !i.isEmpty(), "Order must contain at least one item")
             .flatMap(i -> i.stream()
                     .map(YourClass::validateItem)
                     .collect(withIndex(toResultList()))
@@ -354,7 +354,7 @@ static Result<List<Item>> validateItems(List<Item> items) {
 // For nested collections with a custom prefix:
 static Result<Order> validateOrder(Order order) {
     Result<List<Item>> itemsResult = Result.ok(order.items())
-            .filter(Objects::nonNull, "Order must contain a list of items")
+            .filterField(i -> i != null && !i.isEmpty(), "items", "Order must contain a list of items")
             .flatMap(i -> i.stream()
                 .map(YourClass::validateItem)
                 .collect(withPrefix("items", withIndex(toResultList())))
@@ -616,16 +616,11 @@ user.age.minimum=Debe tener al menos {0} años
 Use message keys in validation:
 ```java
 Result<User> validateUser(String name, String age) {
-    Result<String> nameResult = Result.ok(name)
-            .filter(Objects::nonNull, "user.name.required")
-            .filter(n -> !n.isEmpty(), "user.name.required")
-            .withPrefix("name");
-    
-    Result<String> ageResult = Result.ok(age)
-            .filter(a -> a >= 18, "age", "user.age.minimum", 18)
-            .withPrefix("age");
-
-    return nameResult.and(ageResult).combine(User::new);
+    return Result.ok(name)
+            .filterField(n -> n != null && !n.isEmpty(), "name", "user.name.required")
+            .and(Result.ok(age)
+                    .filterField(a -> a >= 18, "age", "user.age.minimum", 18))
+            .combine(User::new);
 }
 ```
 
@@ -870,23 +865,24 @@ public void validateItemsList(Validation validation, List<Item> items) {
 
 ### Result<T>
 
-| Method                                  | Description                               |
-|-----------------------------------------|-------------------------------------------|
-| `of(Supplier<T>)`/ `of(Runnable)`       | Wrap supplier or runnable in try-catch    |
-| `ok(T)`                                 | Create successful result                  |
-| `err(String, Object...)`                | Create failed result with root error      |
-| `err(String, String, Object...)`        | Create failed result with field error     |
-| `err(ValidationErrors)`                 | Create failed result from existing errors |
-| `map(Function)`                         | Transform success value                   |
-| `flatMap(Function)`                     | Chain validations                         |
-| `filter(Predicate, String, Object...)`  | Conditional validation                    |
-| `check(BiConsumer)`                     | Add imperative validation logic           |
-| `and(Result)`                           | Start applicative combiner chain          |
-| `or(Result)` / `or(Supplier)`           | Provide fallback                          |
-| `fold(Function, Function)`              | Handle both cases                         |
-| `getOrThrow()`                          | Extract value or throw                    |
-| `getOrElse(T)` / `getOrElse(Supplier)`  | Extract value or default                  |
-| `withPrefix(String)`                    | Namespace errors for nested objects       |
+| Method                                              | Description                               |
+|-----------------------------------------------------|-------------------------------------------|
+| `of(Supplier<T>)`/ `of(Runnable)`                   | Wrap supplier or runnable in try-catch    |
+| `ok(T)`                                             | Create successful result                  |
+| `err(String, Object...)`                            | Create failed result with root error      |
+| `err(String, String, Object...)`                    | Create failed result with field error     |
+| `err(ValidationErrors)`                             | Create failed result from existing errors |
+| `map(Function)`                                     | Transform success value                   |
+| `flatMap(Function)`                                 | Chain validations                         |
+| `filter(Predicate, String, Object...)`              | Conditional validation                    |
+| `filterField(Predicate, String, String, Object...)` | Conditional validation (for fields)       |
+| `check(BiConsumer)`                                 | Add imperative validation logic           |
+| `and(Result)`                                       | Start applicative combiner chain          |
+| `or(Result)` / `or(Supplier)`                       | Provide fallback                          |
+| `fold(Function, Function)`                          | Handle both cases                         |
+| `getOrThrow()`                                      | Extract value or throw                    |
+| `getOrElse(T)` / `getOrElse(Supplier)`              | Extract value or default                  |
+| `withPrefix(String)`                                | Namespace errors for nested objects       |
 
 ### ValidationErrors
 

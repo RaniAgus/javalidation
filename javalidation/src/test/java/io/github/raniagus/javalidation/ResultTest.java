@@ -584,7 +584,7 @@ class ResultTest {
         assertThat(result.getErrors().rootErrors()).hasSize(2);
     }
 
-    // -- filter (root error) --
+    // -- filter --
 
     @Test
     void givenOkAndPassingPredicate_whenFilter_thenReturnsOk() {
@@ -611,11 +611,11 @@ class ResultTest {
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("initial"));
     }
 
-    // -- filter (field error) --
+    // -- filterField --
 
     @Test
     void givenOkAndPassingPredicate_whenFilterWithField_thenReturnsOk() {
-        var result = Result.ok("hello").filter(
+        var result = Result.ok("hello").filterField(
                 s -> s.length() >= 5,
                 "length",
                 "Must be at least 5 characters"
@@ -626,7 +626,7 @@ class ResultTest {
 
     @Test
     void givenOkAndFailingPredicate_whenFilterWithField_thenReturnsFieldErr() {
-        var result = Result.ok("hi").filter(
+        var result = Result.ok("hi").filterField(
                 s -> s.length() >= 5,
                 "username",
                 "Must be at least 5 characters"

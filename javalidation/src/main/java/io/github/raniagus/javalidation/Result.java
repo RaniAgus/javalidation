@@ -515,7 +515,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * Filters the success value using a predicate, adding a root error if the predicate fails.
      * <p>
      * If this result is {@link Ok} and the predicate returns {@code false}, returns {@link Err} with
-     * the given error message. Otherwise preserves the current state.
+     * the given error message. Otherwise, preserves the current state.
      * <p>
      * <b>Note on chaining:</b> Chaining multiple {@code filter()} calls creates a fail-fast pipeline
      * where the first failed filter stops execution. To accumulate multiple validation errors,
@@ -526,13 +526,6 @@ public sealed interface Result<T extends @Nullable Object> {
      * // Single filter (or fail-fast chain for single field)
      * Result<Integer> result = Result.ok(15)
      *     .filter(age -> age >= 18, "Must be 18 or older");  // Err("Must be 18 or older")
-     *
-     * // For accumulating multiple errors, use check():
-     * Result<Integer> result = Result.ok(age)
-     *     .check((a, v) -> {
-     *         if (a < 0) v.addRootError("Cannot be negative");
-     *         if (a < 18) v.addRootError("Must be at least 18");
-     *     });
      * }</pre>
      *
      * @param predicate the condition to test
@@ -554,7 +547,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * Filters the success value using a predicate, adding a field error if the predicate fails.
      * <p>
      * If this result is {@link Ok} and the predicate returns {@code false}, returns {@link Err} with
-     * the given field error. Otherwise preserves the current state.
+     * the given field error. Otherwise, preserves the current state.
      * <p>
      * <b>Note on chaining:</b> Chaining multiple {@code filter()} calls on the same field creates
      * a fail-fast pipeline. To accumulate errors for multiple fields, validate each field separately
@@ -563,15 +556,9 @@ public sealed interface Result<T extends @Nullable Object> {
      * Example:
      * <pre>{@code
      * // Single field validation (chaining OK for same field, stops at first error)
-     * Result<String> name = Result.ok(userName)
-     *     .filter(n -> n != null, "name", "Required")
-     *     .filter(n -> n.length() >= 2, "name", "Too short");
-     *
-     * // Multiple fields: use .and() to accumulate ALL errors
-     * Result<User> user = validateName(name)
-     *     .and(validateAge(age))
-     *     .and(validateEmail(email))
-     *     .combine((n, a, e) -> new User(n, a, e));
+     * Result<String> name = Result.ok(user)
+     *     .filterField(u -> u.name() != null, "name", "Required")
+     *     .filterField(u -> u.name().length() >= 2, "name", "Too short");
      * }</pre>
      *
      * @param predicate the condition to test
@@ -582,7 +569,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * @see #check(BiConsumer)
      * @see #and(Result)
      */
-    default Result<T> filter(Predicate<T> predicate, String field, String message, Object... args) {
+    default Result<T> filterField(Predicate<T> predicate, String field, String message, Object... args) {
         return check((value, validation) -> {
             if (!predicate.test(value)) {
                 validation.addFieldError(field, message, args);
