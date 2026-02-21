@@ -2,7 +2,6 @@ package test.jakarta;
 
 import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.validator.Validator;
-import java.util.Objects;
 import javax.annotation.processing.Generated;
 import org.jspecify.annotations.NullMarked;
 
@@ -14,7 +13,7 @@ public class PatternRecordValidator implements Validator<PatternRecord> {
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!Objects.toString(value).matches("^[a-z]+$")) {
+            if (!value.toString().matches("^[a-z]+$")) {
                 validation.addRootError("must match \"{0}\"", "^[a-z]+$");
             }
         });

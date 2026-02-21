@@ -156,14 +156,9 @@ public interface NullUnsafeWriter extends ValidationWriter {
 
     record Pattern(String regex, String message, Object... args) implements NullUnsafeWriter {
         @Override
-        public Stream<String> imports() {
-            return Stream.of("java.util.Objects");
-        }
-
-        @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (!Objects.toString(%s).matches("%s")) {\
+                    if (!%s.toString().matches("%s")) {\
                     """.formatted(out.getVariable(), regex));
             out.incrementIndentationLevel();
             out.write("""

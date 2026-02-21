@@ -40,7 +40,6 @@ public record ValidatorClassWriter(
                 public void validate(Validation validation, %s%s %s) {\
                 """.formatted(enclosingClassPrefix, recordName, out.getVariable()));
         out.incrementIndentationLevel();
-        out.write("");
         for (ValidationWriter writer : fieldWriters) {
             writer.writeBodyTo(out);
         }
