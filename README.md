@@ -58,7 +58,7 @@ For Jackson 3.x serialization support:
 
 ### Jakarta Validation API + Processor
 
-For Bean Validation support:
+Library for code-generated `Validator<T>` interface and injector:
 
 ```xml
 <dependency>
@@ -68,7 +68,7 @@ For Bean Validation support:
 </dependency>
 ```
 
-Add the annotation processor to your compiler configuration:
+Annotation processor for generating Validator implementations:
 ```xml
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
@@ -84,6 +84,9 @@ Add the annotation processor to your compiler configuration:
     </configuration>
 </plugin>
 ```
+
+> [!TIP]
+> Mark the `generatedSourcesDirectory` as "Generated Sources Root" in IntelliJ IDEA to debug generated code.
 
 ### Spring Boot Starter
 
