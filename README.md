@@ -729,8 +729,8 @@ public class UserDtoValidator implements Validator {
 </details>
 
 > [!IMPORTANT]
-> - Only Records and Sealed Interfaces with all Record implementations can be annotated with `@Valid`.
-> - Groups are not supported yet.
+> - Only Records can be annotated with `@Valid`. Sealed Interfaces are only supported if all permitted subtypes are Records.
+> - Validation groups are not supported. All constraints are always applied, regardless of the `groups` attribute.
 > - Using `@Valid` on a `Map` key results in undefined field error namespacing behavior.
 
 #### Full Example
@@ -851,6 +851,25 @@ public void validateItemsList(Validation validation, List<Item> items) {
     items.stream()
             .map(this::validateItemResult) // Must return Result<T>
             .collect(withIndex(into(validation))); // Mutates Validation instance
+}
+```
+
+### Imperative Validation inside `Result<T>` chain
+
+```java
+Result<Order> validateOrder(Order order) {
+    return Result.ok(order)
+            .check((o, validation) -> {
+                if (o.items().isEmpty()) {
+                    validation.addError("Order must contain at least one item");
+                }
+
+                double total = o.items().stream().mapToDouble(Item::price).sum();
+                if (total > 10000 && o.paymentMethod().equals(PaymentMethod.CASH)) {
+                    validation.addErrorAt("paymentMethod",
+                            "Cash payments limited to {0} for orders over {1}", 1000, 10000);
+                }
+            });
 }
 ```
 
