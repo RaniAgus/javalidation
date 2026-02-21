@@ -167,7 +167,7 @@ public class ValidatorProcessor extends AbstractProcessor {
 
     private List<ValidatorClassWriter> parseClassWriters(RoundEnvironment roundEnv) {
         return roundEnv.getRootElements().stream()
-                .flatMap(element -> collectRecordsWithValidFields(element).stream())
+                .flatMap(this::getAllRecordsWithValid)
                 .distinct()
                 .map(te -> te.getModifiers().contains(Modifier.SEALED)
                         ? parseSealedClassWriter(te)
@@ -175,123 +175,126 @@ public class ValidatorProcessor extends AbstractProcessor {
                 .toList();
     }
 
-    private List<TypeElement> collectRecordsWithValidFields(Element root) {
-        List<TypeElement> result = new ArrayList<>();
-        collectValidRecordsRecursively(root, result);
-        return result;
+    private Stream<TypeElement> getAllRecordsWithValid(Element element) {
+        if (!(element instanceof TypeElement typeElement)) {
+            return Stream.empty();
+        }
+
+        Stream<TypeElement> fromParams = getMethodAndConstructorParams(typeElement)
+                .filter(this::isAnnotatedWithValid)
+                .flatMap(this::getRecordsFromParam);
+
+        Stream<TypeElement> fromNested = typeElement.getEnclosedElements().stream()
+                .flatMap(this::getAllRecordsWithValid);
+
+        return Stream.concat(fromParams, fromNested);
     }
 
-    private void collectValidRecordsRecursively(Element element, List<TypeElement> result) {
-        if (!(element instanceof TypeElement typeElement)) return;
+    private Stream<VariableElement> getMethodAndConstructorParams(TypeElement typeElement) {
+        return typeElement.getEnclosedElements().stream()
+                .filter(e -> e instanceof ExecutableElement)
+                .map(e -> (ExecutableElement) e)
+                .flatMap(executableElement -> executableElement.getParameters().stream());
+    }
 
-        // Scan methods for @Valid parameters
-        typeElement.getEnclosedElements().stream()
-                .filter(e -> e.getKind() == ElementKind.METHOD || e.getKind() == ElementKind.CONSTRUCTOR)
-                .flatMap(e -> e instanceof ExecutableElement executableElement ?
-                          executableElement.getParameters().stream()
-                        : Stream.empty()
-                )
-                .filter(this::isAnnotatedWithValid)
-                .forEach(param -> {
-                    TypeElement referred = getReferredType(param.asType());
-                    if (referred == null) return;
+    private Stream<TypeElement> getRecordsFromParam(VariableElement param) {
+        TypeElement referred = getReferredType(param.asType());
+        if (referred == null) {
+            return Stream.empty();
+        }
 
-                    if (referred.getModifiers().contains(Modifier.SEALED)) {
-                        referred.getPermittedSubclasses().stream()
-                                .map(this::getReferredType)
-                                .filter(Objects::nonNull)
-                                .forEach(subtype -> {
-                                    if (subtype.getKind() == ElementKind.RECORD) {
-                                        collectNestedValidRecords(subtype, result);
-                                        result.add(subtype);
-                                        return;
-                                    }
+        if (referred.getModifiers().contains(Modifier.SEALED)) {
+            return Stream.concat(getSealedSubtypes(referred, param), Stream.of(referred));
+        }
 
-                                    processingEnv.getMessager().printMessage(
-                                            Diagnostic.Kind.WARNING,
-                                            "Permitted subtype " + subtype + " is not a record, skipping",
-                                            param
-                                    );
-                                });
-                        result.add(referred);
-                        return;
+        if (referred.getKind() == ElementKind.RECORD) {
+            return getRecordAndNestedValidAnnotated(referred);
+        }
+
+        processingEnv.getMessager().printMessage(
+                Diagnostic.Kind.WARNING,
+                "@Valid can only be applied to records, but it was applied to " + referred,
+                param
+        );
+
+        return Stream.empty();
+    }
+
+    private Stream<TypeElement> getSealedSubtypes(TypeElement sealedType, VariableElement param) {
+        return sealedType.getPermittedSubclasses().stream()
+                .map(this::getReferredType)
+                .filter(Objects::nonNull)
+                .flatMap(subtype -> {
+                    if (subtype.getKind() == ElementKind.RECORD) {
+                        return getRecordAndNestedValidAnnotated(subtype);
                     }
-
-                    if (referred.getKind() == ElementKind.RECORD) {
-                        collectNestedValidRecords(referred, result);
-                        result.add(referred);
-                        return;
-                    }
-
                     processingEnv.getMessager().printMessage(
                             Diagnostic.Kind.WARNING,
-                            "@Valid can only be applied to records, but it was applied to " + referred,
+                            "Permitted subtype " + subtype + " is not a record, skipping",
                             param
                     );
+                    return Stream.empty();
                 });
-
-        // Recurse into nested types
-        typeElement.getEnclosedElements().forEach(e -> collectValidRecordsRecursively(e, result));
     }
 
-    private void collectNestedValidRecords(TypeElement recordElement, List<TypeElement> result) {
-        recordElement.getEnclosedElements().stream()
+    private Stream<TypeElement> getRecordAndNestedValidAnnotated(TypeElement record) {
+        Stream<TypeElement> fromComponents = record.getEnclosedElements().stream()
                 .filter(e -> e.getKind() == ElementKind.RECORD_COMPONENT)
                 .map(e -> (VariableElement) e)
-                .forEach(component -> {
-                    // @Valid directly on the field type
-                    TypeElement referred = getReferredType(component.asType());
-                    if (referred != null && referred.getKind() == ElementKind.RECORD
-                            && isAnnotatedWithValid(component)) {
-                        result.add(referred);
-                        collectNestedValidRecords(referred, result); // recurse
-                    }
+                .flatMap(c -> Stream.concat(
+                        getNestedFromDirectRecordComponent(c),
+                        getNestedFromTypeArguments(c)
+                ));
 
-                    // @Valid on type argument e.g. List<@Valid TransferRequestDTO>
-                    getValidTypeArguments(component.asType()).forEach(argType -> {
-                        TypeElement argElement = getReferredType(argType);
-                        if (argElement != null && argElement.getKind() == ElementKind.RECORD) {
-                            result.add(argElement);
-                            collectNestedValidRecords(argElement, result); // recurse
-                        }
-                    });
-                });
+        return Stream.concat(Stream.of(record), fromComponents);
     }
 
-    private List<TypeMirror> getValidTypeArguments(TypeMirror type) {
-        if (!(type instanceof DeclaredType declared)) return List.of();
+    private Stream<TypeElement> getNestedFromDirectRecordComponent(VariableElement component) {
+        if (!isAnnotatedWithValid(component)) {
+            return Stream.empty();
+        }
+
+        TypeElement referred = getReferredType(component.asType());
+        if (referred == null || referred.getKind() != ElementKind.RECORD) {
+            return Stream.empty();
+        }
+
+        return getRecordAndNestedValidAnnotated(referred);
+    }
+
+    private Stream<TypeElement> getNestedFromTypeArguments(VariableElement component) {
+        return getValidTypeArguments(component.asType())
+                .map(this::getReferredType)
+                .filter(e -> e != null && e.getKind() == ElementKind.RECORD)
+                .flatMap(this::getRecordAndNestedValidAnnotated);
+    }
+
+    private Stream<TypeMirror> getValidTypeArguments(TypeMirror type) {
+        if (!(type instanceof DeclaredType declared)) {
+            return Stream.empty();
+        }
+
         return declared.getTypeArguments().stream()
-                .filter(arg -> arg.getAnnotationMirrors().stream()
-                        .anyMatch(a -> a.getAnnotationType()
-                                .asElement()
-                                .getSimpleName()
-                                .contentEquals("Valid")))
-                .map(TypeMirror.class::cast)
-                .toList();
+                .filter(this::isAnnotatedWithValid)
+                .map(TypeMirror.class::cast);
     }
 
     private boolean isAnnotatedWithValid(TypeMirror type) {
         return type.getAnnotationMirrors().stream()
-                .anyMatch(a -> a.getAnnotationType()
-                        .asElement()
-                        .getSimpleName()
-                        .contentEquals("Valid"));
+                .anyMatch(ValidatorProcessor::isValidAnnotation);
     }
 
     private boolean isAnnotatedWithValid(VariableElement param) {
         boolean onElement = param.getAnnotationMirrors().stream()
-                .anyMatch(a -> a.getAnnotationType()
-                        .asElement()
-                        .getSimpleName()
-                        .contentEquals("Valid"));
+                .anyMatch(ValidatorProcessor::isValidAnnotation);
 
-        boolean onType = param.asType().getAnnotationMirrors().stream()
-                .anyMatch(a -> a.getAnnotationType()
-                        .asElement()
-                        .getSimpleName()
-                        .contentEquals("Valid"));
+        boolean onType = isAnnotatedWithValid(param.asType());
 
         return onElement || onType;
+    }
+
+    private static boolean isValidAnnotation(AnnotationMirror a) {
+        return a.getAnnotationType().toString().equals("jakarta.validation.Valid");
     }
 
     // -- Class writer --
