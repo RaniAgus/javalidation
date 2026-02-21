@@ -427,4 +427,208 @@ class ValidateAnnotationTest {
                         }
                         """));
     }
+
+    @Test
+    void shouldGenerateValidatorForSealedInterface() {
+        JavaFileObject sealedFile = JavaFileObjects.forSourceString("test.Shape", """
+                package test;
+    
+                public sealed interface Shape permits Circle, Rectangle {}
+                """
+        );
+
+        JavaFileObject circleFile = JavaFileObjects.forSourceString("test.Circle", """
+                package test;
+            
+                import jakarta.validation.Valid;
+            
+                public record Circle(double radius, @Valid Center center) implements Shape {}
+                """
+        );
+
+        JavaFileObject centerFile = JavaFileObjects.forSourceString("test.Center", """
+                package test;
+            
+                public record Center(double x, double y) {}
+                """
+        );
+
+        JavaFileObject rectangleFile = JavaFileObjects.forSourceString("test.Rectangle", """
+                package test;
+    
+                public record Rectangle(double width, double height) implements Shape {}
+                """
+        );
+
+        JavaFileObject triggerFile = JavaFileObjects.forSourceString("test.ShapeService", """
+                package test;
+    
+                import jakarta.validation.Valid;
+    
+                public class ShapeService {
+                    public void create(@Valid Shape input) {}
+                }
+                """
+        );
+
+        Compilation compilation = javac()
+                .withProcessors(new ValidatorProcessor())
+                .compile(sealedFile, circleFile, centerFile, rectangleFile, triggerFile);
+
+        assertThat(compilation).succeeded();
+
+        assertThat(compilation)
+                .generatedSourceFile("test.CircleValidator")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.CircleValidator", """
+                        package test;
+    
+                        import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.validator.Validator;
+                        import javax.annotation.processing.Generated;
+                        import org.jspecify.annotations.NullMarked;
+    
+                        @NullMarked
+                        @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
+                        public class CircleValidator implements Validator<Circle> {
+                            private final Validator<Center> centerValidator = new CenterValidator();
+            
+                            @Override
+                            public void validate(Validation validation, Circle root) {
+                                validation.withField("center", () -> {
+                                    var center = root.center();
+                                    if (center == null) return;
+                                    centerValidator.validate(validation, center);
+                                });
+                            }
+                        }
+                        """
+                ));
+
+        assertThat(compilation)
+                .generatedSourceFile("test.CenterValidator")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.CenterValidator", """
+                        package test;
+            
+                        import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.validator.Validator;
+                        import javax.annotation.processing.Generated;
+                        import org.jspecify.annotations.NullMarked;
+            
+                        @NullMarked
+                        @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
+                        public class CenterValidator implements Validator<Center> {
+                            @Override
+                            public void validate(Validation validation, Center root) {
+            
+                            }
+                        }
+                        """
+                ));
+
+        assertThat(compilation)
+                .generatedSourceFile("test.RectangleValidator")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.RectangleValidator", """
+                        package test;
+    
+                        import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.validator.Validator;
+                        import javax.annotation.processing.Generated;
+                        import org.jspecify.annotations.NullMarked;
+    
+                        @NullMarked
+                        @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
+                        public class RectangleValidator implements Validator<Rectangle> {
+                            @Override
+                            public void validate(Validation validation, Rectangle root) {
+    
+                            }
+                        }
+                        """
+                ));
+
+        assertThat(compilation)
+                .generatedSourceFile("test.ShapeValidator")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.ShapeValidator", """
+                    package test;
+
+                    import io.github.raniagus.javalidation.Validation;
+                    import io.github.raniagus.javalidation.validator.Validator;
+                    import javax.annotation.processing.Generated;
+                    import org.jspecify.annotations.NullMarked;
+
+                    @NullMarked
+                    @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
+                    public class ShapeValidator implements Validator<Shape> {
+                        private final Validator<Circle> circleValidator = new CircleValidator();
+                        private final Validator<Rectangle> rectangleValidator = new RectangleValidator();
+
+                        @Override
+                        public void validate(Validation validation, Shape root) {
+                            switch (root) {
+                                case Circle circle -> circleValidator.validate(validation, circle);
+                                case Rectangle rectangle -> rectangleValidator.validate(validation, rectangle);
+                            }
+                        }
+                    }
+                    """
+                ));
+
+        assertThat(compilation)
+                .generatedSourceFile("io.github.raniagus.javalidation.validator.Validators")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("io.github.raniagus.javalidation.validator.Validators", """
+                    package io.github.raniagus.javalidation.validator;
+
+                    import io.github.raniagus.javalidation.ValidationErrors;
+                    import java.util.Map;
+                    import javax.annotation.processing.Generated;
+                    import org.jspecify.annotations.NullMarked;
+                    import test.Center;
+                    import test.CenterValidator;
+                    import test.Circle;
+                    import test.CircleValidator;
+                    import test.Rectangle;
+                    import test.RectangleValidator;
+                    import test.Shape;
+                    import test.ShapeValidator;
+
+                    @NullMarked
+                    @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
+                    public final class Validators {
+                        private static final Map<Class<?>, Validator<?>> CACHE;
+
+                        private Validators() {}
+
+                        static {
+                            CACHE = Map.ofEntries(
+                                    Map.entry(Center.class, new CenterValidator())
+                                  , Map.entry(Circle.class, new CircleValidator())
+                                  , Map.entry(Rectangle.class, new RectangleValidator())
+                                  , Map.entry(Shape.class, new ShapeValidator())
+                            );
+                        }
+
+                        public static boolean hasValidator(Class<?> clazz) {
+                            return CACHE.containsKey(clazz);
+                        }
+
+                        @SuppressWarnings("unchecked")
+                        public static <T> ValidationErrors validate(T instance) {
+                            Validator<T> validator = getValidator((Class<T>) instance.getClass());
+                            return validator.validate(instance);
+                        }
+
+                        @SuppressWarnings("unchecked")
+                        public static <T> Validator<T> getValidator(Class<T> clazz) {
+                             Validator<?> validator = CACHE.get(clazz);
+                             if (validator == null) {
+                                 throw new IllegalArgumentException(
+                                     "No validator registered for " + clazz.getName()
+                                 );
+                             }
+                             return (Validator<T>) validator;
+                        }
+                    }
+                    """
+                ));
+    }
 }

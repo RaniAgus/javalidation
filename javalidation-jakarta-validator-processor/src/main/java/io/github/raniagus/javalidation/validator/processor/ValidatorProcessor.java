@@ -102,7 +102,7 @@ public class ValidatorProcessor extends AbstractProcessor {
      * ValidatorClassWriter instances so ValidatorsClassWriter can use them.
      * ValidatorClassWriter must be reconstructable from its fullName() alone.
      */
-    private List<ValidatorClassWriter> reconstructWriters() {
+    private List<RecordValidatorClassWriter> reconstructWriters() {
         return discoveredClassNames.stream()
                 .map(ValidatorProcessor::fromFullName)
                 .toList();
@@ -116,7 +116,7 @@ public class ValidatorProcessor extends AbstractProcessor {
      * fullName() format: "{packageName}.{className}"
      * className is either "FooValidator" or "EnclosingClass$FooValidator"
      */
-    public static ValidatorClassWriter fromFullName(String fullName) {
+    public static RecordValidatorClassWriter fromFullName(String fullName) {
         int lastDot = fullName.lastIndexOf('.');
         String packageName = fullName.substring(0, lastDot);
         String className = fullName.substring(lastDot + 1); // e.g. "FooValidator" or "Bar$FooValidator"
@@ -139,7 +139,7 @@ public class ValidatorProcessor extends AbstractProcessor {
                 ? packageName + "." + className.substring(0, dollarSign)  // "com.example.Bar"
                 : packageName + "." + recordName;                         // "com.example.Foo"
 
-        return new ValidatorClassWriter(
+        return new RecordValidatorClassWriter(
                 packageName, className, enclosingClassPrefix,
                 recordName, recordFullName, recordImportName,
                 List.of()
@@ -169,7 +169,9 @@ public class ValidatorProcessor extends AbstractProcessor {
         return roundEnv.getRootElements().stream()
                 .flatMap(element -> collectRecordsWithValidFields(element).stream())
                 .distinct()
-                .map(this::parseClassWriter)
+                .map(te -> te.getModifiers().contains(Modifier.SEALED)
+                        ? parseSealedClassWriter(te)
+                        : parseRecordClassWriter(te))
                 .toList();
     }
 
@@ -194,20 +196,78 @@ public class ValidatorProcessor extends AbstractProcessor {
                     TypeElement referred = getReferredType(param.asType());
                     if (referred == null) return;
 
-                    if (referred.getKind() != ElementKind.RECORD) {
-                        processingEnv.getMessager().printMessage(
-                                Diagnostic.Kind.WARNING,
-                                "@Valid can only be applied to records, but it was applied to " + referred,
-                                param
-                        );
+                    if (referred.getModifiers().contains(Modifier.SEALED)) {
+                        referred.getPermittedSubclasses().stream()
+                                .map(this::getReferredType)
+                                .filter(Objects::nonNull)
+                                .forEach(subtype -> {
+                                    if (subtype.getKind() == ElementKind.RECORD) {
+                                        collectNestedValidRecords(subtype, result);
+                                        result.add(subtype);
+                                        return;
+                                    }
+
+                                    processingEnv.getMessager().printMessage(
+                                            Diagnostic.Kind.WARNING,
+                                            "Permitted subtype " + subtype + " is not a record, skipping",
+                                            param
+                                    );
+                                });
+                        result.add(referred);
                         return;
                     }
 
-                    result.add(referred);
-                });;
+                    if (referred.getKind() == ElementKind.RECORD) {
+                        collectNestedValidRecords(referred, result);
+                        result.add(referred);
+                        return;
+                    }
+
+                    processingEnv.getMessager().printMessage(
+                            Diagnostic.Kind.WARNING,
+                            "@Valid can only be applied to records, but it was applied to " + referred,
+                            param
+                    );
+                });
 
         // Recurse into nested types
         typeElement.getEnclosedElements().forEach(e -> collectValidRecordsRecursively(e, result));
+    }
+
+    private void collectNestedValidRecords(TypeElement recordElement, List<TypeElement> result) {
+        recordElement.getEnclosedElements().stream()
+                .filter(e -> e.getKind() == ElementKind.RECORD_COMPONENT)
+                .map(e -> (VariableElement) e)
+                .forEach(component -> {
+                    // @Valid directly on the field type
+                    TypeElement referred = getReferredType(component.asType());
+                    if (referred != null && referred.getKind() == ElementKind.RECORD
+                            && isAnnotatedWithValid(component)) {
+                        result.add(referred);
+                        collectNestedValidRecords(referred, result); // recurse
+                    }
+
+                    // @Valid on type argument e.g. List<@Valid TransferRequestDTO>
+                    getValidTypeArguments(component.asType()).forEach(argType -> {
+                        TypeElement argElement = getReferredType(argType);
+                        if (argElement != null && argElement.getKind() == ElementKind.RECORD) {
+                            result.add(argElement);
+                            collectNestedValidRecords(argElement, result); // recurse
+                        }
+                    });
+                });
+    }
+
+    private List<TypeMirror> getValidTypeArguments(TypeMirror type) {
+        if (!(type instanceof DeclaredType declared)) return List.of();
+        return declared.getTypeArguments().stream()
+                .filter(arg -> arg.getAnnotationMirrors().stream()
+                        .anyMatch(a -> a.getAnnotationType()
+                                .asElement()
+                                .getSimpleName()
+                                .contentEquals("Valid")))
+                .map(TypeMirror.class::cast)
+                .toList();
     }
 
     private boolean isAnnotatedWithValid(TypeMirror type) {
@@ -236,15 +296,34 @@ public class ValidatorProcessor extends AbstractProcessor {
 
     // -- Class writer --
 
-    private ValidatorClassWriter parseClassWriter(TypeElement recordElement) {
-        return new ValidatorClassWriter(
-                processingEnv.getElementUtils().getPackageOf(recordElement).getQualifiedName().toString(),
-                getValidatorName(recordElement),
-                getEnclosingClassPrefix(recordElement, "."),
-                getRecordName(recordElement),
-                getRecordFullName(recordElement),
-                getRecordImportName(recordElement),
-                parseFieldWriters(recordElement)
+    private ValidatorClassWriter parseSealedClassWriter(TypeElement sealedInterface) {
+        List<ValidatorClassWriter> permittedWriters = sealedInterface.getPermittedSubclasses().stream()
+                .map(this::getReferredType)
+                .filter(Objects::nonNull)
+                .filter(te -> te.getKind() == ElementKind.RECORD)
+                .map(this::parseRecordClassWriter)
+                .toList();
+
+        return new SealedValidatorClassWriter(
+                processingEnv.getElementUtils().getPackageOf(sealedInterface).getQualifiedName().toString(),
+                getValidatorName(sealedInterface),
+                getEnclosingClassPrefix(sealedInterface, "."),
+                getRecordName(sealedInterface),
+                getRecordFullName(sealedInterface),
+                getRecordImportName(sealedInterface),
+                permittedWriters
+        );
+    }
+
+    private ValidatorClassWriter parseRecordClassWriter(TypeElement typeElement) {
+        return new RecordValidatorClassWriter(
+                processingEnv.getElementUtils().getPackageOf(typeElement).getQualifiedName().toString(),
+                getValidatorName(typeElement),
+                getEnclosingClassPrefix(typeElement, "."),
+                getRecordName(typeElement),
+                getRecordFullName(typeElement),
+                getRecordImportName(typeElement),
+                parseFieldWriters(typeElement)
         );
     }
 

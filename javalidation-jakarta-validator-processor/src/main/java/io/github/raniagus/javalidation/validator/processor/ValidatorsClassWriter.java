@@ -3,7 +3,7 @@ package io.github.raniagus.javalidation.validator.processor;
 import java.util.List;
 import java.util.stream.Stream;
 
-public record ValidatorsClassWriter(List<ValidatorClassWriter> classWriters) implements ClassWriter {
+public record ValidatorsClassWriter(List<RecordValidatorClassWriter> classWriters) implements ClassWriter {
     @Override
     public String packageName() {
         return "io.github.raniagus.javalidation.validator";
@@ -41,7 +41,7 @@ public record ValidatorsClassWriter(List<ValidatorClassWriter> classWriters) imp
                         CACHE = Map.ofEntries(\
                 """.formatted(className()));
         boolean first = true;
-        for (ValidatorClassWriter writer : classWriters) {
+        for (RecordValidatorClassWriter writer : classWriters) {
             out.write("""
                                   %s Map.entry(%s%s.class, new %s())\
                     """.formatted(first ? " " : ",", writer.enclosingClassPrefix(), writer.recordName(), writer.className()));

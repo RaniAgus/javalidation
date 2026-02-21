@@ -726,7 +726,7 @@ public class UserDtoValidator implements Validator {
 </details>
 
 > [!IMPORTANT]
-> - Only record classes can be annotated with `@Valid`.
+> - Only `record`s and `sealed interface`s with `record` implementations can be annotated with `@Valid`.
 > - Groups are not supported yet.
 > - Using `@Valid` annotation on a `Map` key results in undefined field error namespacing behavior.
 
