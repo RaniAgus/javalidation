@@ -287,7 +287,6 @@ public interface NullUnsafeWriter extends ValidationWriter {
 
             out.decrementIndentationLevel();
             out.write("});");
-            out.write("");
         }
     }
 
@@ -354,7 +353,6 @@ public interface NullUnsafeWriter extends ValidationWriter {
 
             out.decrementIndentationLevel();
             out.write("});");
-            out.write("");
         }
     }
 }

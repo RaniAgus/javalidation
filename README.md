@@ -643,12 +643,15 @@ To tell the annotation processor to generate a `Validator<T>`, annotate the reco
 ```java
 import io.github.raniagus.javalidation.validator.Validate;
 import jakarta.validation.constraints.*;
+import java.util.List;
+import java.util.Map;
 
 @Validate
 public record UserDto(
         @NotBlank String name,
-        @NotNull @Email String email,
-        @NotEmpty List orders
+        @Email String email,
+        @NotEmpty List<@NotNull OrderDto> orders,
+        @NotNull Map<@NotBlank String, @NotNull @Min(0) Integer> inventory
 ) {
     @Validate
     public record OrderDto(
@@ -657,8 +660,81 @@ public record UserDto(
     ) {}
 }
 ```
+<details>
 
-> **Important:** Only record classes are supported.
+<summary>Generated <code>UserDtoValidator</code></summary>
+
+```java
+import io.github.raniagus.javalidation.Validation;
+import io.github.raniagus.javalidation.validator.Validator;
+import javax.annotation.processing.Generated;
+import org.jspecify.annotations.NullMarked;
+
+@NullMarked
+@Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
+public class UserDtoValidator implements Validator {
+    private final Validator ordersItemValidator = new UserDto$OrderDtoValidator();
+
+    @Override
+    public void validate(Validation validation, UserDto root) {
+        validation.withField("name", () -> {
+            var name = root.name();
+            if (name == null || name.isBlank()) {
+                validation.addRootError("must not be blank");
+                return;
+            }
+        });
+        validation.withField("email", () -> {
+            var email = root.email();
+            if (email == null) return;
+            if (!email.toString().matches("^[^@]+@[^@]+\\.[^@]+$")) {
+                validation.addRootError("must be a well-formed email address");
+            }
+        });
+        validation.withField("orders", () -> {
+            var orders = root.orders();
+            if (orders == null || orders.isEmpty()) {
+                validation.addRootError("must not be empty");
+                return;
+            }
+            validation.withEach(orders, ordersItem -> {
+                if (ordersItem == null) {
+                    validation.addRootError("must not be null");
+                    return;
+                }
+                ordersItemValidator.validate(validation, ordersItem);
+            });
+        });
+        validation.withField("inventory", () -> {
+            var inventory = root.inventory();
+            if (inventory == null) {
+                validation.addRootError("must not be null");
+                return;
+            }
+            inventory.forEach((inventoryKey, inventoryValue) -> {
+                if (inventoryKey == null || inventoryKey.isBlank()) {
+                    validation.addRootError("must not be blank");
+                    return;
+                }
+                validation.withField(inventoryKey, () -> {
+                    if (inventoryValue == null) {
+                        validation.addRootError("must not be null");
+                        return;
+                    }
+                    if (!(inventoryValue >= 0)) {
+                        validation.addRootError("must be greater than or equal to {0}", 0);
+                    }
+                });
+            });
+        });
+    }
+}
+```
+
+</details>
+
+> **Important:** Only record classes can be annotated with `@Validate`. Constraints on `Map` keys are validated, but
+> using a `@Validate`-annotated record as a key results in undefined field error namespacing behavior.
 
 Unlike Jakarta Bean Validation, constraints on type arguments are validated automatically without needing `@Valid`. To
 opt out of validation for a specific field or type argument, use `@SkipValidate`:
