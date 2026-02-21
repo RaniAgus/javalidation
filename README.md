@@ -40,7 +40,7 @@ The core validation library with zero dependencies:
 <dependency>
   <groupId>io.github.raniagus</groupId>
   <artifactId>javalidation</artifactId>
-  <version>0.27.0</version>
+  <version>0.28.0</version>
 </dependency>
 ```
 
@@ -52,7 +52,7 @@ For Jackson 3.x serialization support:
 <dependency>
   <groupId>io.github.raniagus</groupId>
   <artifactId>javalidation-jackson</artifactId>
-  <version>0.27.0</version>
+  <version>0.28.0</version>
 </dependency>
 ```
 
@@ -64,7 +64,7 @@ Library for code-generated `Validator<T>` interface and injector:
 <dependency>
   <groupId>io.github.raniagus</groupId>
   <artifactId>javalidation-jakarta-validator</artifactId>
-  <version>0.27.0</version>
+  <version>0.28.0</version>
 </dependency>
 ```
 
@@ -78,7 +78,7 @@ Annotation processor for generating Validator implementations:
             <path>
                 <groupId>io.github.raniagus</groupId>
                 <artifactId>javalidation-jakarta-validator-processor</artifactId>
-                <version>0.27.0</version>
+                <version>0.28.0</version>
             </path>
         </annotationProcessorPaths>
     </configuration>
@@ -99,7 +99,7 @@ Provides Spring Boot 4.x autoconfiguration for:
 <dependency>
   <groupId>io.github.raniagus</groupId>
   <artifactId>javalidation-spring-boot-starter</artifactId>
-  <version>0.27.0</version>
+  <version>0.28.0</version>
 </dependency>
 ```
 
