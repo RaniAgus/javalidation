@@ -45,7 +45,7 @@ package io.github.raniagus.javalidation;
 public class JavalidationException extends RuntimeException {
     private final ValidationErrors errors;
 
-    private JavalidationException(ValidationErrors errors) {
+    public JavalidationException(ValidationErrors errors) {
         super(buildMessage(errors));
         this.errors = errors;
     }
