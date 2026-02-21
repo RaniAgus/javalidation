@@ -111,9 +111,9 @@ import io.github.raniagus.javalidation.*;
 record Person(String name, int age, String email) {}
 
 // Validate multiple fields and accumulate ALL errors
-Result<Person> result = validateName(name)
-    .and(validateAge(age))
-    .and(validateEmail(email))
+Result<Person> result = validateName(name).withPrefix("name")
+    .and(validateAge(age).withPrefix("age"))
+    .and(validateEmail(email).withPrefix("email"))
     .combine(Person::new);
 
 // Handle result with pattern matching
@@ -128,19 +128,19 @@ Person validPerson = result.getOrThrow();
 // Individual field validators
 static Result<String> validateName(String name) {
     return Result.ok(name)
-        .filter(n -> n != null && !n.isEmpty(), "name", "Name is required")
-        .filter(n -> n.length() >= 2, "name", "Name must be at least {0} characters", 2);
+        .filter(n -> n != null && !n.isEmpty(), "Name is required")
+        .filter(n -> n.length() >= 2, "Name must be at least {0} characters", 2);
 }
 
 static Result<Integer> validateAge(int age) {
     return Result.ok(age)
-        .filter(a -> a >= 18, "age", "Must be {0} or older", 18)
-        .filter(a -> a <= 120, "age", "Age must be less than {0}", 120);
+        .filter(a -> a >= 18, "Must be {0} or older", 18)
+        .filter(a -> a <= 120, "Age must be less than {0}", 120);
 }
 
 static Result<String> validateEmail(String email) {
     return Result.ok(email)
-        .filter(e -> e != null && e.contains("@"), "email", "Invalid email format");
+        .filter(e -> e != null && e.contains("@"), "Invalid email format");
 }
 ```
 
@@ -266,36 +266,36 @@ record Person(String name, int age, String email, String password) {}
 
 static Result<String> validateName(String name) {
     return Result.ok(name)
-        .filter(n -> n != null && !n.isEmpty(), "name", "Name is required")
-        .filter(n -> n.length() >= 2, "name", "Name must be at least 2 characters")
-        .filter(n -> n.length() <= 50, "name", "Name must not exceed 50 characters");
+        .filter(n -> n != null && !n.isEmpty(), "Name is required")
+        .filter(n -> n.length() >= 2, "Name must be at least 2 characters")
+        .filter(n -> n.length() <= 50, "Name must not exceed 50 characters");
 }
 
 static Result<Integer> validateAge(int age) {
     return Result.ok(age)
-        .filter(a -> a >= 18, "age", "Must be at least 18 years old")
-        .filter(a -> a <= 120, "age", "Age cannot exceed 120");
+        .filter(a -> a >= 18, "Must be at least 18 years old")
+        .filter(a -> a <= 120, "Age cannot exceed 120");
 }
 
 static Result<String> validateEmail(String email) {
     return Result.ok(email)
-        .filter(e -> e != null && !e.isEmpty(), "email", "Email is required")
-        .filter(e -> e.matches("^[^@]+@[^@]+\\.[^@]+$"), "email", "Invalid email format");
+        .filter(e -> e != null && !e.isEmpty(), "Email is required")
+        .filter(e -> e.matches("^[^@]+@[^@]+\\.[^@]+$"), "Invalid email format");
 }
 
 static Result<String> validatePassword(String password) {
     return Result.ok(password)
-        .filter(p -> p != null && p.length() >= 8, "password", "Password must be at least 8 characters")
-        .filter(p -> p.matches(".*[A-Z].*"), "password", "Password must contain uppercase letter")
-        .filter(p -> p.matches(".*[0-9].*"), "password", "Password must contain a number");
+        .filter(p -> p != null && p.length() >= 8, "Password must be at least 8 characters")
+        .filter(p -> p.matches(".*[A-Z].*"), "Password must contain uppercase letter")
+        .filter(p -> p.matches(".*[0-9].*"), "Password must contain a number");
 }
 
 // Combine all validations
 static Result<Person> validatePerson(String name, int age, String email, String password) {
-    return validateName(name)
-        .and(validateAge(age))
-        .and(validateEmail(email))
-        .and(validatePassword(password))
+    return validateName(name).withPrefix("name")
+        .and(validateAge(age).withPrefix("age"))
+        .and(validateEmail(email).withPrefix("email"))
+        .and(validatePassword(password).withPrefix("password"))
         .combine(Person::new);
 }
 ```
@@ -354,12 +354,12 @@ static Result<List<Item>> validateItems(List<Item> items) {
 // For nested collections with a custom prefix:
 static Result<Order> validateOrder(Order order) {
     Result<List<Item>> itemsResult = Result.ok(order.items())
-            .filter(i -> !i.isEmpty(), "Order must contain at least one item")
+            .filter(Objects::nonNull, "Order must contain a list of items")
             .flatMap(i -> i.stream()
                 .map(YourClass::validateItem)
                 .collect(withPrefix("items", withIndex(toResultList())))
             );
-    
+
     return itemsResult.map(Order::new);
 }
 // Errors become: "items[0].name", "items[1].price", "items[2].name"
@@ -439,37 +439,36 @@ Combining business rules validation and internal checks in a REST API:
 
 ```java
 // Controller
-void routes(Application app) {
-    UserValidator validator = new UserValidator();
-    UserService userService = new UserService(/* ... */);
+public void registerUser(Context ctx) {
+    String contentType = ctx.getHttpHeader("Content-Type");
+    if (contentType == null || !contentType.startsWith("application/json")) {
+        // 415 Unsupported Media Type: Request body is not JSON
+        return ctx.status(415).body("Invalid Content-Type");
+    }
 
-    app.post("/api/users/register", ctx -> {
-        String contentType = ctx.getHttpHeader("Content-Type");
-        if (contentType == null || !contentType.startsWith("application/json")) {
-            // 415 Unsupported Media Type: Request body is not JSON
-            return ctx.status(415).body("Invalid Content-Type");
-        }
+    try {
+        UserRegistrationRequest request = ctx.bodyAsClass(UserRegistrationRequest.class);
+        return switch (validator.validateRegistrationRequest(request)) {
+            // 2xx Success
+            case Result.Ok(User user) -> ctx.ok(userService.createUser(user));
 
-        try {
-            UserRegistrationRequest request = ctx.bodyAsClass(UserRegistrationRequest.class);
-            return switch (validator.validateRegistrationRequest(request)) {
-                case Result.Ok(User user) -> ctx.ok(userService.createUser(user));
+            // 422 Unprocessable Content: Request is well-formed but violates business rules
+            case Result.Err(ValidationErrors errors) -> ctx.status(422).body(errors);
+        };
 
-                // 422 Unprocessable Content: Request is well-formed but violates business rules
-                case Result.Err(ValidationErrors errors) -> ctx.status(422).body(errors);
-            };
-        } catch (JavalidationException e) {
-            // 409 Conflict: Request is valid but conflicts with the current state
-            return ctx.status(409).body(e.getErrors());
-        } catch (JsonProcessingException e) {
-            // 400 Bad Request: Request is malformed for specified Content-Type
-            return ctx.status(400).body("Invalid request format");
-        } catch (Exception e) {
-            // 500: Unexpected error - log and alert
-            logger.error("Unexpected error during registration", e);
-            return ctx.status(500).body("Internal server error");
-        }
-    });
+    } catch (JavalidationException e) {
+        // 409 Conflict: Request is valid but conflicts with the current state
+        return ctx.status(409).body(e.getErrors());
+
+    } catch (JsonProcessingException e) {
+        // 400 Bad Request: Request is malformed for specified Content-Type
+        return ctx.status(400).body("Invalid request format");
+
+    } catch (Exception e) {
+        // 500: Unexpected error - log and alert
+        logger.error("Unexpected error during registration", e);
+        return ctx.status(500).body("Internal server error");
+    }
 }
 
 // Business rules validator
@@ -590,7 +589,7 @@ Result<User> failure = Result.err("email", "Invalid format");
 
 ### Spring Boot Integration
 
-**Configuration (optional):**
+#### Configuration (optional)
 ```yaml
 # application.yml
 io.github.raniagus.javalidation:
@@ -599,7 +598,7 @@ io.github.raniagus.javalidation:
   flatten-errors: false       # Flatten JSON error structure (default: false)
 ```
 
-**Internationalization:**
+#### Internationalization
 
 Create message files:
 ```properties
@@ -617,18 +616,22 @@ user.age.minimum=Debe tener al menos {0} años
 Use message keys in validation:
 ```java
 Result<User> validateUser(String name, String age) {
-    return Result.ok(name)
-            .filter(n -> !n.isEmpty(), "name", "user.name.required")
-            .and(Result.ok(age)
-                    .filter(a -> a >= 18, "age", "user.age.minimum", 18)
-            )
-            .combine(User::new);
+    Result<String> nameResult = Result.ok(name)
+            .filter(Objects::nonNull, "user.name.required")
+            .filter(n -> !n.isEmpty(), "user.name.required")
+            .withPrefix("name");
+    
+    Result<String> ageResult = Result.ok(age)
+            .filter(a -> a >= 18, "age", "user.age.minimum", 18)
+            .withPrefix("age");
+
+    return nameResult.and(ageResult).combine(User::new);
 }
 ```
 
 Spring automatically formats messages based on the request locale.
 
-**Bean validation**:
+#### Bean validation
 
 When including `javalidation-jakarta-validator` dependency and `javalidation-jakarta-validator-processor`, bean
 validation is autoconfigured to use `Validators.validate(T)`, which is a compile-time generated service locator for
@@ -728,8 +731,11 @@ public class UserDtoValidator implements Validator {
 
 </details>
 
-> **Important:** Only record classes can be annotated with `@Validate`. Constraints on `Map` keys are validated, but
-> using a `@Validate`-annotated record as a key results in undefined field error namespacing behavior.
+> [!IMPORTANT]
+> - Only record classes can be annotated with `@Validate`.
+> - Constraints on `Map` keys are validated, but using a `@Validate`-annotated record as a key results in undefined
+> field error namespacing behavior.
+> - Groups are not supported yet.
 
 Unlike Jakarta Bean Validation, constraints on type arguments are validated automatically without needing `@Valid`. To
 opt out of validation for a specific field or type argument, use `@SkipValidate`:
@@ -742,17 +748,25 @@ public record UserDto(
 ) {}
 ```
 
-### Spring Boot Example
+#### Full Example
+
+```java
+record UserRegistrationRequest(
+        @NotBlank("user.name.required") String name,
+        @Email("user.email.invalid") String email,
+        @Min(value = 18, message = "user.age.minimum") int age
+) {}
+```
 
 ```java
 @PostMapping("/register")
-public ResponseEntity<?> registerUser(@RequestBody @Valid UserRegistrationRequest request, BindingResult bindingResult) {
+public ResponseEntity<?> registerUser(@RequestBody @Valid UserRegistrationRequest request) {
     return ResponseEntity.ok(userService.createUser(user));
 }
 
 @ExceptionHandler(MethodArgumentNotValidException.class)
 public ResponseEntity<?> handleValidation(MethodArgumentNotValidException e) {
-    return ResponseEntity.status(422).body(JavalidationSpringValidator.toValidationErrors(e.getBindingResult()));
+    return ResponseEntity.status(422).body(JavalidationSpringValidator.toValidationErrors(e));
 }
 
 @ExceptionHandler(JavalidationException.class)
@@ -765,6 +779,12 @@ public ResponseEntity<?> handleUnexpectedError(Exception e) {
     logger.error("Unexpected error during registration", e);
     return ResponseEntity.status(500).body("Internal server error");
 }
+```
+
+```properties
+user.name.required=Name is required
+user.email.invalid=Invalid email format
+user.age.minimum=Must be at least {0} years old
 ```
 
 ## Advanced Patterns
@@ -850,23 +870,23 @@ public void validateItemsList(Validation validation, List<Item> items) {
 
 ### Result<T>
 
-| Method                                 | Description                                        |
-|----------------------------------------|----------------------------------------------------|
-| `of(Supplier<T>)`/ `of(Runnable)`      | Wrap supplier or runnable in try-catch             |
-| `ok(T)`                                | Create successful result                           |
-| `err(String, Object...)`               | Create failed result with root error               |
-| `err(String, String, Object...)`       | Create failed result with field error              |
-| `err(ValidationErrors)`                | Create failed result from existing errors          |
-| `map(Function)`                        | Transform success value                            |
-| `flatMap(Function)`                    | Chain validations                                  |
-| `filter(Predicate, String, String)`    | Conditional validation (field error)               |
-| `check(BiConsumer)`                    | Add imperative validation logic                    |
-| `and(Result)`                          | Start applicative combiner chain                   |
-| `or(Result)` / `or(Supplier)`          | Provide fallback                                   |
-| `fold(Function, Function)`             | Handle both cases                                  |
-| `getOrThrow()`                         | Extract value or throw                             |
-| `getOrElse(T)` / `getOrElse(Supplier)` | Extract value or default                           |
-| `withPrefix(String)`                   | Namespace errors for nested objects                |
+| Method                                  | Description                               |
+|-----------------------------------------|-------------------------------------------|
+| `of(Supplier<T>)`/ `of(Runnable)`       | Wrap supplier or runnable in try-catch    |
+| `ok(T)`                                 | Create successful result                  |
+| `err(String, Object...)`                | Create failed result with root error      |
+| `err(String, String, Object...)`        | Create failed result with field error     |
+| `err(ValidationErrors)`                 | Create failed result from existing errors |
+| `map(Function)`                         | Transform success value                   |
+| `flatMap(Function)`                     | Chain validations                         |
+| `filter(Predicate, String, Object...)`  | Conditional validation                    |
+| `check(BiConsumer)`                     | Add imperative validation logic           |
+| `and(Result)`                           | Start applicative combiner chain          |
+| `or(Result)` / `or(Supplier)`           | Provide fallback                          |
+| `fold(Function, Function)`              | Handle both cases                         |
+| `getOrThrow()`                          | Extract value or throw                    |
+| `getOrElse(T)` / `getOrElse(Supplier)`  | Extract value or default                  |
+| `withPrefix(String)`                    | Namespace errors for nested objects       |
 
 ### ValidationErrors
 
@@ -905,7 +925,8 @@ public void validateItemsList(Validation validation, List<Item> items) {
 | `withIndex(Collector<...>)`              | Wraps collector to add `[0]`, `[1]`, etc. prefixes               |
 | `withPrefix(String, Collector<...>)`     | Wraps collector to add field prefix to all errors                |
 
-> **Note:** The optional `int` parameter provides an `initialCapacity` hint for ArrayList optimization.
+> [!NOTE]
+> The optional `int` parameter provides an `initialCapacity` hint for ArrayList optimization.
 
 ### JavalidationException
 
