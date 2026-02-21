@@ -14,42 +14,58 @@ class ValidateAnnotationTest {
     void shouldReportErrorForNonRecordType() {
         JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.InvalidClass", """
                 package test;
-                
-                import io.github.raniagus.javalidation.validator.*;
-                
-                @Validate
+
                 public class InvalidClass {
                     private String field;
                 }
                 """
         );
 
+        JavaFileObject triggerFile = JavaFileObjects.forSourceString("test.SimpleService", """
+                package test;
+    
+                import jakarta.validation.*;
+    
+                public class SimpleService {
+                    public void doSomething(@Valid InvalidClass input) {}
+                }
+                """
+        );
+
         Compilation compilation = javac()
                 .withProcessors(new ValidatorProcessor())
-                .compile(sourceFile);
+                .compile(sourceFile, triggerFile);
 
-        assertThat(compilation).failed();
+        assertThat(compilation).succeeded();
         assertThat(compilation)
-                .hadErrorContaining("@Validate can only be applied to records");
+                .hadWarningContaining("@Valid can only be applied to records, but it was applied to test.InvalidClass");
     }
 
     @Test
     void shouldHandleRecordWithNoValidationAnnotations() {
         // Arrange - create source files in memory
-        JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.SimpleRecord", """
+        JavaFileObject recordFile = JavaFileObjects.forSourceString("test.SimpleRecord", """
                 package test;
-                
-                import io.github.raniagus.javalidation.validator.*;
-                
-                @Validate
+    
                 public record SimpleRecord(String name, int age) {}
+                """
+        );
+
+        JavaFileObject triggerFile = JavaFileObjects.forSourceString("test.SimpleService", """
+                package test;
+    
+                import jakarta.validation.*;
+    
+                public class SimpleService {
+                    public void doSomething(@Valid SimpleRecord input) {}
+                }
                 """
         );
 
         // Act - compile with your processor
         Compilation compilation = javac()
                 .withProcessors(new ValidatorProcessor())
-                .compile(sourceFile);
+                .compile(recordFile, triggerFile);
 
         // Assert - compilation succeeded
         assertThat(compilation).succeeded();
@@ -129,36 +145,42 @@ class ValidateAnnotationTest {
         // Arrange - create source files in memory
         JavaFileObject sourceFile1 = JavaFileObjects.forSourceString("test.UserRequest", """
                 package test;
-                
-                import io.github.raniagus.javalidation.validator.*;
+
+                import jakarta.validation.*;
                 import jakarta.validation.constraints.*;
                 import other.UserAddress;
-                
-                @Validate
+
                 public record UserRequest(
                     String username,
                     String email,
                     Integer age,
-                    UserAddress address
+                    @Valid UserAddress address
                 ) {}
                 """
         );
 
         JavaFileObject sourceFile2 = JavaFileObjects.forSourceString("other.UserAddress", """
                 package other;
-                
-                import io.github.raniagus.javalidation.validator.*;
-                import jakarta.validation.constraints.*;
-                
-                @Validate
+
                 public record UserAddress(String street, String city) {}
+                """
+        );
+
+        JavaFileObject triggerFile = JavaFileObjects.forSourceString("test.UserService", """
+                package test;
+        
+                import jakarta.validation.Valid;
+        
+                public class UserService {
+                    public void create(@Valid UserRequest request) {}
+                }
                 """
         );
 
         // Act - compile with your processor
         Compilation compilation = javac()
                 .withProcessors(new ValidatorProcessor())
-                .compile(sourceFile1, sourceFile2);
+                .compile(sourceFile1, sourceFile2, triggerFile);
 
         // Assert - compilation succeeded
         assertThat(compilation).succeeded();
@@ -235,8 +257,8 @@ class ValidateAnnotationTest {
                         
                             static {
                                 CACHE = Map.ofEntries(
-                                        Map.entry(UserRequest.class, new UserRequestValidator())
-                                      , Map.entry(UserAddress.class, new UserAddressValidator())
+                                        Map.entry(UserAddress.class, new UserAddressValidator())
+                                      , Map.entry(UserRequest.class, new UserRequestValidator())
                                 );
                             }
 
@@ -269,31 +291,39 @@ class ValidateAnnotationTest {
         // Arrange - create source files in memory
         JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.UserRequest", """
                 package test;
-                
-                import io.github.raniagus.javalidation.validator.*;
+
+                import jakarta.validation.*;
                 import jakarta.validation.constraints.*;
                 import java.util.List;
-                
-                @Validate
+
                 public record UserRequest(
                     String username,
                     String email,
                     Integer age,
-                    UserAddress address
+                    @Valid UserAddress address
                 ) {
-                    @Validate
                     public record UserAddress(String street, String city) {}
 
-                    @Validate
                     public record Person(String name) {}
                 }
                 """
         );
 
+        JavaFileObject triggerFile = JavaFileObjects.forSourceString("test.UserService", """
+            package test;
+    
+            import jakarta.validation.Valid;
+    
+            public class UserService {
+                public void create(@Valid UserRequest request) {}
+            }
+            """
+        );
+
         // Act - compile with your processor
         Compilation compilation = javac()
                 .withProcessors(new ValidatorProcessor())
-                .compile(sourceFile);
+                .compile(sourceFile, triggerFile);
 
         // Assert - compilation succeeded
         assertThat(compilation).succeeded();
@@ -357,7 +387,6 @@ class ValidateAnnotationTest {
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
                         import test.UserRequest;
-                        import test.UserRequest$PersonValidator;
                         import test.UserRequest$UserAddressValidator;
                         import test.UserRequestValidator;
 
@@ -370,9 +399,8 @@ class ValidateAnnotationTest {
                         
                             static {
                                 CACHE = Map.ofEntries(
-                                        Map.entry(UserRequest.class, new UserRequestValidator())
-                                      , Map.entry(UserRequest.UserAddress.class, new UserRequest$UserAddressValidator())
-                                      , Map.entry(UserRequest.Person.class, new UserRequest$PersonValidator())
+                                        Map.entry(UserRequest.UserAddress.class, new UserRequest$UserAddressValidator())
+                                      , Map.entry(UserRequest.class, new UserRequestValidator())
                                 );
                             }
 

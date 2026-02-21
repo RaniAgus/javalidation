@@ -11,6 +11,7 @@ import io.github.raniagus.javalidation.ValidationErrors;
 import io.github.raniagus.javalidation.validator.Validator;
 import java.util.*;
 import java.util.function.Consumer;
+import javax.tools.JavaFileObject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -29,10 +30,22 @@ public class CollectionValidationsTest {
             "NestedMapRecord"
     })
     void givenAnnotatedRecords_WhenAnnotationProcessing_ThenGenerateExpectedFiles(String recordName) {
+        JavaFileObject recordFile = JavaFileObjects.forResource("test/collection/" + recordName + ".java");
+        JavaFileObject triggerFile = JavaFileObjects.forSourceString("test.SimpleService", """
+                package test;
+    
+                import jakarta.validation.*;
+    
+                public class SimpleService {
+                    public void doSomething(test.collection.@Valid %s input) {}
+                }
+                """.formatted(recordName)
+        );
+
         assertThat(
                 javac()
                         .withProcessors(new ValidatorProcessor())
-                        .compile(JavaFileObjects.forResource("test/collection/" + recordName + ".java")))
+                        .compile(recordFile, triggerFile))
                 .generatedSourceFile("test.collection." + recordName + "Validator")
                 .hasSourceEquivalentTo(
                         JavaFileObjects.forResource("test/collection/" + recordName + "Validator.java"));
@@ -288,8 +301,6 @@ public class CollectionValidationsTest {
                     );
         }
     }
-
-
 
     @Nested
     class NestedMapRecordValidatorTest {

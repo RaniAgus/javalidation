@@ -18,14 +18,26 @@ class SkipValidateAnnotationTest {
                 import io.github.raniagus.javalidation.validator.*;
                 import jakarta.validation.constraints.*;
 
-                @Validate
-                public record SkippedRecord(@SkipValidate @NotNull String name) {}
+                public record SkippedRecord(@NotNull Name name) {
+                    public record Name(@NotNull String value) {}
+                }
+                """
+        );
+
+        JavaFileObject triggerFile = JavaFileObjects.forSourceString("test.SimpleService", """
+                package test;
+    
+                import jakarta.validation.*;
+    
+                public class SimpleService {
+                    public void doSomething(@Valid SkippedRecord input) {}
+                }
                 """
         );
 
         Compilation compilation = javac()
                 .withProcessors(new ValidatorProcessor())
-                .compile(sourceFile);
+                .compile(sourceFile, triggerFile);
 
         assertThat(compilation).succeeded();
         assertThat(compilation)
@@ -43,75 +55,16 @@ class SkipValidateAnnotationTest {
                         public class SkippedRecordValidator implements Validator<SkippedRecord> {
                             @Override
                             public void validate(Validation validation, SkippedRecord root) {
-
+                                validation.withField("name", () -> {
+                                    var name = root.name();
+                                    if (name == null) {
+                                        validation.addError("must not be null");
+                                        return;
+                                    }
+                                });
                             }
                         }
                         """
                 ));
-    }
-
-    @Test
-    void shouldSkipValidationOnTypeArgument() {
-        JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.SkippedIterableRecord", """
-                package test;
-
-                import io.github.raniagus.javalidation.validator.*;
-                import jakarta.validation.constraints.*;
-                import java.util.List;
-
-                @Validate
-                public record SkippedIterableRecord(List<@SkipValidate @NotNull String> items) {}
-                """
-        );
-
-        Compilation compilation = javac()
-                .withProcessors(new ValidatorProcessor())
-                .compile(sourceFile);
-
-        assertThat(compilation).succeeded();
-        assertThat(compilation)
-                .generatedSourceFile("test.SkippedIterableRecordValidator")
-                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.SkippedIterableRecordValidator", """
-                        package test;
-
-                        import io.github.raniagus.javalidation.Validation;
-                        import io.github.raniagus.javalidation.validator.Validator;
-                        import javax.annotation.processing.Generated;
-                        import org.jspecify.annotations.NullMarked;
-
-                        @NullMarked
-                        @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
-                        public class SkippedIterableRecordValidator implements Validator<SkippedIterableRecord> {
-                            @Override
-                            public void validate(Validation validation, SkippedIterableRecord root) {
-
-                            }
-                        }
-                        """
-                ));
-    }
-
-    @Test
-    void withoutSkipValidate_constraintsAreApplied() {
-        JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.NotSkippedRecord", """
-                package test;
-
-                import io.github.raniagus.javalidation.validator.*;
-                import jakarta.validation.constraints.*;
-
-                @Validate
-                public record NotSkippedRecord(@NotNull String name) {}
-                """
-        );
-
-        Compilation compilation = javac()
-                .withProcessors(new ValidatorProcessor())
-                .compile(sourceFile);
-
-        assertThat(compilation).succeeded();
-        assertThat(compilation)
-                .generatedSourceFile("test.NotSkippedRecordValidator")
-                .contentsAsUtf8String()
-                .contains("must not be null");
     }
 }

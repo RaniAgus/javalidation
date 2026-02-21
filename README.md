@@ -624,21 +624,28 @@ When including `javalidation-jakarta-validator` dependency and `javalidation-jak
 validation is autoconfigured to use `Validators.validate(T)`, which is a compile-time generated service locator for
 different `Validator<T>` instances, to generate `BindingResult`s or throw `ValidationException`s.
 
-To tell the annotation processor to generate a `Validator<T>`, annotate the record with `@Validate`:
+To tell the annotation processor to generate a `Validator<T>`, annotate any method with `@Valid`:
+
 ```java
-import io.github.raniagus.javalidation.validator.Validate;
+@PostMapping("/register")
+public ResponseEntity<?> registerUser(@RequestBody @Valid UserDto request) {
+    return ResponseEntity.ok(userService.createUser(user));
+}
+```
+
+**Example:**
+
+```java
 import jakarta.validation.constraints.*;
 import java.util.List;
 import java.util.Map;
 
-@Validate
 public record UserDto(
         @NotBlank String name,
         @Email String email,
         @NotEmpty List<@NotNull OrderDto> orders,
         @NotNull Map<@NotBlank String, @NotNull @Min(0) Integer> inventory
 ) {
-    @Validate
     public record OrderDto(
             @NotEmpty String productId,
             @Min(0) int quantity
@@ -719,20 +726,9 @@ public class UserDtoValidator implements Validator {
 </details>
 
 > [!IMPORTANT]
-> - Only record classes can be annotated with `@Validate`.
-> - Constraints on `Map` keys are validated, but using a `@Validate`-annotated record as a key results in undefined
-> field error namespacing behavior.
+> - Only record classes can be annotated with `@Valid`.
 > - Groups are not supported yet.
-> - Unlike Jakarta Bean Validation, constraints on type arguments are validated automatically without needing `@Valid`. To
-> opt out of validation for a specific field or type argument, use `@SkipValidate`:
-> ```java
-> @Validate
-> public record UserDto(
->         @NotBlank String name,
->         @SkipValidate String internalToken,         // field is not validated
->         @NotEmpty List<@SkipValidate Order> orders  // field is validated, items are not
-> ) {}
-> ```
+> - Using `@Valid` annotation on a `Map` key results in undefined field error namespacing behavior.
 
 #### Full Example
 

@@ -1,6 +1,5 @@
 package io.github.raniagus.javalidation.validator.processor;
 
-import io.github.raniagus.javalidation.validator.Validate;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -13,10 +12,7 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.RecordComponentElement;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
@@ -27,7 +23,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 import org.jspecify.annotations.Nullable;
 
-@SupportedAnnotationTypes("io.github.raniagus.javalidation.validator.Validate")
+@SupportedAnnotationTypes("*")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class ValidatorProcessor extends AbstractProcessor {
     private static final String REGISTRY_RESOURCE = "META-INF/io/github/raniagus/javalidation/validator/validators.list";
@@ -56,7 +52,7 @@ public class ValidatorProcessor extends AbstractProcessor {
             generated = true;
         }
 
-        return true;
+        return false;
     }
 
     // -- Persistence --
@@ -167,28 +163,78 @@ public class ValidatorProcessor extends AbstractProcessor {
         }
     }
 
-    // -- Class writer --
+    // -- Annotation scan --
 
     private List<ValidatorClassWriter> parseClassWriters(RoundEnvironment roundEnv) {
-        return roundEnv.getElementsAnnotatedWith(Validate.class).stream()
-                .flatMap(element -> {
-                    if (!(element instanceof TypeElement recordElement)) {
-                        return Stream.empty();
-                    }
-
-                    if (recordElement.getKind() != ElementKind.RECORD) {
-                        processingEnv.getMessager().printMessage(
-                                Diagnostic.Kind.ERROR,
-                                "@Validate can only be applied to records, but it was applied to " + recordElement
-                        );
-                        return Stream.empty();
-                    }
-
-                    return Stream.of(recordElement);
-                })
+        return roundEnv.getRootElements().stream()
+                .flatMap(element -> collectRecordsWithValidFields(element).stream())
+                .distinct()
                 .map(this::parseClassWriter)
                 .toList();
     }
+
+    private List<TypeElement> collectRecordsWithValidFields(Element root) {
+        List<TypeElement> result = new ArrayList<>();
+        collectValidRecordsRecursively(root, result);
+        return result;
+    }
+
+    private void collectValidRecordsRecursively(Element element, List<TypeElement> result) {
+        if (!(element instanceof TypeElement typeElement)) return;
+
+        // Scan methods for @Valid parameters
+        typeElement.getEnclosedElements().stream()
+                .filter(e -> e.getKind() == ElementKind.METHOD || e.getKind() == ElementKind.CONSTRUCTOR)
+                .flatMap(e -> e instanceof ExecutableElement executableElement ?
+                          executableElement.getParameters().stream()
+                        : Stream.empty()
+                )
+                .filter(this::isAnnotatedWithValid)
+                .forEach(param -> {
+                    TypeElement referred = getReferredType(param.asType());
+                    if (referred == null) return;
+
+                    if (referred.getKind() != ElementKind.RECORD) {
+                        processingEnv.getMessager().printMessage(
+                                Diagnostic.Kind.WARNING,
+                                "@Valid can only be applied to records, but it was applied to " + referred,
+                                param
+                        );
+                        return;
+                    }
+
+                    result.add(referred);
+                });;
+
+        // Recurse into nested types
+        typeElement.getEnclosedElements().forEach(e -> collectValidRecordsRecursively(e, result));
+    }
+
+    private boolean isAnnotatedWithValid(TypeMirror type) {
+        return type.getAnnotationMirrors().stream()
+                .anyMatch(a -> a.getAnnotationType()
+                        .asElement()
+                        .getSimpleName()
+                        .contentEquals("Valid"));
+    }
+
+    private boolean isAnnotatedWithValid(VariableElement param) {
+        boolean onElement = param.getAnnotationMirrors().stream()
+                .anyMatch(a -> a.getAnnotationType()
+                        .asElement()
+                        .getSimpleName()
+                        .contentEquals("Valid"));
+
+        boolean onType = param.asType().getAnnotationMirrors().stream()
+                .anyMatch(a -> a.getAnnotationType()
+                        .asElement()
+                        .getSimpleName()
+                        .contentEquals("Valid"));
+
+        return onElement || onType;
+    }
+
+    // -- Class writer --
 
     private ValidatorClassWriter parseClassWriter(TypeElement recordElement) {
         return new ValidatorClassWriter(
@@ -250,8 +296,12 @@ public class ValidatorProcessor extends AbstractProcessor {
     // -- Nested --
 
     private @Nullable NullUnsafeWriter parseNested(TypeMirror type) {
+        if (!isAnnotatedWithValid(type)) {
+            return null;
+        }
+
         Element referredType = getReferredType(type);
-        if (referredType == null || referredType.getAnnotation(Validate.class) == null) {
+        if (referredType == null || referredType.getKind() != ElementKind.RECORD) {
             return null;
         }
 

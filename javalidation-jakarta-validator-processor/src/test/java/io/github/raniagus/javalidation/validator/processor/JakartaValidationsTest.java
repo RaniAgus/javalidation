@@ -4,6 +4,7 @@ import com.google.testing.compile.JavaFileObjects;
 import io.github.raniagus.javalidation.ValidationErrors;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import javax.tools.JavaFileObject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -57,15 +58,26 @@ class JakartaValidationsTest {
             "NotNullAndMinRecord",
     })
     void givenAnnotatedRecords_WhenAnnotationProcessing_ThenGenerateExpectedFiles(String recordName) {
+        JavaFileObject recordFile = JavaFileObjects.forResource("test/jakarta/" + recordName + ".java");
+        JavaFileObject triggerFile = JavaFileObjects.forSourceString("test.SimpleService", """
+                package test;
+    
+                import jakarta.validation.*;
+    
+                public class SimpleService {
+                    public void doSomething(test.jakarta.@Valid %s input) {}
+                }
+                """.formatted(recordName)
+        );
+
         assertThat(
                 javac()
                         .withProcessors(new ValidatorProcessor())
-                        .compile(JavaFileObjects.forResource("test/jakarta/" + recordName + ".java")))
+                        .compile(recordFile, triggerFile))
                 .generatedSourceFile("test.jakarta." + recordName + "Validator")
                 .hasSourceEquivalentTo(
                         JavaFileObjects.forResource("test/jakarta/" + recordName + "Validator.java"));
     }
-
 
     // ── @NotNull ──────────────────────────────────────────────────────────────
     @Nested
