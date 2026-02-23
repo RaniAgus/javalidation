@@ -13,7 +13,7 @@ public class PositiveOrZeroPrimitiveRecordValidator implements Validator<Positiv
         validation.withField("value", () -> {
             var value = root.value();
             if (!(value >= 0)) {
-                validation.addError("must be greater than or equal to 0");
+                validation.addError("io.github.raniagus.javalidation.constraints.PositiveOrZero.message");
             }
         });
     }

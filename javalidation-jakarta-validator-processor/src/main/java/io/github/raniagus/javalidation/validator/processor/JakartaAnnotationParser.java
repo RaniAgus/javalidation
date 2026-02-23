@@ -47,7 +47,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "must not be null");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.NotNull.message");
         return new NullSafeWriter.NotNull(resolveMessage(message));
     }
 
@@ -57,7 +57,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "must not be empty");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.NotEmpty.message");
         return new NullSafeWriter.NullSafeAccessor("isEmpty", resolveMessage(message));
     }
 
@@ -67,7 +67,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "must be null");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Null.message");
         return new NullSafeWriter.Null(resolveMessage(message));
     }
 
@@ -77,7 +77,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "must not be blank");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.NotBlank.message");
         return new NullSafeWriter.NullSafeAccessor("isBlank", resolveMessage(message));
     }
 
@@ -87,7 +87,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "size must be between {min} and {max}");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Size.message");
         int min = getAnnotationIntValue(annotationMirror, "min", 0);
         int max = getAnnotationIntValue(annotationMirror, "max", Integer.MAX_VALUE);
 
@@ -110,7 +110,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "must be greater than or equal to {value}");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Min.message");
         long value = getAnnotationLongValue(annotationMirror, "value", 0);
 
         return new NullUnsafeWriter.NumericCompare(
@@ -133,7 +133,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "must be less than or equal to {value}");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Max.message");
         long value = getAnnotationLongValue(annotationMirror, "value", 0);
 
         return new NullUnsafeWriter.NumericCompare(
@@ -156,7 +156,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "must be greater than 0");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Positive.message");
         return new NullUnsafeWriter.NumericCompare(
                 ">",
                 0,
@@ -177,7 +177,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "must be greater than or equal to 0");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.PositiveOrZero.message");
         return new NullUnsafeWriter.NumericCompare(
                 ">=",
                 0,
@@ -198,7 +198,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "must be less than 0");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Negative.message");
         return new NullUnsafeWriter.NumericCompare(
                 "<",
                 0,
@@ -219,7 +219,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "must be less than or equal to 0");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.NegativeOrZero.message");
         return new NullUnsafeWriter.NumericCompare(
                 "<=",
                 0,
@@ -235,7 +235,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "must be a well-formed email address");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Email.message");
         return new NullUnsafeWriter.Pattern(
                 "^[^@]+@[^@]+\\\\.[^@]+$", // TODO: check email validation regex
                 resolveMessage(message)
@@ -249,7 +249,7 @@ public final class JakartaAnnotationParser {
         }
 
         String regexp = getAnnotationStringValue(annotationMirror, "regexp", "");
-        String message = getAnnotationStringValue(annotationMirror, "message", "must match \\\"{regexp}\\\"");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Pattern.message");
 
         return new NullUnsafeWriter.Pattern(
                 regexp.replace("\\", "\\\\"),
@@ -264,7 +264,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "must be true");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.AssertTrue.message");
         return new NullUnsafeWriter.EqualTo("true", resolveMessage(message));
     }
 
@@ -274,7 +274,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "must be false");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.AssertFalse.message");
         return new NullUnsafeWriter.EqualTo("false", resolveMessage(message));
     }
 
@@ -291,7 +291,7 @@ public final class JakartaAnnotationParser {
 
         String value = getAnnotationStringValue(annotationMirror, "value", "0");
         boolean inclusive = getAnnotationBooleanValue(annotationMirror, "inclusive", true);
-        String message = getAnnotationStringValue(annotationMirror, "message", "must be less than %s{value}".formatted(inclusive ? "or equal to " : ""));
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.DecimalMax%s.message".formatted(inclusive ? "" : ".exclusive"));
 
         try {
             return new NullUnsafeWriter.NumericCompare(
@@ -319,7 +319,7 @@ public final class JakartaAnnotationParser {
 
         String value = getAnnotationStringValue(annotationMirror, "value", "0");
         boolean inclusive = getAnnotationBooleanValue(annotationMirror, "inclusive", true);
-        String message = getAnnotationStringValue(annotationMirror, "message", "must be greater than %s{value}").formatted(inclusive ? "or equal to " : "");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.DecimalMin%s.message".formatted(inclusive ? "" : ".exclusive"));
 
         try {
             return new NullUnsafeWriter.NumericCompare(
@@ -345,7 +345,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "numeric value out of bounds ({integer} digits, {fraction} decimal digits expected)");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Digits.message");
         int integer = getAnnotationIntValue(annotationMirror, "integer", 0);
         int fraction = getAnnotationIntValue(annotationMirror, "fraction", 0);
 
@@ -368,7 +368,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "must be a future date");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Future.message");
         return new NullUnsafeWriter.TemporalCompare(
                 "isAfter", true, temporalKind, resolveMessage(message));
     }
@@ -384,7 +384,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "must be a date in the present or in the future");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.FutureOrPresent.message");
         return new NullUnsafeWriter.TemporalCompare(
                 "isBefore", false, temporalKind, resolveMessage(message));
     }
@@ -400,7 +400,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "must be a past date");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Past.message");
         return new NullUnsafeWriter.TemporalCompare(
                 "isBefore", true, temporalKind, resolveMessage(message));
     }
@@ -416,7 +416,7 @@ public final class JakartaAnnotationParser {
             return null;
         }
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "must be a date in the past or in the present");
+        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.PastOrPresent.message");
         return new NullUnsafeWriter.TemporalCompare(
                 "isAfter", false, temporalKind, resolveMessage(message));
     }

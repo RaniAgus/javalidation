@@ -13,7 +13,7 @@ public class MaxPrimitiveRecordValidator implements Validator<MaxPrimitiveRecord
         validation.withField("value", () -> {
             var value = root.value();
             if (!(value <= 100)) {
-                validation.addError("must be less than or equal to {0}", 100);
+                validation.addError("io.github.raniagus.javalidation.constraints.Max.message", 100);
             }
         });
     }

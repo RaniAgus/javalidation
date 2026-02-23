@@ -13,17 +13,17 @@ public class NestedIterableRecordValidator implements Validator<NestedIterableRe
         validation.withField("scores", () -> {
             var scores = root.scores();
             if (scores == null || scores.isEmpty()) {
-                validation.addError("must not be empty");
+                validation.addError("io.github.raniagus.javalidation.constraints.NotEmpty.message");
                 return;
             }
             validation.withEach(scores, scoresItem -> {
                 if (scoresItem == null || scoresItem.isEmpty()) {
-                    validation.addError("must not be empty");
+                    validation.addError("io.github.raniagus.javalidation.constraints.NotEmpty.message");
                     return;
                 }
                 validation.withEach(scoresItem, scoresItemItem -> {
                     if (scoresItemItem == null) {
-                        validation.addError("must not be null");
+                        validation.addError("io.github.raniagus.javalidation.constraints.NotNull.message");
                         return;
                     }
                 });

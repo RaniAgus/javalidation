@@ -14,7 +14,7 @@ public class SizeMaxOnlyRecordValidator implements Validator<SizeMaxOnlyRecord> 
             var value = root.value();
             if (value == null) return;
             if (value.length() < 0 || value.length() > 10) {
-                validation.addError("size must be between {0} and {1}", 0, 10);
+                validation.addError("io.github.raniagus.javalidation.constraints.Size.message", 0, 10);
             }
         });
     }

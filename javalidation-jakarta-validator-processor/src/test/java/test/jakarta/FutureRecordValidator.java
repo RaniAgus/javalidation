@@ -15,7 +15,7 @@ public class FutureRecordValidator implements Validator<FutureRecord> {
             var value = root.value();
             if (value == null) return;
             if (!(value.isAfter(Instant.now()) == true)) {
-                validation.addError("must be a future date");
+                validation.addError("io.github.raniagus.javalidation.constraints.Future.message");
             }
         });
     }

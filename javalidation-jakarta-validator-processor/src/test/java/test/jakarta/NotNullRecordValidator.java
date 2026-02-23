@@ -13,7 +13,7 @@ public class NotNullRecordValidator implements Validator<NotNullRecord> {
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) {
-                validation.addError("must not be null");
+                validation.addError("io.github.raniagus.javalidation.constraints.NotNull.message");
                 return;
             }
         });

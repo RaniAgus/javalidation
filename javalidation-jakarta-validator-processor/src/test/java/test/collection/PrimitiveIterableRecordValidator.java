@@ -14,13 +14,13 @@ public class PrimitiveIterableRecordValidator implements Validator<PrimitiveIter
         validation.withField("tags", () -> {
             var tags = root.tags();
             if (tags == null) {
-                validation.addError("must not be null");
+                validation.addError("io.github.raniagus.javalidation.constraints.NotNull.message");
                 return;
             }
             validation.withEach(tags, tagsItem -> {
                 if (tagsItem == null) return;
                 if (tagsItem.length() < 3 || tagsItem.length() > 10) {
-                    validation.addError("size must be between {0} and {1}", 3, 10);
+                    validation.addError("io.github.raniagus.javalidation.constraints.Size.message", 3, 10);
                 }
             });
         });

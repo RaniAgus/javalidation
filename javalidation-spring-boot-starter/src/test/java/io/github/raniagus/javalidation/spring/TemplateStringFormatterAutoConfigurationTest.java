@@ -40,6 +40,20 @@ class TemplateStringFormatterAutoConfigurationTest extends AutoConfigurationTest
             String json = jsonMapper.writeValueAsString(ts);
             assertThat(json).isEqualTo("\"Hello World! 42\"");
         }
+
+        @Test
+        void givenJavalidationValidatorMessage_whenSerialize_thenUsesDefaultSource() {
+            TemplateString ts = TemplateString.of("io.github.raniagus.javalidation.constraints.NotEmpty.message");
+            String json = jsonMapper.writeValueAsString(ts);
+            assertThat(json).isEqualTo("\"must not be empty\"");
+        }
+
+        @Test
+        void givenJavalidationValidatorMessage_whenSerialize_thenUsesOverriddenSource() {
+            TemplateString ts = TemplateString.of("io.github.raniagus.javalidation.constraints.NotNull.message");
+            String json = jsonMapper.writeValueAsString(ts);
+            assertThat(json).isEqualTo("\"is required\"");
+        }
     }
 
     @TestPropertySource(properties = "io.github.raniagus.javalidation.use-message-source=true")
@@ -63,6 +77,13 @@ class TemplateStringFormatterAutoConfigurationTest extends AutoConfigurationTest
             TemplateString ts = TemplateString.of("Hello {0}! {1}", "World", 42);
             String json = jsonMapper.writeValueAsString(ts);
             assertThat(json).isEqualTo("\"Hello World! 42\"");
+        }
+
+        @Test
+        void givenJavalidationValidatorMessage_whenSerialize_thenReturnsSameKey() {
+            TemplateString ts = TemplateString.of("io.github.raniagus.javalidation.constraints.NotEmpty.message");
+            String json = jsonMapper.writeValueAsString(ts);
+            assertThat(json).isEqualTo("\"io.github.raniagus.javalidation.constraints.NotEmpty.message\"");
         }
     }
 }

@@ -87,7 +87,7 @@ class JakartaValidationsTest {
         @Test
         void nullValue_hasFieldError() {
             assertThat(validator.validate(new NotNullRecord(null)))
-                    .isEqualTo(ValidationErrors.at("value", "must not be null"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.NotNull.message"));
         }
 
         @Test
@@ -105,13 +105,13 @@ class JakartaValidationsTest {
         @Test
         void nullValue_hasFieldError() {
             assertThat(validator.validate(new NotEmptyRecord(null)))
-                    .isEqualTo(ValidationErrors.at("value", "must not be empty"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.NotEmpty.message"));
         }
 
         @Test
         void emptyString_hasFieldError() {
             assertThat(validator.validate(new NotEmptyRecord("")))
-                    .isEqualTo(ValidationErrors.at("value", "must not be empty"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.NotEmpty.message"));
         }
 
         @Test
@@ -135,19 +135,19 @@ class JakartaValidationsTest {
         @Test
         void nullValue_hasFieldError() {
             assertThat(validator.validate(new NotBlankRecord(null)))
-                    .isEqualTo(ValidationErrors.at("value", "must not be blank"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.NotBlank.message"));
         }
 
         @Test
         void emptyString_hasFieldError() {
             assertThat(validator.validate(new NotBlankRecord("")))
-                    .isEqualTo(ValidationErrors.at("value", "must not be blank"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.NotBlank.message"));
         }
 
         @Test
         void blankString_hasFieldError() {
             assertThat(validator.validate(new NotBlankRecord("   ")))
-                    .isEqualTo(ValidationErrors.at("value", "must not be blank"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.NotBlank.message"));
         }
 
         @Test
@@ -171,7 +171,7 @@ class JakartaValidationsTest {
         @Test
         void belowMin_hasFieldError() {
             assertThat(validator.validate(new SizeMinMaxRecord("")))
-                    .isEqualTo(ValidationErrors.at("value", "size must be between {0} and {1}", 1, 10));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Size.message", 1, 10));
         }
 
         @Test
@@ -189,7 +189,7 @@ class JakartaValidationsTest {
         @Test
         void aboveMax_hasFieldError() {
             assertThat(validator.validate(new SizeMinMaxRecord("01234567890")))
-                    .isEqualTo(ValidationErrors.at("value", "size must be between {0} and {1}", 1, 10));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Size.message", 1, 10));
         }
     }
 
@@ -213,13 +213,13 @@ class JakartaValidationsTest {
         @Test
         void missingAt_hasFieldError() {
             assertThat(validator.validate(new EmailRecord("userexample.com")))
-                    .isEqualTo(ValidationErrors.at("value", "must be a well-formed email address"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Email.message"));
         }
 
         @Test
         void missingDomain_hasFieldError() {
             assertThat(validator.validate(new EmailRecord("user@")))
-                    .isEqualTo(ValidationErrors.at("value", "must be a well-formed email address"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Email.message"));
         }
     }
 
@@ -231,7 +231,7 @@ class JakartaValidationsTest {
         @Test
         void belowMin_hasFieldError() {
             assertThat(validator.validate(new MinRecord(9L)))
-                    .isEqualTo(ValidationErrors.at("value", "must be greater than or equal to {0}", 10));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Min.message", 10));
         }
 
         @Test
@@ -270,7 +270,7 @@ class JakartaValidationsTest {
         @Test
         void abovePrimitiveMax_hasFieldError() {
             assertThat(primitiveValidator.validate(new MaxPrimitiveRecord(101L)))
-                    .isEqualTo(ValidationErrors.at("value", "must be less than or equal to {0}", 100));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Max.message", 100));
         }
 
         @Test
@@ -288,7 +288,7 @@ class JakartaValidationsTest {
         @Test
         void aboveReferenceMax_hasFieldError() {
             assertThat(referenceValidator.validate(new MaxReferenceRecord(101L)))
-                    .isEqualTo(ValidationErrors.at("value", "must be less than or equal to {0}", 100));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Max.message", 100));
         }
 
         @Test
@@ -306,7 +306,7 @@ class JakartaValidationsTest {
         @Test
         void aboveBigIntegerMax_hasFieldError() {
             assertThat(bigIntegerValidator.validate(new MaxBigIntegerRecord(BigInteger.valueOf(101L))))
-                    .isEqualTo(ValidationErrors.at("value", "must be less than or equal to {0}", 100));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Max.message", 100));
         }
 
         @Test
@@ -324,7 +324,7 @@ class JakartaValidationsTest {
         @Test
         void aboveBigDecimalMax_hasFieldError() {
             assertThat(bigDecimalValidator.validate(new MaxBigDecimalRecord(BigDecimal.valueOf(101L))))
-                    .isEqualTo(ValidationErrors.at("value", "must be less than or equal to {0}", 100));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Max.message", 100));
         }
     }
 
@@ -336,13 +336,13 @@ class JakartaValidationsTest {
         @Test
         void negative_hasFieldError() {
             assertThat(validator.validate(new PositivePrimitiveRecord(-1L)))
-                    .isEqualTo(ValidationErrors.at("value", "must be greater than 0"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Positive.message"));
         }
 
         @Test
         void zero_hasFieldError() {
             assertThat(validator.validate(new PositivePrimitiveRecord(0L)))
-                    .isEqualTo(ValidationErrors.at("value", "must be greater than 0"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Positive.message"));
         }
 
         @Test
@@ -360,7 +360,7 @@ class JakartaValidationsTest {
         @Test
         void negative_hasFieldError() {
             assertThat(validator.validate(new PositiveOrZeroPrimitiveRecord(-1L)))
-                    .isEqualTo(ValidationErrors.at("value", "must be greater than or equal to 0"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.PositiveOrZero.message"));
         }
 
         @Test
@@ -390,13 +390,13 @@ class JakartaValidationsTest {
         @Test
         void zero_hasFieldError() {
             assertThat(validator.validate(new NegativePrimitiveRecord(0L)))
-                    .isEqualTo(ValidationErrors.at("value", "must be less than 0"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Negative.message"));
         }
 
         @Test
         void positive_hasFieldError() {
             assertThat(validator.validate(new NegativePrimitiveRecord(1L)))
-                    .isEqualTo(ValidationErrors.at("value", "must be less than 0"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Negative.message"));
         }
     }
 
@@ -420,7 +420,7 @@ class JakartaValidationsTest {
         @Test
         void positive_hasFieldError() {
             assertThat(validator.validate(new NegativeOrZeroPrimitiveRecord(1L)))
-                    .isEqualTo(ValidationErrors.at("value", "must be less than or equal to 0"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.NegativeOrZero.message"));
         }
     }
 
@@ -444,7 +444,7 @@ class JakartaValidationsTest {
         @Test
         void futureInstant_hasFieldError() {
             assertThat(validator.validate(new PastRecord(Instant.now().plus(Duration.ofDays(60)))))
-                    .isEqualTo(ValidationErrors.at("value", "must be a past date"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Past.message"));
         }
     }
 
@@ -468,7 +468,7 @@ class JakartaValidationsTest {
         @Test
         void futureInstant_hasFieldError() {
             assertThat(validator.validate(new PastOrPresentRecord(Instant.now().plus(Duration.ofDays(60)))))
-                    .isEqualTo(ValidationErrors.at("value", "must be a date in the past or in the present"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.PastOrPresent.message"));
         }
     }
 
@@ -492,7 +492,7 @@ class JakartaValidationsTest {
         @Test
         void pastInstant_hasFieldError() {
             assertThat(validator.validate(new FutureRecord(Instant.now().minus(Duration.ofDays(1)))))
-                    .isEqualTo(ValidationErrors.at("value", "must be a future date"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Future.message"));
         }
     }
 
@@ -516,7 +516,7 @@ class JakartaValidationsTest {
         @Test
         void pastInstant_hasFieldError() {
             assertThat(validator.validate(new FutureOrPresentRecord(Instant.now().minus(Duration.ofDays(1)))))
-                    .isEqualTo(ValidationErrors.at("value", "must be a date in the present or in the future"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.FutureOrPresent.message"));
         }
     }
 
@@ -540,7 +540,7 @@ class JakartaValidationsTest {
         @Test
         void nonMatchingValue_hasFieldError() {
             assertThat(validator.validate(new PatternRecord("Hello123")))
-                    .isEqualTo(ValidationErrors.at("value", "must match \"{0}\"", "^[a-z]+$"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[a-z]+$"));
         }
     }
 
@@ -565,13 +565,13 @@ class JakartaValidationsTest {
         @Test
         void inclusive_belowMin_hasFieldError() {
             assertThat(inclusiveValidator.validate(new DecimalMinInclusiveRecord(new BigDecimal("10.4"))))
-                    .isEqualTo(ValidationErrors.at("value", "must be greater than or equal to {0}", "10.5"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.DecimalMin.message", "10.5"));
         }
 
         @Test
         void exclusive_atMin_hasFieldError() {
             assertThat(exclusiveValidator.validate(new DecimalMinExclusiveRecord(new BigDecimal("10.5"))))
-                    .isEqualTo(ValidationErrors.at("value", "must be greater than {0}", "10.5"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.DecimalMin.exclusive.message", "10.5"));
         }
 
         @Test
@@ -602,13 +602,13 @@ class JakartaValidationsTest {
         @Test
         void inclusive_aboveMax_hasFieldError() {
             assertThat(inclusiveValidator.validate(new DecimalMaxInclusiveRecord(new BigDecimal("10.6"))))
-                    .isEqualTo(ValidationErrors.at("value", "must be less than or equal to {0}", "10.5"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.DecimalMax.message", "10.5"));
         }
 
         @Test
         void exclusive_atMax_hasFieldError() {
             assertThat(exclusiveValidator.validate(new DecimalMaxExclusiveRecord(new BigDecimal("10.5"))))
-                    .isEqualTo(ValidationErrors.at("value", "must be less than {0}", "10.5"));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.DecimalMax.exclusive.message", "10.5"));
         }
 
         @Test
@@ -638,13 +638,13 @@ class JakartaValidationsTest {
         @Test
         void tooManyIntegerDigits_hasFieldError() {
             assertThat(validator.validate(new DigitsRecord(new BigDecimal("123456.7"))))
-                    .isEqualTo(ValidationErrors.at("value", "numeric value out of bounds ({0} digits, {1} decimal digits expected)", 5, 2));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Digits.message", 5, 2));
         }
 
         @Test
         void tooManyFractionDigits_hasFieldError() {
             assertThat(validator.validate(new DigitsRecord(new BigDecimal("12345.678"))))
-                    .isEqualTo(ValidationErrors.at("value", "numeric value out of bounds ({0} digits, {1} decimal digits expected)", 5, 2));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Digits.message", 5, 2));
         }
     }
 }

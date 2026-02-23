@@ -58,7 +58,7 @@ class SkipValidateAnnotationTest {
                                 validation.withField("name", () -> {
                                     var name = root.name();
                                     if (name == null) {
-                                        validation.addError("must not be null");
+                                        validation.addError("io.github.raniagus.javalidation.constraints.NotNull.message");
                                         return;
                                     }
                                 });

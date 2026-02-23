@@ -15,18 +15,17 @@ public class ValidatedMapRecordValidator implements Validator<ValidatedMapRecord
         validation.withField("friends", () -> {
             var friends = root.friends();
             if (friends == null || friends.isEmpty()) {
-                validation.addError("must not be empty");
+                validation.addError("io.github.raniagus.javalidation.constraints.NotEmpty.message");
                 return;
             }
             friends.forEach((friendsKey, friendsValue) -> {
                 if (friendsKey == null) {
-                    validation.addError("must not be null");
+                    validation.addError("io.github.raniagus.javalidation.constraints.NotNull.message");
                     return;
                 }
-
                 validation.withField(friendsKey, () -> {
                     if (friendsValue == null) {
-                        validation.addError("must not be null");
+                        validation.addError("io.github.raniagus.javalidation.constraints.NotNull.message");
                         return;
                     }
                     friendsValueValidator.validate(validation, friendsValue);

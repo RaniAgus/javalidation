@@ -675,7 +675,7 @@ public class UserDtoValidator implements Validator {
         validation.withField("name", () -> {
             var name = root.name();
             if (name == null || name.isBlank()) {
-                validation.addError("must not be blank");
+                validation.addError("io.github.raniagus.javalidation.constraints.NotBlank.message");
                 return;
             }
         });
@@ -683,18 +683,18 @@ public class UserDtoValidator implements Validator {
             var email = root.email();
             if (email == null) return;
             if (!email.toString().matches("^[^@]+@[^@]+\\.[^@]+$")) {
-                validation.addError("must be a well-formed email address");
+                validation.addError("io.github.raniagus.javalidation.constraints.Email.message");
             }
         });
         validation.withField("orders", () -> {
             var orders = root.orders();
             if (orders == null || orders.isEmpty()) {
-                validation.addError("must not be empty");
+                validation.addError("io.github.raniagus.javalidation.constraints.NotEmpty.message");
                 return;
             }
             validation.withEach(orders, ordersItem -> {
                 if (ordersItem == null) {
-                    validation.addError("must not be null");
+                    validation.addError("io.github.raniagus.javalidation.constraints.NotNull.message");
                     return;
                 }
                 ordersItemValidator.validate(validation, ordersItem);
@@ -703,21 +703,21 @@ public class UserDtoValidator implements Validator {
         validation.withField("inventory", () -> {
             var inventory = root.inventory();
             if (inventory == null) {
-                validation.addError("must not be null");
+                validation.addError("io.github.raniagus.javalidation.constraints.NotNull.message");
                 return;
             }
             inventory.forEach((inventoryKey, inventoryValue) -> {
                 if (inventoryKey == null || inventoryKey.isBlank()) {
-                    validation.addError("must not be blank");
+                    validation.addError("io.github.raniagus.javalidation.constraints.NotBlank.message");
                     return;
                 }
                 validation.withField(inventoryKey, () -> {
                     if (inventoryValue == null) {
-                        validation.addError("must not be null");
+                        validation.addError("io.github.raniagus.javalidation.constraints.NotNull.message");
                         return;
                     }
                     if (!(inventoryValue >= 0)) {
-                        validation.addError("must be greater than or equal to {0}", 0);
+                        validation.addError("io.github.raniagus.javalidation.constraints.Min.message", 0);
                     }
                 });
             });
@@ -729,7 +729,9 @@ public class UserDtoValidator implements Validator {
 </details>
 
 > [!IMPORTANT]
-> - Only Records can be annotated with `@Valid`. Sealed Interfaces are only supported if all permitted subtypes are Records.
+> - Only Records can be annotated with `@Valid`. It also applies to Sealed Interfaces if all permitted subtypes are Records.
+> - Messages must have positional arguments, so we use `io.github.raniagus.javalidation.constraints` prefix to avoid conflicts with other libraries.
+> - For `@DecimalMax` and `@DecimalMin`, we use `DecimalMax.exclusive` and `DecimalMin.exclusive` attribute keys when `inclusive` is set to `false`.
 > - Validation groups are not supported. All constraints are always applied, regardless of the `groups` attribute.
 > - Using `@Valid` on a `Map` key results in undefined field error namespacing behavior.
 

@@ -15,7 +15,7 @@ public class PastOrPresentRecordValidator implements Validator<PastOrPresentReco
             var value = root.value();
             if (value == null) return;
             if (!(value.isAfter(Instant.now()) == false)) {
-                validation.addError("must be a date in the past or in the present");
+                validation.addError("io.github.raniagus.javalidation.constraints.PastOrPresent.message");
             }
         });
     }

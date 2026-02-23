@@ -15,22 +15,22 @@ public class NestedMapRecordValidator implements Validator<NestedMapRecord> {
             if (scores == null) return;
             scores.forEach((scoresKey, scoresValue) -> {
                 if (scoresKey == null) {
-                    validation.addError("must not be null");
+                    validation.addError("io.github.raniagus.javalidation.constraints.NotNull.message");
                     return;
                 }
                 validation.withField(scoresKey, () -> {
                     if (scoresValue == null || scoresValue.isEmpty()) {
-                        validation.addError("must not be empty");
+                        validation.addError("io.github.raniagus.javalidation.constraints.NotEmpty.message");
                         return;
                     }
                     scoresValue.forEach((scoresValueKey, scoresValueValue) -> {
                         if (scoresValueKey == null) {
-                            validation.addError("must not be null");
+                            validation.addError("io.github.raniagus.javalidation.constraints.NotNull.message");
                             return;
                         }
                         validation.withField(scoresValueKey, () -> {
                             if (scoresValueValue == null) {
-                                validation.addError("must not be null");
+                                validation.addError("io.github.raniagus.javalidation.constraints.NotNull.message");
                                 return;
                             }
                         });
