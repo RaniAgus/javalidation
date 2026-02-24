@@ -17,7 +17,8 @@ public record RecordValidatorClassWriter(
         return Stream.concat(
                 Stream.of(
                         "io.github.raniagus.javalidation.Validation",
-                        "io.github.raniagus.javalidation.validator.Validator"
+                        "io.github.raniagus.javalidation.validator.InitializableValidator",
+                        "io.github.raniagus.javalidation.validator.ValidatorsHolder"
                 ),
                 fieldWriters.stream().flatMap(ValidationWriter::imports)
         );
@@ -27,13 +28,24 @@ public record RecordValidatorClassWriter(
     public void writeBody(ValidationOutput out) {
         out.write(
                 """
-                public class %s implements Validator<%s%s> {\
+                public class %s implements InitializableValidator<%s%s> {\
                 """.formatted(className, enclosingClassPrefix, recordName));
         out.incrementIndentationLevel();
         for (FieldWriter writer : fieldWriters) {
             writer.writePropertiesTo(out);
         }
         out.write("");
+
+        out.write("@Override");
+        out.write("public void initialize(ValidatorsHolder holder) {");
+        out.incrementIndentationLevel();
+        for (FieldWriter writer : fieldWriters) {
+            writer.writePropertiesInitTo(out);
+        }
+        out.decrementIndentationLevel();
+        out.write("}");
+        out.write("");
+
         out.registerVariable("root");
         out.write("@Override");
         out.write("""

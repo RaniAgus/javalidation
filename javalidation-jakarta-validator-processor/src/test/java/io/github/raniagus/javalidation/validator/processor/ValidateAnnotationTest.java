@@ -77,17 +77,22 @@ class ValidateAnnotationTest {
                         package test;
                         
                         import io.github.raniagus.javalidation.Validation;
-                        import io.github.raniagus.javalidation.validator.Validator;
+                        import io.github.raniagus.javalidation.validator.InitializableValidator;
+                        import io.github.raniagus.javalidation.validator.ValidatorsHolder;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
                         
                         @NullMarked
-@Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
-                        public class SimpleRecordValidator implements Validator<SimpleRecord> {
-                           @Override
-                           public void validate(Validation validation, SimpleRecord root) {
-                        
-                           }
+                        @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
+                        public class SimpleRecordValidator implements InitializableValidator<SimpleRecord> {
+
+                            @Override
+                            public void initialize(ValidatorsHolder holder) {
+                            }
+
+                            @Override
+                            public void validate(Validation validation, SimpleRecord root) {
+                            }
                         }
                         """
                 ));
@@ -106,35 +111,27 @@ class ValidateAnnotationTest {
                         @NullMarked
                         @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
                         public final class Validators {
-                            private static final Map<Class<?>, Validator<?>> CACHE;
+                            private static final ValidatorsHolder HOLDER;
                         
                             private Validators() {}
                         
                             static {
-                                CACHE = Map.ofEntries(
-                                    Map.entry(SimpleRecord.class, new SimpleRecordValidator())
-                                );
-                            }
-
-                            public static boolean hasValidator(Class<?> clazz) {
-                                return CACHE.containsKey(clazz);
+                                HOLDER = new ValidatorsHolder(Map.ofEntries(
+                                        Map.entry(SimpleRecord.class, new SimpleRecordValidator())
+                                ));
+                                HOLDER.initialize();
                             }
                         
-                            @SuppressWarnings("unchecked")
-                            public static <T> ValidationErrors validate(T instance) {
-                                Validator<T> validator = getValidator((Class<T>) instance.getClass());
-                                return validator.validate(instance);
+                            public static boolean hasValidator(Class<?> clazz) {
+                                return HOLDER.hasValidator(clazz);
                             }
-
-                            @SuppressWarnings("unchecked")
+                        
+                            public static <T> ValidationErrors validate(T instance) {
+                                 return HOLDER.validate(instance);
+                            }
+                        
                             public static <T> Validator<T> getValidator(Class<T> clazz) {
-                                 Validator<?> validator = CACHE.get(clazz);
-                                 if (validator == null) {
-                                     throw new IllegalArgumentException(
-                                         "No validator registered for " + clazz.getName()
-                                     );
-                                 }
-                                 return (Validator<T>) validator;
+                                 return HOLDER.getValidator(clazz);
                             }
                         }
                         """));
@@ -192,16 +189,22 @@ class ValidateAnnotationTest {
                         package test;
                         
                         import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.validator.InitializableValidator;
                         import io.github.raniagus.javalidation.validator.Validator;
+                        import io.github.raniagus.javalidation.validator.ValidatorsHolder;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
                         import other.UserAddress;
-                        import other.UserAddressValidator;
 
                         @NullMarked
                         @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
-                        public class UserRequestValidator implements Validator<UserRequest> {
-                            private final Validator<UserAddress> addressValidator = new UserAddressValidator();
+                        public class UserRequestValidator implements InitializableValidator<UserRequest> {
+                            private Validator<UserAddress> addressValidator;
+
+                            @Override
+                            public void initialize(ValidatorsHolder holder) {
+                                addressValidator = holder.getValidator(UserAddress.class);
+                            }
 
                             @Override
                             public void validate(Validation validation, UserRequest root) {
@@ -220,16 +223,21 @@ class ValidateAnnotationTest {
                         package other;
                         
                         import io.github.raniagus.javalidation.Validation;
-                        import io.github.raniagus.javalidation.validator.Validator;
+                        import io.github.raniagus.javalidation.validator.InitializableValidator;
+                        import io.github.raniagus.javalidation.validator.ValidatorsHolder;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
 
                         @NullMarked
                         @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
-                        public class UserAddressValidator implements Validator<UserAddress> {
+                        public class UserAddressValidator implements InitializableValidator<UserAddress> {
+        
+                            @Override
+                            public void initialize(ValidatorsHolder holder) {
+                            }
+
                             @Override
                             public void validate(Validation validation, UserAddress root) {
-
                             }
                         }
                         """
@@ -251,36 +259,28 @@ class ValidateAnnotationTest {
                         @NullMarked
                         @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
                         public final class Validators {
-                            private static final Map<Class<?>, Validator<?>> CACHE;
+                            private static final ValidatorsHolder HOLDER;
                         
                             private Validators() {}
                         
                             static {
-                                CACHE = Map.ofEntries(
+                                HOLDER = new ValidatorsHolder(Map.ofEntries(
                                         Map.entry(UserAddress.class, new UserAddressValidator())
                                       , Map.entry(UserRequest.class, new UserRequestValidator())
-                                );
+                                ));
+                                HOLDER.initialize();
                             }
 
                             public static boolean hasValidator(Class<?> clazz) {
-                                return CACHE.containsKey(clazz);
+                                return HOLDER.hasValidator(clazz);
                             }
 
-                            @SuppressWarnings("unchecked")
                             public static <T> ValidationErrors validate(T instance) {
-                                Validator<T> validator = getValidator((Class<T>) instance.getClass());
-                                return validator.validate(instance);
+                                return HOLDER.validate(instance);
                             }
                         
-                            @SuppressWarnings("unchecked")
                             public static <T> Validator<T> getValidator(Class<T> clazz) {
-                                 Validator<?> validator = CACHE.get(clazz);
-                                 if (validator == null) {
-                                     throw new IllegalArgumentException(
-                                         "No validator registered for " + clazz.getName()
-                                     );
-                                 }
-                                 return (Validator<T>) validator;
+                                 return HOLDER.getValidator(clazz);
                             }
                         }
                         """));
@@ -335,15 +335,22 @@ class ValidateAnnotationTest {
                         package test;
                         
                         import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.validator.InitializableValidator;
                         import io.github.raniagus.javalidation.validator.Validator;
+                        import io.github.raniagus.javalidation.validator.ValidatorsHolder;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
 
                         @NullMarked
                         @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
-                        public class UserRequestValidator implements Validator<UserRequest> {
-                            private final Validator<UserRequest.UserAddress> addressValidator = new UserRequest$UserAddressValidator();
+                        public class UserRequestValidator implements InitializableValidator<UserRequest> {
+                            private Validator<UserRequest.UserAddress> addressValidator;
 
+                            @Override
+                            public void initialize(ValidatorsHolder holder) {
+                                addressValidator = holder.getValidator(UserRequest.UserAddress.class);
+                            }
+                        
                             @Override
                             public void validate(Validation validation, UserRequest root) {
                                 validation.withField("address", () -> {
@@ -363,16 +370,21 @@ class ValidateAnnotationTest {
                         package test;
                         
                         import io.github.raniagus.javalidation.Validation;
-                        import io.github.raniagus.javalidation.validator.Validator;
+                        import io.github.raniagus.javalidation.validator.InitializableValidator;
+                        import io.github.raniagus.javalidation.validator.ValidatorsHolder;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
 
                         @NullMarked
                         @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
-                        public class UserRequest$UserAddressValidator implements Validator<UserRequest.UserAddress> {
+                        public class UserRequest$UserAddressValidator implements InitializableValidator<UserRequest.UserAddress> {
+
+                            @Override
+                            public void initialize(ValidatorsHolder holder) {
+                            }
+
                             @Override
                             public void validate(Validation validation, UserRequest.UserAddress root) {
-
                             }
                         }
                         """
@@ -393,36 +405,181 @@ class ValidateAnnotationTest {
                         @NullMarked
                         @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
                         public final class Validators {
-                            private static final Map<Class<?>, Validator<?>> CACHE;
+                            private static final ValidatorsHolder HOLDER;
                         
                             private Validators() {}
                         
                             static {
-                                CACHE = Map.ofEntries(
+                                HOLDER = new ValidatorsHolder(Map.ofEntries(
                                         Map.entry(UserRequest.UserAddress.class, new UserRequest$UserAddressValidator())
                                       , Map.entry(UserRequest.class, new UserRequestValidator())
-                                );
-                            }
-
-                            public static boolean hasValidator(Class<?> clazz) {
-                                return CACHE.containsKey(clazz);
-                            }
-
-                            @SuppressWarnings("unchecked")
-                            public static <T> ValidationErrors validate(T instance) {
-                                Validator<T> validator = getValidator((Class<T>) instance.getClass());
-                                return validator.validate(instance);
+                                ));
+                                HOLDER.initialize();
                             }
                         
-                            @SuppressWarnings("unchecked")
+                            public static boolean hasValidator(Class<?> clazz) {
+                                return HOLDER.hasValidator(clazz);
+                            }
+                        
+                            public static <T> ValidationErrors validate(T instance) {
+                                 return HOLDER.validate(instance);
+                            }
+                        
                             public static <T> Validator<T> getValidator(Class<T> clazz) {
-                                 Validator<?> validator = CACHE.get(clazz);
-                                 if (validator == null) {
-                                     throw new IllegalArgumentException(
-                                         "No validator registered for " + clazz.getName()
-                                     );
-                                 }
-                                 return (Validator<T>) validator;
+                                 return HOLDER.getValidator(clazz);
+                            }
+                        }
+                        """));
+    }
+
+
+    @Test
+    void shouldGenerateValidatorForAnnotatedRecordWithCyclicNestedRecord() {
+        // Arrange - create source files in memory
+        JavaFileObject sourceFile = JavaFileObjects.forSourceString("test.UserRequest", """
+                package test;
+
+                import jakarta.validation.*;
+                import jakarta.validation.constraints.*;
+                import java.util.List;
+
+                public record UserRequest(
+                    String username,
+                    String email,
+                    Integer age,
+                    @Valid UserAddress address
+                ) {
+                    public record UserAddress(String street, String city, @Valid UserRequest parent) {}
+                }
+                """
+        );
+
+        JavaFileObject triggerFile = JavaFileObjects.forSourceString("test.UserService", """
+            package test;
+    
+            import jakarta.validation.Valid;
+    
+            public class UserService {
+                public void create(@Valid UserRequest request) {}
+            }
+            """
+        );
+
+        // Act - compile with your processor
+        Compilation compilation = javac()
+                .withProcessors(new ValidatorProcessor())
+                .compile(sourceFile, triggerFile);
+
+        // Assert - compilation succeeded
+        assertThat(compilation).succeeded();
+
+        // Assert - all generated files match expected
+        assertThat(compilation)
+                .generatedSourceFile("test.UserRequestValidator")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.UserRequestValidator", """
+                        package test;
+                        
+                        import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.validator.InitializableValidator;
+                        import io.github.raniagus.javalidation.validator.Validator;
+                        import io.github.raniagus.javalidation.validator.ValidatorsHolder;
+                        import javax.annotation.processing.Generated;
+                        import org.jspecify.annotations.NullMarked;
+
+                        @NullMarked
+                        @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
+                        public class UserRequestValidator implements InitializableValidator<UserRequest> {
+                            private Validator<UserRequest.UserAddress> addressValidator;
+
+                            @Override
+                            public void initialize(ValidatorsHolder holder) {
+                                addressValidator = holder.getValidator(UserRequest.UserAddress.class);
+                            }
+                        
+                            @Override
+                            public void validate(Validation validation, UserRequest root) {
+                                validation.withField("address", () -> {
+                                    var address = root.address();
+                                    if (address == null) return;
+                                    addressValidator.validate(validation, address);
+                                });
+                            }
+                        }
+                        """
+                ));
+        assertThat(compilation)
+                .generatedSourceFile("test.UserRequest$UserAddressValidator")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString(
+                        "test.UserRequest$UserAddressValidator",
+                        """
+                        package test;
+                        
+                        import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.validator.InitializableValidator;
+                        import io.github.raniagus.javalidation.validator.Validator;
+                        import io.github.raniagus.javalidation.validator.ValidatorsHolder;
+                        import javax.annotation.processing.Generated;
+                        import org.jspecify.annotations.NullMarked;
+
+                        @NullMarked
+                        @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
+                        public class UserRequest$UserAddressValidator implements InitializableValidator<UserRequest.UserAddress> {
+                            private Validator<UserRequest> parentValidator;
+
+                            @Override
+                            public void initialize(ValidatorsHolder holder) {
+                                parentValidator = holder.getValidator(UserRequest.class);
+                            }
+
+                            @Override
+                            public void validate(Validation validation, UserRequest.UserAddress root) {
+                                validation.withField("parent", () -> {
+                                    var parent = root.parent();
+                                    if (parent == null) return;
+                                    parentValidator.validate(validation, parent);
+                                });
+                            }
+                        }
+                        """
+                ));
+        assertThat(compilation)
+                .generatedSourceFile("io.github.raniagus.javalidation.validator.Validators")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("io.github.raniagus.javalidation.validator.Validators", """
+                        package io.github.raniagus.javalidation.validator;
+                        
+                        import io.github.raniagus.javalidation.ValidationErrors;
+                        import java.util.Map;
+                        import javax.annotation.processing.Generated;
+                        import org.jspecify.annotations.NullMarked;
+                        import test.UserRequest;
+                        import test.UserRequest$UserAddressValidator;
+                        import test.UserRequestValidator;
+
+                        @NullMarked
+                        @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
+                        public final class Validators {
+                            private static final ValidatorsHolder HOLDER;
+                        
+                            private Validators() {}
+                        
+                            static {
+                                HOLDER = new ValidatorsHolder(Map.ofEntries(
+                                        Map.entry(UserRequest.UserAddress.class, new UserRequest$UserAddressValidator())
+                                      , Map.entry(UserRequest.class, new UserRequestValidator())
+                                ));
+                                HOLDER.initialize();
+                            }
+                        
+                            public static boolean hasValidator(Class<?> clazz) {
+                                return HOLDER.hasValidator(clazz);
+                            }
+                        
+                            public static <T> ValidationErrors validate(T instance) {
+                                 return HOLDER.validate(instance);
+                            }
+                        
+                            public static <T> Validator<T> getValidator(Class<T> clazz) {
+                                 return HOLDER.getValidator(clazz);
                             }
                         }
                         """));
@@ -483,14 +640,21 @@ class ValidateAnnotationTest {
                         package test;
     
                         import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.validator.InitializableValidator;
                         import io.github.raniagus.javalidation.validator.Validator;
+                        import io.github.raniagus.javalidation.validator.ValidatorsHolder;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
     
                         @NullMarked
                         @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
-                        public class CircleValidator implements Validator<Circle> {
-                            private final Validator<Center> centerValidator = new CenterValidator();
+                        public class CircleValidator implements InitializableValidator<Circle> {
+                            private Validator<Center> centerValidator;
+            
+                            @Override
+                            public void initialize(ValidatorsHolder holder) {
+                                centerValidator = holder.getValidator(Center.class);
+                            }
             
                             @Override
                             public void validate(Validation validation, Circle root) {
@@ -508,15 +672,21 @@ class ValidateAnnotationTest {
                 .generatedSourceFile("test.CenterValidator")
                 .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.CenterValidator", """
                         package test;
-            
+
                         import io.github.raniagus.javalidation.Validation;
-                        import io.github.raniagus.javalidation.validator.Validator;
+                        import io.github.raniagus.javalidation.validator.InitializableValidator;
+                        import io.github.raniagus.javalidation.validator.ValidatorsHolder;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
             
                         @NullMarked
                         @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
-                        public class CenterValidator implements Validator<Center> {
+                        public class CenterValidator implements InitializableValidator<Center> {
+
+                            @Override
+                            public void initialize(ValidatorsHolder holder) {
+                            }
+
                             @Override
                             public void validate(Validation validation, Center root) {
             
@@ -531,16 +701,21 @@ class ValidateAnnotationTest {
                         package test;
     
                         import io.github.raniagus.javalidation.Validation;
-                        import io.github.raniagus.javalidation.validator.Validator;
+                        import io.github.raniagus.javalidation.validator.InitializableValidator;
+                        import io.github.raniagus.javalidation.validator.ValidatorsHolder;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
     
                         @NullMarked
                         @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
-                        public class RectangleValidator implements Validator<Rectangle> {
+                        public class RectangleValidator implements InitializableValidator<Rectangle> {
+        
+                            @Override
+                            public void initialize(ValidatorsHolder holder) {
+                            }
+
                             @Override
                             public void validate(Validation validation, Rectangle root) {
-    
                             }
                         }
                         """
@@ -552,15 +727,23 @@ class ValidateAnnotationTest {
                     package test;
 
                     import io.github.raniagus.javalidation.Validation;
+                    import io.github.raniagus.javalidation.validator.InitializableValidator;
                     import io.github.raniagus.javalidation.validator.Validator;
+                    import io.github.raniagus.javalidation.validator.ValidatorsHolder;
                     import javax.annotation.processing.Generated;
                     import org.jspecify.annotations.NullMarked;
 
                     @NullMarked
                     @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
-                    public class ShapeValidator implements Validator<Shape> {
-                        private final Validator<Circle> circleValidator = new CircleValidator();
-                        private final Validator<Rectangle> rectangleValidator = new RectangleValidator();
+                    public class ShapeValidator implements InitializableValidator<Shape> {
+                        private Validator<Circle> circleValidator;
+                        private Validator<Rectangle> rectangleValidator;
+
+                        @Override
+                        public void initialize(ValidatorsHolder holder) {
+                            circleValidator = holder.getValidator(Circle.class);
+                            rectangleValidator = holder.getValidator(Rectangle.class);
+                        }
 
                         @Override
                         public void validate(Validation validation, Shape root) {
@@ -594,38 +777,30 @@ class ValidateAnnotationTest {
                     @NullMarked
                     @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
                     public final class Validators {
-                        private static final Map<Class<?>, Validator<?>> CACHE;
+                        private static final ValidatorsHolder HOLDER;
 
                         private Validators() {}
 
                         static {
-                            CACHE = Map.ofEntries(
+                            HOLDER = new ValidatorsHolder(Map.ofEntries(
                                     Map.entry(Center.class, new CenterValidator())
                                   , Map.entry(Circle.class, new CircleValidator())
                                   , Map.entry(Rectangle.class, new RectangleValidator())
                                   , Map.entry(Shape.class, new ShapeValidator())
-                            );
+                            ));
+                            HOLDER.initialize();
                         }
 
                         public static boolean hasValidator(Class<?> clazz) {
-                            return CACHE.containsKey(clazz);
+                            return HOLDER.hasValidator(clazz);
                         }
 
-                        @SuppressWarnings("unchecked")
                         public static <T> ValidationErrors validate(T instance) {
-                            Validator<T> validator = getValidator((Class<T>) instance.getClass());
-                            return validator.validate(instance);
+                             return HOLDER.validate(instance);
                         }
 
-                        @SuppressWarnings("unchecked")
                         public static <T> Validator<T> getValidator(Class<T> clazz) {
-                             Validator<?> validator = CACHE.get(clazz);
-                             if (validator == null) {
-                                 throw new IllegalArgumentException(
-                                     "No validator registered for " + clazz.getName()
-                                 );
-                             }
-                             return (Validator<T>) validator;
+                             return HOLDER.getValidator(clazz);
                         }
                     }
                     """

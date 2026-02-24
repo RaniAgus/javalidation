@@ -166,8 +166,9 @@ public class ValidatorProcessor extends AbstractProcessor {
     // -- Annotation scan --
 
     private List<ValidatorClassWriter> parseClassWriters(RoundEnvironment roundEnv) {
+        Set<Object> visited = new HashSet<>();
         return roundEnv.getRootElements().stream()
-                .flatMap(this::getAllRecordsWithValid)
+                .flatMap(element -> getAllRecordsWithValid(element, visited))
                 .distinct()
                 .map(te -> te.getModifiers().contains(Modifier.SEALED)
                         ? parseSealedClassWriter(te)
@@ -175,17 +176,17 @@ public class ValidatorProcessor extends AbstractProcessor {
                 .toList();
     }
 
-    private Stream<TypeElement> getAllRecordsWithValid(Element element) {
+    private Stream<TypeElement> getAllRecordsWithValid(Element element, Set<Object> visited) {
         if (!(element instanceof TypeElement typeElement)) {
             return Stream.empty();
         }
 
         Stream<TypeElement> fromParams = getMethodAndConstructorParams(typeElement)
                 .filter(this::isAnnotatedWithValid)
-                .flatMap(this::getRecordsFromParam);
+                .flatMap(e -> getRecordsFromParam(e, visited));
 
         Stream<TypeElement> fromNested = typeElement.getEnclosedElements().stream()
-                .flatMap(this::getAllRecordsWithValid);
+                .flatMap(e -> getAllRecordsWithValid(e, visited));
 
         return Stream.concat(fromParams, fromNested);
     }
@@ -197,18 +198,18 @@ public class ValidatorProcessor extends AbstractProcessor {
                 .flatMap(executableElement -> executableElement.getParameters().stream());
     }
 
-    private Stream<TypeElement> getRecordsFromParam(VariableElement param) {
+    private Stream<TypeElement> getRecordsFromParam(VariableElement param, Set<Object> visited) {
         TypeElement referred = getReferredType(param.asType());
         if (referred == null) {
             return Stream.empty();
         }
 
         if (referred.getModifiers().contains(Modifier.SEALED)) {
-            return Stream.concat(getSealedSubtypes(referred, param), Stream.of(referred));
+            return Stream.concat(getSealedSubtypes(referred, param, visited), Stream.of(referred));
         }
 
         if (referred.getKind() == ElementKind.RECORD) {
-            return getRecordAndNestedValidAnnotated(referred);
+            return getRecordAndNestedValidAnnotated(referred, visited);
         }
 
         processingEnv.getMessager().printMessage(
@@ -220,13 +221,13 @@ public class ValidatorProcessor extends AbstractProcessor {
         return Stream.empty();
     }
 
-    private Stream<TypeElement> getSealedSubtypes(TypeElement sealedType, VariableElement param) {
+    private Stream<TypeElement> getSealedSubtypes(TypeElement sealedType, VariableElement param, Set<Object> visited) {
         return sealedType.getPermittedSubclasses().stream()
                 .map(this::getReferredType)
                 .filter(Objects::nonNull)
                 .flatMap(subtype -> {
                     if (subtype.getKind() == ElementKind.RECORD) {
-                        return getRecordAndNestedValidAnnotated(subtype);
+                        return getRecordAndNestedValidAnnotated(subtype, visited);
                     }
                     processingEnv.getMessager().printMessage(
                             Diagnostic.Kind.WARNING,
@@ -237,19 +238,23 @@ public class ValidatorProcessor extends AbstractProcessor {
                 });
     }
 
-    private Stream<TypeElement> getRecordAndNestedValidAnnotated(TypeElement record) {
+    private Stream<TypeElement> getRecordAndNestedValidAnnotated(TypeElement record, Set<Object> visited) {
+        if (!visited.add(record.toString())) {
+            return Stream.empty();
+        }
+
         Stream<TypeElement> fromComponents = record.getEnclosedElements().stream()
                 .filter(e -> e.getKind() == ElementKind.RECORD_COMPONENT)
                 .map(e -> (VariableElement) e)
                 .flatMap(c -> Stream.concat(
-                        getNestedFromDirectRecordComponent(c),
-                        getNestedFromTypeArguments(c)
+                        getNestedFromDirectRecordComponent(c, visited),
+                        getNestedFromTypeArguments(c, visited)
                 ));
 
         return Stream.concat(Stream.of(record), fromComponents);
     }
 
-    private Stream<TypeElement> getNestedFromDirectRecordComponent(VariableElement component) {
+    private Stream<TypeElement> getNestedFromDirectRecordComponent(VariableElement component, Set<Object> visited) {
         if (!isAnnotatedWithValid(component)) {
             return Stream.empty();
         }
@@ -259,14 +264,14 @@ public class ValidatorProcessor extends AbstractProcessor {
             return Stream.empty();
         }
 
-        return getRecordAndNestedValidAnnotated(referred);
+        return getRecordAndNestedValidAnnotated(referred, visited);
     }
 
-    private Stream<TypeElement> getNestedFromTypeArguments(VariableElement component) {
+    private Stream<TypeElement> getNestedFromTypeArguments(VariableElement component, Set<Object> visited) {
         return getValidTypeArguments(component.asType())
                 .map(this::getReferredType)
                 .filter(e -> e != null && e.getKind() == ElementKind.RECORD)
-                .flatMap(this::getRecordAndNestedValidAnnotated);
+                .flatMap(element -> getRecordAndNestedValidAnnotated(element, visited));
     }
 
     private Stream<TypeMirror> getValidTypeArguments(TypeMirror type) {
@@ -391,8 +396,7 @@ public class ValidatorProcessor extends AbstractProcessor {
                 getRecordImportName(referredType),
                 getEnclosingClassPrefix(referredType, "."),
                 getRecordName(referredType),
-                getValidatorName(referredType),
-                getValidatorFullName(referredType)
+                getValidatorName(referredType)
         );
     }
 

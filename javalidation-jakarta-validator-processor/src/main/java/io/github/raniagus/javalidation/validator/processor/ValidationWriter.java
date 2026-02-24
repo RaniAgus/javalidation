@@ -9,5 +9,7 @@ public interface ValidationWriter {
 
     default void writePropertiesTo(ValidationOutput out) {}
 
+    default void writePropertiesInitTo(ValidationOutput out) {}
+
     void writeBodyTo(ValidationOutput out);
 }

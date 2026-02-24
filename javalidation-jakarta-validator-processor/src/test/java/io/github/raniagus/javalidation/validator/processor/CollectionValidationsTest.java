@@ -8,10 +8,13 @@ import com.google.testing.compile.JavaFileObjects;
 import io.github.raniagus.javalidation.FieldKey;
 import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.ValidationErrors;
+import io.github.raniagus.javalidation.validator.InitializableValidator;
 import io.github.raniagus.javalidation.validator.Validator;
+import io.github.raniagus.javalidation.validator.ValidatorsHolder;
 import java.util.*;
 import java.util.function.Consumer;
 import javax.tools.JavaFileObject;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -107,7 +110,18 @@ public class CollectionValidationsTest {
 
     @Nested
     class ValidatedIterableRecordValidatorTest {
-        private final Validator<ValidatedIterableRecord> validator = new ValidatedIterableRecordValidator();
+        private final InitializableValidator<ValidatedIterableRecord> validator = new ValidatedIterableRecordValidator();
+        private final InitializableValidator<ValidatedIterableRecord.Person> personValidator = new ValidatedIterableRecord$PersonValidator();
+
+        private final ValidatorsHolder validatorsHolder = new ValidatorsHolder(Map.of(
+                ValidatedIterableRecord.class, validator,
+                ValidatedIterableRecord.Person.class, personValidator
+        ));
+
+        @BeforeEach
+        void setup() {
+            validatorsHolder.initialize();
+        }
 
         @Test
         void nullFriends_hasFieldError() {

@@ -1,14 +1,21 @@
 package test.collection;
 
 import io.github.raniagus.javalidation.Validation;
+import io.github.raniagus.javalidation.validator.InitializableValidator;
 import io.github.raniagus.javalidation.validator.Validator;
+import io.github.raniagus.javalidation.validator.ValidatorsHolder;
 import javax.annotation.processing.Generated;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
-public class ValidatedIterableRecordValidator implements Validator<ValidatedIterableRecord> {
-    private final Validator<ValidatedIterableRecord.Person> friendsItemValidator = new ValidatedIterableRecord$PersonValidator();
+public class ValidatedIterableRecordValidator implements InitializableValidator<ValidatedIterableRecord> {
+    private Validator<ValidatedIterableRecord.Person> friendsItemValidator;
+
+    @Override
+    public void initialize(ValidatorsHolder holder) {
+        friendsItemValidator = holder.getValidator(ValidatedIterableRecord.Person.class);
+    }
 
     @Override
     public void validate(Validation validation, ValidatedIterableRecord root) {

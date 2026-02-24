@@ -25,6 +25,18 @@ public sealed interface FieldWriter extends ValidationWriter {
         out.removeVariable();
     }
 
+    default void writePropertiesInitTo(ValidationOutput out) {
+        NullSafeWriter nullSafeWriter = nullSafeWriter();
+        out.registerVariable(field());
+        if (nullSafeWriter != null) {
+            nullSafeWriter.writePropertiesInitTo(out);
+        }
+        for (NullUnsafeWriter writer : nullUnsafeWriters()) {
+            writer.writePropertiesInitTo(out);
+        }
+        out.removeVariable();
+    }
+
     String field();
 
     default @Nullable NullSafeWriter nullSafeWriter() {

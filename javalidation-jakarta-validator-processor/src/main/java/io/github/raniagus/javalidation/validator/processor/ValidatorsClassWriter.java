@@ -15,7 +15,8 @@ public record ValidatorsClassWriter(List<RecordValidatorClassWriter> classWriter
                 Stream.of(
                         "java.util.Map",
                         "io.github.raniagus.javalidation.ValidationErrors",
-                        "io.github.raniagus.javalidation.validator.Validator"
+                        "io.github.raniagus.javalidation.validator.Validator",
+                        "io.github.raniagus.javalidation.validator.ValidatorsHolder"
                 ),
                 classWriters.stream().flatMap(writer -> Stream.concat(
                         Stream.of(writer.fullName()),
@@ -33,12 +34,12 @@ public record ValidatorsClassWriter(List<RecordValidatorClassWriter> classWriter
     public void writeBody(ValidationOutput out) {
         out.write("""
                 public final class %1$s {
-                    private static final Map<Class<?>, Validator<?>> CACHE;
+                    private static final ValidatorsHolder HOLDER;
 
                     private %1$s() {}
 
                     static {
-                        CACHE = Map.ofEntries(\
+                        HOLDER = new ValidatorsHolder(Map.ofEntries(\
                 """.formatted(className()));
         boolean first = true;
         for (RecordValidatorClassWriter writer : classWriters) {
@@ -48,28 +49,20 @@ public record ValidatorsClassWriter(List<RecordValidatorClassWriter> classWriter
             first = false;
         }
         out.write("""
-                        );
+                        ));
+                        HOLDER.initialize();
                     }
 
                     public static boolean hasValidator(Class<?> clazz) {
-                        return CACHE.containsKey(clazz);
+                        return HOLDER.hasValidator(clazz);
                     }
 
-                    @SuppressWarnings("unchecked")
                     public static <T> ValidationErrors validate(T instance) {
-                        Validator<T> validator = getValidator((Class<T>) instance.getClass());
-                        return validator.validate(instance);
+                         return HOLDER.validate(instance);
                     }
 
-                    @SuppressWarnings("unchecked")
                     public static <T> Validator<T> getValidator(Class<T> clazz) {
-                         Validator<?> validator = CACHE.get(clazz);
-                         if (validator == null) {
-                             throw new IllegalArgumentException(
-                                 "No validator registered for " + clazz.getName()
-                             );
-                         }
-                         return (Validator<T>) validator;
+                         return HOLDER.getValidator(clazz);
                     }
                 }
                 """);

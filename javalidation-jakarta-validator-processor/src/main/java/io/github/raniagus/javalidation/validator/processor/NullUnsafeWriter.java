@@ -222,24 +222,31 @@ public interface NullUnsafeWriter extends ValidationWriter {
             String referredTypeImport, // "com.example.RecordName"
             String referredTypeEnclosingClassPrefix, // "" or "EnclosingClass."
             String referredTypeName, // "RecordName"
-            String referredValidatorName, // "RecordNameValidator" or "EnclosingClass$RecordNameValidator"
-            String referredValidatorFullName // "com.example.RecordNameValidator" or "com.example.EnclosingClass$RecordNameValidator"
+            String referredValidatorName // "RecordNameValidator" or "EnclosingClass$RecordNameValidator"
     ) implements NullUnsafeWriter {
         @Override
         public Stream<String> imports() {
-            return Stream.of(referredTypeImport, referredValidatorFullName);
+            return Stream.of(referredTypeImport, "io.github.raniagus.javalidation.validator.Validator");
         }
 
         @Override
         public void writePropertiesTo(ValidationOutput out) {
             out.write("""
-                    private final Validator<%s%s> %sValidator = new %s();\
+                    private Validator<%s%s> %sValidator;\
                     """.formatted(
-                    referredTypeEnclosingClassPrefix,
-                    referredTypeName,
-                    out.getVariable(),
-                    referredValidatorName
-            ));
+                        referredTypeEnclosingClassPrefix,
+                        referredTypeName,
+                        out.getVariable()
+                    )
+            );
+        }
+
+        @Override
+        public void writePropertiesInitTo(ValidationOutput out) {
+            out.write("""
+                    %sValidator = holder.getValidator(%s%s.class);\
+                    """.formatted(out.getVariable(), referredTypeEnclosingClassPrefix, referredTypeName)
+            );
         }
 
         @Override
@@ -269,6 +276,16 @@ public interface NullUnsafeWriter extends ValidationWriter {
                 nullSafeWriter.writePropertiesTo(out);
             }
             nullUnsafeWriters.forEach(writer -> writer.writePropertiesTo(out));
+            out.removeVariable();
+        }
+
+        @Override
+        public void writePropertiesInitTo(ValidationOutput out) {
+            out.registerVariable(out.getVariable() + "Item");
+            if (nullSafeWriter != null) {
+                nullSafeWriter.writePropertiesInitTo(out);
+            }
+            nullUnsafeWriters.forEach(writer -> writer.writePropertiesInitTo(out));
             out.removeVariable();
         }
 
@@ -321,6 +338,23 @@ public interface NullUnsafeWriter extends ValidationWriter {
                 valueNullSafeWriter.writePropertiesTo(out);
             }
             valueNullUnsafeWriters.forEach(w -> w.writePropertiesTo(out));
+            out.removeVariable();
+        }
+
+        @Override
+        public void writePropertiesInitTo(ValidationOutput out) {
+            out.registerVariable(out.getVariable() + "Key");
+            if (keyNullSafeWriter != null) {
+                keyNullSafeWriter.writePropertiesInitTo(out);
+            }
+            keyNullUnsafeWriters.forEach(w -> w.writePropertiesInitTo(out));
+            out.removeVariable();
+
+            out.registerVariable(out.getVariable() + "Value");
+            if (valueNullSafeWriter != null) {
+                valueNullSafeWriter.writePropertiesInitTo(out);
+            }
+            valueNullUnsafeWriters.forEach(w -> w.writePropertiesInitTo(out));
             out.removeVariable();
         }
 
