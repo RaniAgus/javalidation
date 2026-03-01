@@ -10,7 +10,8 @@ import org.jspecify.annotations.Nullable;
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.PROPERTY,
-        property = "ok"
+        property = "ok",
+        visible = true
 )
 @JsonSubTypes({
         @JsonSubTypes.Type(value = Result.Ok.class, name = "true"),
@@ -20,9 +21,6 @@ public interface ResultMixIn {
 
     interface OkMixin<T extends @Nullable Object> {
         T value();
-
-        @JsonIgnore
-        ValidationErrors getErrors();
 
         @JsonIgnore
         T getOrThrow();

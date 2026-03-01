@@ -114,7 +114,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * <pre>{@code
      * Result<String> result = Result.error("Invalid input");
      * result.getOrThrow();  // throws JavalidationException
-     * ValidationErrors errors = result.getErrors();  // get accumulated errors
+     * ValidationErrors errors = result.errors();  // get accumulated errors
      * }</pre>
      *
      * @param errors the accumulated validation errors
@@ -156,7 +156,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * Example:
      * <pre>{@code
      * Result<String> result = validateInput(input);
-     * ValidationErrors errors = result.getErrors();
+     * ValidationErrors errors = result.errors();
      * if (errors.isNotEmpty()) {
      *     // handle validation errors
      * }
@@ -164,7 +164,7 @@ public sealed interface Result<T extends @Nullable Object> {
      *
      * @return the accumulated validation errors, or empty if this is {@link Ok}
      */
-    default ValidationErrors getErrors() {
+    default ValidationErrors errors() {
         return switch (this) {
             case Ok<T>(T ignored) -> ValidationErrors.empty();
             case Err<T>(ValidationErrors errors) -> errors;

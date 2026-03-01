@@ -40,6 +40,6 @@ class PartitionedResultTest {
 
         assertThatThrownBy(result::getOrThrow)
                 .isInstanceOf(JavalidationException.class);
-        assertThat(result.getErrors()).isEqualTo(errors);
+        assertThat(result.errors()).isEqualTo(errors);
     }
 }

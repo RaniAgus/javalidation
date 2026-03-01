@@ -78,7 +78,7 @@ class ResultTest {
                 Result.errorAt("field", "error2")
         );
 
-        var errors = result.getErrors();
+        var errors = result.errors();
         assertThat(errors.rootErrors()).hasSize(1);
         assertThat(errors.fieldErrors()).hasSize(1);
     }
@@ -100,20 +100,20 @@ class ResultTest {
                 .isInstanceOf(JavalidationException.class);
     }
 
-    // -- getErrors --
+    // -- errors --
 
     @Test
     void givenOk_whenGetErrors_thenReturnsEmpty() {
         var result = Result.ok("value");
 
-        assertThat(result.getErrors().isEmpty()).isTrue();
+        assertThat(result.errors().isEmpty()).isTrue();
     }
 
     @Test
     void givenErr_whenGetErrors_thenReturnsErrors() {
         var result = Result.<String>errorAt("field", "error message");
 
-        var errors = result.getErrors();
+        var errors = result.errors();
         assertThat(errors.isEmpty()).isFalse();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("field"));
     }
@@ -166,7 +166,7 @@ class ResultTest {
     void givenErr_whenWithPrefix_thenPrefixesErrorField() {
         var result = Result.<String>errorAt("field", "error").withPrefix("root");
 
-        var errors = result.getErrors();
+        var errors = result.errors();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("root", "field"));
     }
 
@@ -181,7 +181,7 @@ class ResultTest {
     void givenErr_whenWithPrefixVarargs_thenBuildsPrefix() {
         var result = Result.<String>errorAt("field", "error").withPrefix("root", "sub");
 
-        var errors = result.getErrors();
+        var errors = result.errors();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("root", "sub", "field"));
     }
 
@@ -243,7 +243,7 @@ class ResultTest {
         var result = Result.<Integer>errorAt("first", "error1")
                 .or(() -> Result.errorAt("second", "error2"));
 
-        var errors = result.getErrors();
+        var errors = result.errors();
         assertThat(errors.fieldErrors()).hasSize(2);
         assertThat(errors.fieldErrors()).containsKeys(FieldKey.of("first"), FieldKey.of("second"));
     }
@@ -280,7 +280,7 @@ class ResultTest {
         var result = Result.<Integer>errorAt("field1", "error1")
                 .or(Result.errorAt("field2", "error2"));
 
-        var errors = result.getErrors();
+        var errors = result.errors();
         assertThat(errors.fieldErrors()).hasSize(2);
         assertThat(errors.fieldErrors()).containsKeys(FieldKey.of("field1"), FieldKey.of("field2"));
     }
@@ -309,7 +309,7 @@ class ResultTest {
         });
 
         assertThat(result).isInstanceOf(Result.Err.class);
-        var errors = result.getErrors();
+        var errors = result.errors();
         assertThat(errors.rootErrors()).hasSize(1);
         assertThat(errors.rootErrors().get(0).message()).isEqualTo("error in mapper");
     }
@@ -337,7 +337,7 @@ class ResultTest {
         var originalError = Result.<String>errorAt("field", "message");
         var result = originalError.mapErr(errors -> errors.withPrefix("prefix"));
 
-        var errors = result.getErrors();
+        var errors = result.errors();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("prefix", "field"));
     }
 
@@ -361,7 +361,7 @@ class ResultTest {
                         errors -> errors.withPrefix("user")
                 );
 
-        var errors = result.getErrors();
+        var errors = result.errors();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("user", "age"));
         assertThat(errors.fieldErrors()).doesNotContainKey(FieldKey.of("age"));
     }
@@ -445,7 +445,7 @@ class ResultTest {
         });
 
         assertThat(result).isInstanceOf(Result.Err.class);
-        var errors = result.getErrors();
+        var errors = result.errors();
         assertThat(errors.rootErrors()).hasSize(1);
         assertThat(errors.rootErrors().get(0).message()).isEqualTo("error in flatMap");
     }
@@ -484,7 +484,7 @@ class ResultTest {
         var result = Result.<Integer>errorAt("first", "error1")
                 .flatMapErr(errors -> Result.errorAt("second", "error2"));
 
-        var resultErrors = result.getErrors();
+        var resultErrors = result.errors();
         assertThat(resultErrors.fieldErrors()).containsKey(FieldKey.of("second"));
         assertThat(resultErrors.fieldErrors()).doesNotContainKey(FieldKey.of("first"));
     }
@@ -543,7 +543,7 @@ class ResultTest {
 
         assertThatThrownBy(result::getOrThrow)
                 .isInstanceOf(JavalidationException.class);
-        assertThat(result.getErrors().rootErrors()).hasSize(1);
+        assertThat(result.errors().rootErrors()).hasSize(1);
     }
 
     @Test
@@ -554,7 +554,7 @@ class ResultTest {
             }
         });
 
-        var errors = result.getErrors();
+        var errors = result.errors();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("username"));
     }
 
@@ -565,7 +565,7 @@ class ResultTest {
                     validation.addError("This should not be executed");
                 });
 
-        var errors = result.getErrors();
+        var errors = result.errors();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("field"));
         assertThat(errors.rootErrors()).isEmpty();
     }
@@ -581,7 +581,7 @@ class ResultTest {
             }
         });
 
-        assertThat(result.getErrors().rootErrors()).hasSize(2);
+        assertThat(result.errors().rootErrors()).hasSize(2);
     }
 
     // -- ensure --
@@ -599,7 +599,7 @@ class ResultTest {
 
         assertThatThrownBy(result::getOrThrow)
                 .isInstanceOf(JavalidationException.class);
-        assertThat(result.getErrors().rootErrors()).hasSize(1);
+        assertThat(result.errors().rootErrors()).hasSize(1);
     }
 
     @Test
@@ -607,7 +607,7 @@ class ResultTest {
         var result = Result.<Integer>errorAt("initial", "error")
                 .ensure(x -> x > 0, "Value must be positive");
 
-        var errors = result.getErrors();
+        var errors = result.errors();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("initial"));
     }
 
@@ -632,7 +632,7 @@ class ResultTest {
                 "Must be at least 5 characters"
         );
 
-        var errors = result.getErrors();
+        var errors = result.errors();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("username"));
     }
 

@@ -35,7 +35,7 @@ class JoinerTest {
                 .and(result2)
                 .combine(Person::new);
 
-        assertThat(combined.getErrors())
+        assertThat(combined.errors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
                 .map(TemplateString::message)
@@ -69,7 +69,7 @@ class JoinerTest {
                 .and(result3)
                 .combine((a, b, c) -> a + b + c);
 
-        assertThat(combined.getErrors())
+        assertThat(combined.errors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
                 .map(TemplateString::message)
@@ -107,7 +107,7 @@ class JoinerTest {
                 .and(result4)
                 .combine((a, b, c, d) -> a + b + c + d);
 
-        assertThat(combined.getErrors())
+        assertThat(combined.errors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
                 .map(TemplateString::message)
@@ -149,7 +149,7 @@ class JoinerTest {
                 .and(result5)
                 .combine((a, b, c, d, e) -> a + b + c + d + e);
 
-        assertThat(combined.getErrors())
+        assertThat(combined.errors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
                 .map(TemplateString::message)
@@ -195,7 +195,7 @@ class JoinerTest {
                 .and(result6)
                 .combine((a, b, c, d, e, f) -> a + b + c + d + e + f);
 
-        assertThat(combined.getErrors())
+        assertThat(combined.errors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
                 .map(TemplateString::message)
@@ -245,7 +245,7 @@ class JoinerTest {
                 .and(result7)
                 .combine((a, b, c, d, e, f, g) -> a + b + c + d + e + f + g);
 
-        assertThat(combined.getErrors())
+        assertThat(combined.errors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
                 .map(TemplateString::message)
@@ -299,7 +299,7 @@ class JoinerTest {
                 .and(result8)
                 .combine((a, b, c, d, e, f, g, h) -> a + b + c + d + e + f + g + h);
 
-        assertThat(combined.getErrors())
+        assertThat(combined.errors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
                 .map(TemplateString::message)
@@ -357,7 +357,7 @@ class JoinerTest {
                 .and(result9)
                 .combine((a, b, c, d, e, f, g, h, i) -> a + b + c + d + e + f + g + h + i);
 
-        assertThat(combined.getErrors())
+        assertThat(combined.errors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
                 .map(TemplateString::message)
@@ -419,7 +419,7 @@ class JoinerTest {
                 .and(result10)
                 .combine((a, b, c, d, e, f, g, h, i, j) -> a + b + c + d + e + f + g + h + i + j);
 
-        assertThat(combined.getErrors())
+        assertThat(combined.errors())
                 .extracting(ValidationErrors::rootErrors)
                 .asInstanceOf(list(TemplateString.class))
                 .map(TemplateString::message)
