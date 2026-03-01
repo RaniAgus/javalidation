@@ -1,6 +1,7 @@
 package io.github.raniagus.javalidation.jackson;
 
 import io.github.raniagus.javalidation.Result;
+import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 import tools.jackson.databind.BeanDescription;
 import tools.jackson.databind.DeserializationConfig;
@@ -8,15 +9,12 @@ import tools.jackson.databind.JavaType;
 import tools.jackson.databind.ValueDeserializer;
 import tools.jackson.databind.deser.Deserializers;
 
-/**
- * Custom deserializer resolver for {@link Result} types that extracts generic type information.
- * <p>
- * This resolver is used by Jackson to find the appropriate deserializer for {@link Result} instances,
- * enabling generic type-safe deserialization like {@code Result<Person>} or {@code Result<List<Item>>}.
- *
- * @see StructuredResultDeserializer
- */
 class StructuredResultDeserializerResolver extends Deserializers.Base {
+    private final Function<JavaType, ValueDeserializer<Result<?>>> deserializerFactory;
+
+    StructuredResultDeserializerResolver(Function<JavaType, ValueDeserializer<Result<?>>> deserializerFactory) {
+        this.deserializerFactory = deserializerFactory;
+    }
     
     @Override
     public boolean hasDeserializerFor(DeserializationConfig config, Class<?> valueType) {
@@ -38,6 +36,6 @@ class StructuredResultDeserializerResolver extends Deserializers.Base {
                 ? type.containedType(0)
                 : config.constructType(Object.class);
 
-        return new StructuredResultDeserializer(valueType);
+        return deserializerFactory.apply(valueType);
     }
 }

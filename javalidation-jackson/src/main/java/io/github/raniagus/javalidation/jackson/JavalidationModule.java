@@ -8,80 +8,59 @@ import io.github.raniagus.javalidation.format.BracketNotationFormatter;
 import io.github.raniagus.javalidation.format.DotNotationFormatter;
 import io.github.raniagus.javalidation.format.FieldKeyFormatter;
 import io.github.raniagus.javalidation.format.TemplateStringFormatter;
+import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.ValueDeserializer;
 import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.deser.Deserializers;
 import tools.jackson.databind.module.SimpleModule;
 
 /**
- * Jackson module for serializing javalidation types ({@link Result}, {@link TemplateString}, and {@link ValidationErrors}).
+ * Jackson module for serializing javalidation types.
  * <p>
- * This module registers custom serializers and deserializers to control how validation types are serialized to and from JSON.
- * By default, it uses:
- * <ul>
- *   <li>{@link StructuredResultSerializer} and {@link StructuredResultDeserializer} for {@link Result} - structured format with template/args preservation</li>
- *   <li>{@link TemplateStringSerializer} for {@link TemplateString} - formats templates using {@link TemplateStringFormatter}</li>
- *   <li>{@link ValidationErrorsMixIn} for {@link ValidationErrors} - structures errors as {@code {rootErrors: [...], fieldErrors: {...}}}</li>
- * </ul>
+ * By default, uses structured format with code/args preservation for {@link Result},
+ * and formats {@link TemplateString} using {@link TemplateStringFormatter}.
  * <p>
- * <b>Basic usage (default configuration):</b>
+ * <b>Basic usage:</b>
  * <pre>{@code
  * ObjectMapper mapper = JsonMapper.builder()
  *     .addModule(JavalidationModule.getDefault())
  *     .build();
  * }</pre>
  * <p>
- * <b>Custom formatter (for internationalization):</b>
+ * <b>Custom formatter for i18n:</b>
  * <pre>{@code
  * JavalidationModule module = JavalidationModule.builder()
- *     .withTemplateStringFormatter(myCustomFormatter)
+ *     .withTemplateStringFormatter(myFormatter)
  *     .build();
  * }</pre>
  * <p>
- * <b>Flattened errors (flat object instead of nested structure):</b>
+ * <b>Flattened errors:</b>
  * <pre>{@code
  * JavalidationModule module = JavalidationModule.builder()
  *     .withFlattenedErrors()
  *     .build();
  * }</pre>
- * <p>
- * <b>Custom Result serializer:</b>
- * <pre>{@code
- * JavalidationModule module = JavalidationModule.builder()
- *     .withResultSerializer(myCustomSerializer)
- *     .build();
- * }</pre>
  *
- * @see TemplateStringSerializer
- * @see FlattenedErrorsSerializer
- * @see ValidationErrorsMixIn
  * @see StructuredResultSerializer
  * @see StructuredResultDeserializer
  */
 public class JavalidationModule extends SimpleModule {
-    private final TemplateStringFormatter templateStringFormatter;
-    private final boolean useDefaultResultSerialization;
+    private final Deserializers resultDeserializer;
     private final boolean useDefaultErrorSerializer;
 
     private JavalidationModule(
-            TemplateStringFormatter templateStringFormatter,
             ValueSerializer<FieldKey> fieldKeySerializer,
-            @Nullable ValueSerializer<Result<?>> resultSerializer,
             ValueSerializer<TemplateString> templateStringSerializer,
-            @Nullable ValueSerializer<ValidationErrors> validationErrorsSerializer
+            @Nullable ValueSerializer<ValidationErrors> validationErrorsSerializer,
+            ValueSerializer<Result<?>> resultSerializer,
+            Function<JavaType, ValueDeserializer<Result<?>>> resultDeserializerFactory
     ) {
         super(JavalidationModule.class.getSimpleName());
 
-        this.templateStringFormatter = templateStringFormatter;
-
         addKeySerializer(FieldKey.class, fieldKeySerializer);
         addSerializer(TemplateString.class, templateStringSerializer);
-
-        if (resultSerializer != null) {
-            addSerializer(resultSerializer);
-            this.useDefaultResultSerialization = false;
-        } else {
-            this.useDefaultResultSerialization = true;
-        }
 
         if (validationErrorsSerializer != null) {
             addSerializer(ValidationErrors.class, validationErrorsSerializer);
@@ -89,26 +68,18 @@ public class JavalidationModule extends SimpleModule {
         } else {
             this.useDefaultErrorSerializer = true;
         }
+
+        addSerializer(resultSerializer);
+        this.resultDeserializer = new StructuredResultDeserializerResolver(resultDeserializerFactory);
     }
 
     @Override
     public void setupModule(SetupContext context) {
         super.setupModule(context);
-
-        // Register default Result serializer/deserializer
-        if (useDefaultResultSerialization) {
-            StructuredResultSerializer serializer = new StructuredResultSerializer(templateStringFormatter);
-            // Use addSerializer without the class parameter to register for the type hierarchy
-            addSerializer(serializer);
-
-            // Register deserializer using a custom resolver
-            StructuredResultDeserializerResolver resolver = new StructuredResultDeserializerResolver();
-            context.addDeserializers(resolver);
-        }
-
         if (useDefaultErrorSerializer) {
             context.setMixIn(ValidationErrors.class, ValidationErrorsMixIn.class);
         }
+        context.addDeserializers(resultDeserializer);
     }
 
     /**
@@ -132,21 +103,17 @@ public class JavalidationModule extends SimpleModule {
     }
 
     /**
-     * Builder for configuring {@link JavalidationModule} with custom serializers.
-     * <p>
-     * Use this builder to customize how {@link Result}, {@link TemplateString} and {@link ValidationErrors}
-     * are serialized to JSON.
+     * Builder for configuring {@link JavalidationModule}.
      *
      * @see #withTemplateStringFormatter(TemplateStringFormatter)
      * @see #withFlattenedErrors()
-     * @see #withResultSerializer(ValueSerializer)
      */
     public static class Builder {
-        private TemplateStringFormatter templateStringFormatter = TemplateStringFormatter.getDefault();
         private ValueSerializer<FieldKey> fieldKeySerializer = new FieldKeySerializer();
-        private @Nullable ValueSerializer<Result<?>> resultSerializer;
         private ValueSerializer<TemplateString> templateStringSerializer = new TemplateStringSerializer();
         private @Nullable ValueSerializer<ValidationErrors> validationErrorsSerializer;
+        private ValueSerializer<Result<?>> resultSerializer = new StructuredResultSerializer();
+        private Function<JavaType, ValueDeserializer<Result<?>>> resultDeserializerFactory = StructuredResultDeserializer::new;
 
         /**
          * Creates a new builder with default serializers.
@@ -155,94 +122,65 @@ public class JavalidationModule extends SimpleModule {
         }
 
         /**
-         * Configures the module to serialize {@link FieldKey} using dot notation.
+         * Configures dot notation for {@link FieldKey}.
          * <p>
-         * By default, {@link FieldKey} is serialized using square brackets for numbers, and dots for strings:
-         * {@code users[0].name}. This method changes the serialization to dot notation: {@code users.0.name}.
+         * Changes {@code users[0].name} to {@code users.0.name}.
          *
-         * @return this builder for method chaining
-         * @see DotNotationFormatter
+         * @return this builder
          */
         public Builder withDotNotation() {
             return withFieldKeyFormatter(new DotNotationFormatter());
         }
 
         /**
-         * Configures the module to serialize {@link FieldKey} using bracket notation.
+         * Configures bracket notation for {@link FieldKey}.
          * <p>
-         * By default, {@link FieldKey} is serialized using square brackets for numbers, and dots for strings:
-         * {@code users[0].name}. This method changes the serialization to bracket notation: {@code users[0][name]}.
+         * Changes {@code users[0].name} to {@code users[0][name]}.
          *
-         * @return this builder for method chaining
-         * @see BracketNotationFormatter
+         * @return this builder
          */
         public Builder withBracketNotation() {
             return withFieldKeyFormatter(new BracketNotationFormatter());
         }
 
         /**
-         * Configures the module to serialize {@link ValidationErrors} as a flat object of field paths to error arrays.
+         * Configures flat error serialization.
          * <p>
-         * By default, errors are serialized with nested structure: {@code {rootErrors: [...], fieldErrors: {...}}}.
-         * This method changes the serialization to a flat object: {@code {"": [...], "field.path": [...]}}.
-         * <p>
-         * Example output:
-         * <pre>{@code
-         * {"": ["Root error"], "email": ["Invalid format"]}
-         * }</pre>
+         * Changes {@code {rootErrors: [...], fieldErrors: {...}}} to {@code {"": [...], "field": [...]}}.
          *
-         * @return this builder for method chaining
-         * @see FlattenedErrorsSerializer
+         * @return this builder
          */
         public Builder withFlattenedErrors() {
             return withValidationErrorsSerializer(new FlattenedErrorsSerializer());
         }
 
         /**
-         * Configures a custom formatter for {@link FieldKey} serialization.
-         * <p>
-         * This is a convenience method that wraps the formatter in a {@link FieldKeySerializer}.
-         * Use this to customize how field keys are formatted in error messages (e.g., using dots or brackets).
+         * Configures custom {@link FieldKey} formatter.
          *
-         * @param formatter the formatter to use (must not be null)
-         * @return this builder for method chaining
-         * @see #withFieldKeyFormatter(FieldKeyFormatter)
+         * @param formatter the formatter
+         * @return this builder
          */
         public Builder withFieldKeyFormatter(FieldKeyFormatter formatter) {
             return withFieldKeySerializer(new FieldKeySerializer(formatter));
         }
 
         /**
-         * Configures a custom formatter for {@link TemplateString} serialization.
-         * <p>
-         * This is a convenience method that wraps the formatter in a {@link TemplateStringSerializer}.
-         * Use this to customize how template messages are formatted (e.g., for i18n).
-         * <p>
-         * This formatter is also used by the default {@link StructuredResultSerializer} to format
-         * the {@code message} field in structured error output.
-         * <p>
-         * Example:
-         * <pre>{@code
-         * builder.withTemplateStringFormatter(new MessageSourceTemplateStringFormatter(messageSource, locale))
-         * }</pre>
+         * Configures custom {@link TemplateString} formatter for i18n.
          *
-         * @param formatter the formatter to use (must not be null)
-         * @return this builder for method chaining
-         * @see #withTemplateStringSerializer(ValueSerializer)
+         * @param formatter the formatter
+         * @return this builder
          */
         public Builder withTemplateStringFormatter(TemplateStringFormatter formatter) {
-            this.templateStringFormatter = formatter;
-            return withTemplateStringSerializer(new TemplateStringSerializer(formatter));
+            withTemplateStringSerializer(new TemplateStringSerializer(formatter));
+            withResultSerializer(new StructuredResultSerializer(formatter));
+            return this;
         }
 
         /**
-         * Configures a custom serializer for {@link FieldKey}.
-         * <p>
-         * Use this for full control over error structure serialization. For most use cases,
-         * {@link #withFieldKeyFormatter(FieldKeyFormatter)} is simpler.
+         * Configures custom {@link FieldKey} serializer.
          *
-         * @param fieldKeySerializer the custom serializer (must not be null)
-         * @return this builder for method chaining
+         * @param fieldKeySerializer the serializer
+         * @return this builder
          */
         public Builder withFieldKeySerializer(ValueSerializer<FieldKey> fieldKeySerializer) {
             this.fieldKeySerializer = fieldKeySerializer;
@@ -250,27 +188,10 @@ public class JavalidationModule extends SimpleModule {
         }
 
         /**
-         * Configures a custom serializer for {@link Result}.
-         * <p>
-         * Use this to override the default {@link StructuredResultSerializer}. This replaces the
-         * structured format with your custom serialization logic.
+         * Configures custom {@link TemplateString} serializer.
          *
-         * @param resultSerializer the custom serializer (must not be null)
-         * @return this builder for method chaining
-         */
-        public Builder withResultSerializer(ValueSerializer<Result<?>> resultSerializer) {
-            this.resultSerializer = resultSerializer;
-            return this;
-        }
-
-        /**
-         * Configures a custom serializer for {@link TemplateString}.
-         * <p>
-         * Use this for full control over template serialization. For most use cases,
-         * {@link #withTemplateStringFormatter(TemplateStringFormatter)} is simpler.
-         *
-         * @param templateStringSerializer the custom serializer (must not be null)
-         * @return this builder for method chaining
+         * @param templateStringSerializer the serializer
+         * @return this builder
          */
         public Builder withTemplateStringSerializer(ValueSerializer<TemplateString> templateStringSerializer) {
             this.templateStringSerializer = templateStringSerializer;
@@ -278,13 +199,10 @@ public class JavalidationModule extends SimpleModule {
         }
 
         /**
-         * Configures a custom serializer for {@link ValidationErrors}.
-         * <p>
-         * Use this for full control over error structure serialization. For flattened output,
-         * {@link #withFlattenedErrors()} is simpler.
+         * Configures custom {@link ValidationErrors} serializer.
          *
-         * @param validationErrorsSerializer the custom serializer (must not be null)
-         * @return this builder for method chaining
+         * @param validationErrorsSerializer the serializer
+         * @return this builder
          */
         public Builder withValidationErrorsSerializer(ValueSerializer<ValidationErrors> validationErrorsSerializer) {
             this.validationErrorsSerializer = validationErrorsSerializer;
@@ -292,17 +210,52 @@ public class JavalidationModule extends SimpleModule {
         }
 
         /**
-         * Builds the configured {@link JavalidationModule}.
+         * Configures custom {@link Result} serializer.
+         * <p>
+         * <b>WARNING:</b> Must also configure matching deserializer factory via
+         * {@link #withResultDeserializerFactory(Function)} for round-trip serialization.
          *
-         * @return a new module instance with the configured serializers
+         * @param resultSerializer the serializer
+         * @return this builder
+         * @see #withResultDeserializerFactory(Function)
+         * @see #withTemplateStringFormatter(TemplateStringFormatter)
+         */
+        public Builder withResultSerializer(ValueSerializer<Result<?>> resultSerializer) {
+            this.resultSerializer = resultSerializer;
+            return this;
+        }
+
+        /**
+         * Configures custom {@link Result} deserializer factory.
+         * <p>
+         * Factory receives {@link JavaType} (e.g., {@code Person} from {@code Result<Person>})
+         * and returns a deserializer.
+         * <p>
+         * <b>WARNING:</b> Must also configure matching serializer via
+         * {@link #withResultSerializer(ValueSerializer)} for round-trip serialization.
+         *
+         * @param resultDeserializerFactory the factory function
+         * @return this builder
+         * @see #withResultSerializer(ValueSerializer)
+         * @see #withTemplateStringFormatter(TemplateStringFormatter)
+         */
+        public Builder withResultDeserializerFactory(Function<JavaType, ValueDeserializer<Result<?>>> resultDeserializerFactory) {
+            this.resultDeserializerFactory = resultDeserializerFactory;
+            return this;
+        }
+
+        /**
+         * Builds the configured module.
+         *
+         * @return a new module instance
          */
         public JavalidationModule build() {
             return new JavalidationModule(
-                    templateStringFormatter,
                     fieldKeySerializer,
-                    resultSerializer,
                     templateStringSerializer,
-                    validationErrorsSerializer
+                    validationErrorsSerializer,
+                    resultSerializer,
+                    resultDeserializerFactory
             );
         }
     }
