@@ -46,7 +46,7 @@ public class ValidatorProcessor extends AbstractProcessor {
             discoveredClassNames.add(classWriter.fullName());
         }
 
-        if (roundEnv.processingOver() && !generated) {
+        if (roundEnv.processingOver() && !generated && !discoveredClassNames.isEmpty()) {
             persistClassNames();
             writeClass(new ValidatorsClassWriter(reconstructWriters()));
             generated = true;
