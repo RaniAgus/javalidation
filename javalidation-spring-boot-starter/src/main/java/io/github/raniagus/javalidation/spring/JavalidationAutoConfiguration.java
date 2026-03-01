@@ -25,7 +25,6 @@ public class JavalidationAutoConfiguration {
     // -- FieldKey formatting --
 
     @Bean
-    @ConditionalOnMissingBean(JavalidationProperties.class)
     @ConditionalOnProperty(prefix = PREFIX, name = "key-notation", havingValue = "property_path", matchIfMissing = true)
     public FieldKeyFormatter propertyPathNotationFieldKeyFormatter() {
         return new PropertyPathNotationFormatter();
@@ -46,7 +45,6 @@ public class JavalidationAutoConfiguration {
     // -- TemplateString formatting --
 
     @Bean
-    @ConditionalOnMissingBean(JavalidationProperties.class)
     @ConditionalOnProperty(prefix = PREFIX, name = "use-message-source", havingValue = "false")
     public TemplateStringFormatter defaultTemplateStringFormatter() {
         return TemplateStringFormatter.getDefault();
