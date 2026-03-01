@@ -15,12 +15,12 @@ import tools.jackson.databind.module.SimpleModule;
 /**
  * Jackson module for serializing javalidation types ({@link Result}, {@link TemplateString}, and {@link ValidationErrors}).
  * <p>
- * This module registers custom serializers to control how validation types are serialized to JSON.
+ * This module registers custom serializers and deserializers to control how validation types are serialized to and from JSON.
  * By default, it uses:
  * <ul>
- *   <li>{@link ResultMixIn} for {@link Result} - discriminated union with {@code ok} string discriminator field</li>
+ *   <li>{@link StructuredResultSerializer} and {@link StructuredResultDeserializer} for {@link Result} - structured format with template/args preservation</li>
  *   <li>{@link TemplateStringSerializer} for {@link TemplateString} - formats templates using {@link TemplateStringFormatter}</li>
- *   <li>{@link ValidationErrorsMixIn} for {@link ValidationErrors} - structures errors as {@code {root: [...], fields: {...}}}</li>
+ *   <li>{@link ValidationErrorsMixIn} for {@link ValidationErrors} - structures errors as {@code {rootErrors: [...], fieldErrors: {...}}}</li>
  * </ul>
  * <p>
  * <b>Basic usage (default configuration):</b>
@@ -37,22 +37,33 @@ import tools.jackson.databind.module.SimpleModule;
  *     .build();
  * }</pre>
  * <p>
- * <b>Flattened errors (flat array instead of nested structure):</b>
+ * <b>Flattened errors (flat object instead of nested structure):</b>
  * <pre>{@code
  * JavalidationModule module = JavalidationModule.builder()
  *     .withFlattenedErrors()
+ *     .build();
+ * }</pre>
+ * <p>
+ * <b>Custom Result serializer:</b>
+ * <pre>{@code
+ * JavalidationModule module = JavalidationModule.builder()
+ *     .withResultSerializer(myCustomSerializer)
  *     .build();
  * }</pre>
  *
  * @see TemplateStringSerializer
  * @see FlattenedErrorsSerializer
  * @see ValidationErrorsMixIn
+ * @see StructuredResultSerializer
+ * @see StructuredResultDeserializer
  */
 public class JavalidationModule extends SimpleModule {
-    private final boolean useDefaultResultSerializer;
+    private final TemplateStringFormatter templateStringFormatter;
+    private final boolean useDefaultResultSerialization;
     private final boolean useDefaultErrorSerializer;
 
     private JavalidationModule(
+            TemplateStringFormatter templateStringFormatter,
             ValueSerializer<FieldKey> fieldKeySerializer,
             @Nullable ValueSerializer<Result<?>> resultSerializer,
             ValueSerializer<TemplateString> templateStringSerializer,
@@ -60,16 +71,17 @@ public class JavalidationModule extends SimpleModule {
     ) {
         super(JavalidationModule.class.getSimpleName());
 
+        this.templateStringFormatter = templateStringFormatter;
+
         addKeySerializer(FieldKey.class, fieldKeySerializer);
+        addSerializer(TemplateString.class, templateStringSerializer);
 
         if (resultSerializer != null) {
             addSerializer(resultSerializer);
-            this.useDefaultResultSerializer = false;
+            this.useDefaultResultSerialization = false;
         } else {
-            this.useDefaultResultSerializer = true;
+            this.useDefaultResultSerialization = true;
         }
-
-        addSerializer(TemplateString.class, templateStringSerializer);
 
         if (validationErrorsSerializer != null) {
             addSerializer(ValidationErrors.class, validationErrorsSerializer);
@@ -82,11 +94,18 @@ public class JavalidationModule extends SimpleModule {
     @Override
     public void setupModule(SetupContext context) {
         super.setupModule(context);
-        if (useDefaultResultSerializer) {
-            context.setMixIn(Result.class, ResultMixIn.class);
-            context.setMixIn(Result.Ok.class, ResultMixIn.OkMixin.class);
-            context.setMixIn(Result.Err.class, ResultMixIn.ErrMixin.class);
+
+        // Register default Result serializer/deserializer
+        if (useDefaultResultSerialization) {
+            StructuredResultSerializer serializer = new StructuredResultSerializer(templateStringFormatter);
+            // Use addSerializer without the class parameter to register for the type hierarchy
+            addSerializer(serializer);
+
+            // Register deserializer using a custom resolver
+            StructuredResultDeserializerResolver resolver = new StructuredResultDeserializerResolver();
+            context.addDeserializers(resolver);
         }
+
         if (useDefaultErrorSerializer) {
             context.setMixIn(ValidationErrors.class, ValidationErrorsMixIn.class);
         }
@@ -115,13 +134,15 @@ public class JavalidationModule extends SimpleModule {
     /**
      * Builder for configuring {@link JavalidationModule} with custom serializers.
      * <p>
-     * Use this builder to customize how {@link TemplateString} and {@link ValidationErrors}
+     * Use this builder to customize how {@link Result}, {@link TemplateString} and {@link ValidationErrors}
      * are serialized to JSON.
      *
      * @see #withTemplateStringFormatter(TemplateStringFormatter)
      * @see #withFlattenedErrors()
+     * @see #withResultSerializer(ValueSerializer)
      */
     public static class Builder {
+        private TemplateStringFormatter templateStringFormatter = TemplateStringFormatter.getDefault();
         private ValueSerializer<FieldKey> fieldKeySerializer = new FieldKeySerializer();
         private @Nullable ValueSerializer<Result<?>> resultSerializer;
         private ValueSerializer<TemplateString> templateStringSerializer = new TemplateStringSerializer();
@@ -160,14 +181,14 @@ public class JavalidationModule extends SimpleModule {
         }
 
         /**
-         * Configures the module to serialize {@link ValidationErrors} as a flat array of error strings.
+         * Configures the module to serialize {@link ValidationErrors} as a flat object of field paths to error arrays.
          * <p>
-         * By default, errors are serialized with nested structure: {@code {root: [...], fields: {...}}}.
-         * This method changes the serialization to a simple flat array: {@code ["error1", "error2", ...]}.
+         * By default, errors are serialized with nested structure: {@code {rootErrors: [...], fieldErrors: {...}}}.
+         * This method changes the serialization to a flat object: {@code {"": [...], "field.path": [...]}}.
          * <p>
          * Example output:
          * <pre>{@code
-         * ["Name is required", "Age must be positive"]
+         * {"": ["Root error"], "email": ["Invalid format"]}
          * }</pre>
          *
          * @return this builder for method chaining
@@ -182,11 +203,6 @@ public class JavalidationModule extends SimpleModule {
          * <p>
          * This is a convenience method that wraps the formatter in a {@link FieldKeySerializer}.
          * Use this to customize how field keys are formatted in error messages (e.g., using dots or brackets).
-         * <p>
-         * Example:
-         * <pre>{@code
-         * builder.withTemplateStringFormatter(new MessageSourceTemplateStringFormatter(messageSource, locale))
-         * }</pre>
          *
          * @param formatter the formatter to use (must not be null)
          * @return this builder for method chaining
@@ -202,6 +218,9 @@ public class JavalidationModule extends SimpleModule {
          * This is a convenience method that wraps the formatter in a {@link TemplateStringSerializer}.
          * Use this to customize how template messages are formatted (e.g., for i18n).
          * <p>
+         * This formatter is also used by the default {@link StructuredResultSerializer} to format
+         * the {@code message} field in structured error output.
+         * <p>
          * Example:
          * <pre>{@code
          * builder.withTemplateStringFormatter(new MessageSourceTemplateStringFormatter(messageSource, locale))
@@ -212,6 +231,7 @@ public class JavalidationModule extends SimpleModule {
          * @see #withTemplateStringSerializer(ValueSerializer)
          */
         public Builder withTemplateStringFormatter(TemplateStringFormatter formatter) {
+            this.templateStringFormatter = formatter;
             return withTemplateStringSerializer(new TemplateStringSerializer(formatter));
         }
 
@@ -232,7 +252,8 @@ public class JavalidationModule extends SimpleModule {
         /**
          * Configures a custom serializer for {@link Result}.
          * <p>
-         * Use this for full control over error structure serialization.
+         * Use this to override the default {@link StructuredResultSerializer}. This replaces the
+         * structured format with your custom serialization logic.
          *
          * @param resultSerializer the custom serializer (must not be null)
          * @return this builder for method chaining
@@ -277,6 +298,7 @@ public class JavalidationModule extends SimpleModule {
          */
         public JavalidationModule build() {
             return new JavalidationModule(
+                    templateStringFormatter,
                     fieldKeySerializer,
                     resultSerializer,
                     templateStringSerializer,

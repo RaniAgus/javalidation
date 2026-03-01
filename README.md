@@ -574,13 +574,40 @@ JsonMapper mapper = JsonMapper.builder()
 ```
 
 **Result<T> serialization:**
+
+By default, `Result<T>` is serialized using a structured format that preserves error codes and arguments for client-side
+internationalization:
+
 ```java
 Result<User> success = Result.ok(new User("Alice", 30));
 // {"ok": true, "value": {"name": "Alice", "age": 30}}
 
-Result<User> failure = Result.error("email", "Invalid format");
-// {"ok": false, "errors": {"fieldErrors": {"email": ["Invalid format"]}}}
+Result<User> failure = Result.errorAt("age", "Must be at least {0} years old", 18);
+/* Output:
+{
+  "ok": false,
+  "errors": {
+    "rootErrors": [],
+    "fieldErrors": [
+      {
+        "key": ["age"],
+        "errors": [
+          {
+            "message": "Must be at least 18 years old",
+            "code": "Must be at least {0} years old",
+            "args": [18]
+          }
+        ]
+      }
+    ]
+  }
+}
+*/
 ```
+
+- `message`: Pre-formatted message using configured `TemplateStringFormatter`
+- `code`: Message code, can be a i18n key like `"user.age.minimum"` or a template pattern
+- `args`: Arguments array for reconstruction and custom formatting
 
 ### Spring Boot Integration
 
