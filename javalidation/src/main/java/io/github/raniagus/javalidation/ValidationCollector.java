@@ -15,8 +15,8 @@ public class ValidationCollector<T extends @Nullable Object> implements ResultCo
     }
 
     @Override
-    public void add(Result<T> result, Object[] prefix) {
-        result.peekErr(errors -> validation.addAll(errors, prefix));
+    public void add(Result<T> result, Object... prefix) {
+        result.peekErr(errors -> validation.addAll(FieldKey.of(prefix), errors));
     }
 
     @Override

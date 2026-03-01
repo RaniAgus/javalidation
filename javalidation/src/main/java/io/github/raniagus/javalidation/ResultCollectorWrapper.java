@@ -21,7 +21,7 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
     }
 
     @Override
-    public void add(Result<T> result, Object[] prefix) {
+    public void add(Result<T> result, Object... prefix) {
         resultCollector.add(result, prefix);
     }
 
@@ -39,11 +39,11 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
 
         @Override
         public void add(Result<T> result) {
-            super.add(result, new Object[]{index++});
+            super.add(result, index++);
         }
 
         @Override
-        public void add(Result<T> result, Object[] parts) {
+        public void add(Result<T> result, Object... parts) {
             Object[] newPrefix = Arrays.copyOf(parts, parts.length + 1);
             newPrefix[parts.length] = index++;
             super.add(result, newPrefix);
@@ -70,11 +70,11 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
 
         @Override
         public void add(Result<T> result) {
-            super.add(result, new Object[]{prefix});
+            super.add(result, prefix);
         }
 
         @Override
-        public void add(Result<T> result, Object[] parts) {
+        public void add(Result<T> result, Object... parts) {
             Object[] newPrefix = Arrays.copyOf(parts, parts.length + 1);
             newPrefix[parts.length] = prefix;
             super.add(result, newPrefix);

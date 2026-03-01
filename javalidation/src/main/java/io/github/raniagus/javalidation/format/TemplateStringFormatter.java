@@ -24,7 +24,7 @@ import io.github.raniagus.javalidation.TemplateString;
  * }</pre>
  * <p>
  * Custom formatters can be registered with Jackson (via the javalidation-jackson module)
- * or Spring Boot auto-configuration properties (via the javalidation-spring-boot-starter module).
+ * or Spring Boot autoconfiguration properties (via the javalidation-spring-boot-starter module).
  *
  * @see TemplateString
  * @see MessageFormatTemplateStringFormatter

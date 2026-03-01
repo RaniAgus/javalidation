@@ -161,7 +161,7 @@ static Result<String> validateEmail(String email) {
 ```java
 // Create results
 Result<String> success = Result.ok("value");
-Result<String> failure = Result.error("email", "Invalid format");
+Result<String> failure = Result.error("Invalid format");
 
 // Extract values
 String value = success.getOrThrow();              // "value"
@@ -405,7 +405,7 @@ import static io.github.raniagus.javalidation.ResultCollector.*;
 public List<User> validateAndProcessUsers(List<User> users) {
     // Validates all items, accumulates errors, then throws if any failed
     return users.stream()
-        .map(this::validateAndCreateUser)
+        .map(user -> Result.of(() -> validateAndCreateUser(user)))
         .collect(withPrefix("users", withIndex(toListOrThrow())));
 }
 
@@ -903,7 +903,7 @@ Result<Order> validateOrder(Order order) {
 | `fold(Function, Function)`                       | Handle both cases                         |
 | `getOrThrow()`                                   | Extract value or throw                    |
 | `getOrElse(T)` / `getOrElse(Supplier)`           | Extract value or default                  |
-| `withPrefix(String)`                             | Namespace errors for nested objects       |
+| `withPrefix(Object...)`                          | Namespace errors for nested objects       |
 
 ### ValidationErrors
 
@@ -911,9 +911,9 @@ Result<Order> validateOrder(Order order) {
 |---------------------------------|--------------------------------|
 | `empty()`                       | Create empty errors            |
 | `of(String, Object...)`         | Create with single root error  |
-| `of(String, String, Object...)` | Create with single field error |
+| `at(Object, String, Object...)` | Create with single field error |
 | `mergeWith(ValidationErrors)`   | Merge two error sets           |
-| `withPrefix(String)`            | Add prefix to all fields       |
+| `withPrefix(Object...)`         | Add prefix to all fields       |
 | `isEmpty()` / `isNotEmpty()`    | Check if errors exist          |
 | `count()`                       | Total number of errors         |
 
@@ -925,7 +925,7 @@ Result<Order> validateOrder(Order order) {
 | `addError(String, Object...)`               | Add root-level error                                       |
 | `addErrorAt(Object, String, Object...)`     | Add field-specific error                                   |
 | `addAll(ValidationErrors)`                  | Merge errors                                               |
-| `addAll(ValidationErrors, Object[])`        | Merge errors with prefix                                   |
+| `addAll(FieldKey, ValidationErrors)`        | Merge errors with prefix                                   |
 | `withField(Object, Runnable)`               | Scope validation under a field prefix                      |
 | `withEach(Iterable, Consumer / BiConsumer)` | Scope validation over a collection (optionally with index) |
 | `check()`                                   | Throw if errors exist                                      |
@@ -940,7 +940,7 @@ Result<Order> validateOrder(Order order) {
 | `toPartitioned()` / `toPartitioned(int)` | Returns valid items + errors (partial success)                   |
 | `into(Validation)`                       | Accumulates errors into existing `Validation` (mutable state)    |
 | `withIndex(Collector<...>)`              | Wraps collector to add `[0]`, `[1]`, etc. prefixes               |
-| `withPrefix(String, Collector<...>)`     | Wraps collector to add field prefix to all errors                |
+| `withPrefix(Object, Collector<...>)`     | Wraps collector to add field prefix to all errors                |
 
 > [!NOTE]
 > The optional `int` parameter provides an `initialCapacity` hint for ArrayList optimization.
@@ -949,9 +949,9 @@ Result<Order> validateOrder(Order order) {
 
 | Method                          | Description                       |
 |---------------------------------|-----------------------------------|
+| `of(ValidationErrors)`          | Create from ValidationErrors      |
 | `of(String, Object...)`         | Create with root error            |
 | `at(String, String, Object...)` | Create with field error           |
-| `of(ValidationErrors)`          | Create from ValidationErrors      |
 | `getErrors()`                   | Get accumulated errors            |
 
 ## License

@@ -337,7 +337,7 @@ public class Validation {
      * <pre>{@code
      * // Validate nested address
      * ValidationErrors addressErrors = validateAddress(user.address());
-     * validation.addAll("address", addressErrors);
+     * validation.addAll(FieldKey.of("address"), addressErrors);
      *
      * // If addressErrors had:
      * //   - rootErrors: ["Invalid address"]
@@ -351,19 +351,19 @@ public class Validation {
      * //     }
      * }</pre>
      *
-     * @param errors the validation errors to merge (must not be null)
      * @param prefix the prefix to add to all field paths (must not be null)
+     * @param errors the validation errors to merge (must not be null)
      * @return this validation for method chaining
      * @throws NullPointerException if prefix or errors is null
      */
-    public Validation addAll(ValidationErrors errors, Object[] prefix) {
+    public Validation addAll(FieldKey prefix, ValidationErrors errors) {
         Objects.requireNonNull(prefix);
         Objects.requireNonNull(errors);
         if (!errors.rootErrors().isEmpty()) {
-            addFieldErrors(FieldKey.of(prefix), errors.rootErrors());
+            addFieldErrors(prefix, errors.rootErrors());
         }
         for (Map.Entry<FieldKey, List<TemplateString>> entry : errors.fieldErrors().entrySet()) {
-            addFieldErrors(entry.getKey().withPrefix(prefix), entry.getValue());
+            addFieldErrors(entry.getKey().withPrefix(prefix.parts()), entry.getValue());
         }
         return this;
     }

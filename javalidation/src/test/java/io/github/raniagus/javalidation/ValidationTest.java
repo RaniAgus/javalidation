@@ -152,7 +152,7 @@ class ValidationTest {
     void givenFieldErrors_whenAddAllWithPrefix_thenPrefixesFieldNames() {
         var validationErrors = ValidationErrors.at("field", "error");
         var validation = Validation.create()
-                .addAll(validationErrors, new Object[]{"root"});
+                .addAll(FieldKey.of("root"), validationErrors);
 
         var errors = validation.finish();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("root", "field"));
@@ -162,7 +162,7 @@ class ValidationTest {
     void givenRootErrors_whenAddAllWithPrefix_thenConvertsToFieldErrors() {
         var validationErrors = ValidationErrors.of("root error");
         var validation = Validation.create()
-                .addAll(validationErrors, new Object[]{"prefix"});
+                .addAll(FieldKey.of("prefix"), validationErrors);
 
         var errors = validation.finish();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("prefix"));
