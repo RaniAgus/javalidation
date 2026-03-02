@@ -30,7 +30,7 @@ class StructuredResultDeserializerTest {
                 {"ok":true,"value":"hello"}\
                 """;
 
-        Result<String> result = mapper.readValue(json, new TypeReference<Result<String>>() {});
+        Result<String> result = mapper.readValue(json, new TypeReference<>() {});
 
         assertThat(result).isInstanceOf(Result.Ok.class);
         assertThat(((Result.Ok<String>) result).value()).isEqualTo("hello");
@@ -54,7 +54,7 @@ class StructuredResultDeserializerTest {
                 {"ok":true,"value":null}\
                 """;
 
-        Result<String> result = mapper.readValue(json, new TypeReference<Result<String>>() {});
+        Result<String> result = mapper.readValue(json, new TypeReference<>() {});
 
         assertThat(result).isInstanceOf(Result.Ok.class);
         assertThat(((Result.Ok<String>) result).value()).isNull();
@@ -96,10 +96,10 @@ class StructuredResultDeserializerTest {
                 {"ok":false,"errors":{"rootErrors":[{"message":"Invalid input","code":"Invalid input","args":[]}],"fieldErrors":[]}}\
                 """;
 
-        Result<String> result = mapper.readValue(json, new TypeReference<Result<String>>() {});
+        Result<String> result = mapper.readValue(json, new TypeReference<>() {});
 
         assertThat(result).isInstanceOf(Result.Err.class);
-        ValidationErrors errors = ((Result.Err) result).errors();
+        ValidationErrors errors = result.errors();
         assertThat(errors.rootErrors()).hasSize(1);
         assertThat(errors.rootErrors().getFirst().message()).isEqualTo("Invalid input");
         assertThat(errors.rootErrors().getFirst().args()).isEmpty();
@@ -112,10 +112,10 @@ class StructuredResultDeserializerTest {
                 {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["email"],"errors":[{"message":"Invalid format","code":"Invalid format","args":[]}]}]}}\
                 """;
 
-        Result<String> result = mapper.readValue(json, new TypeReference<Result<String>>() {});
+        Result<String> result = mapper.readValue(json, new TypeReference<>() {});
 
         assertThat(result).isInstanceOf(Result.Err.class);
-        ValidationErrors errors = ((Result.Err) result).errors();
+        ValidationErrors errors = result.errors();
         assertThat(errors.rootErrors()).isEmpty();
         assertThat(errors.fieldErrors()).hasSize(1);
         
@@ -132,10 +132,10 @@ class StructuredResultDeserializerTest {
                 {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["age"],"errors":[{"message":"Must be at least 18","code":"Must be at least {0}","args":[18]}]}]}}\
                 """;
 
-        Result<String> result = mapper.readValue(json, new TypeReference<Result<String>>() {});
+        Result<String> result = mapper.readValue(json, new TypeReference<>() {});
 
         assertThat(result).isInstanceOf(Result.Err.class);
-        ValidationErrors errors = ((Result.Err) result).errors();
+        ValidationErrors errors = result.errors();
         
         FieldKey ageKey = FieldKey.of("age");
         List<TemplateString> fieldErrors = errors.fieldErrors().get(ageKey);
@@ -152,10 +152,10 @@ class StructuredResultDeserializerTest {
                 {"ok":false,"errors":{"rootErrors":[{"message":"Global error","code":"Global error","args":[]}],"fieldErrors":[{"key":["age"],"errors":[{"message":"Must be positive","code":"Must be positive","args":[]}]},{"key":["name"],"errors":[{"message":"Required","code":"Required","args":[]}]}]}}\
                 """;
 
-        Result<String> result = mapper.readValue(json, new TypeReference<Result<String>>() {});
+        Result<String> result = mapper.readValue(json, new TypeReference<>() {});
 
         assertThat(result).isInstanceOf(Result.Err.class);
-        ValidationErrors errors = ((Result.Err) result).errors();
+        ValidationErrors errors = result.errors();
         
         assertThat(errors.rootErrors()).hasSize(1);
         assertThat(errors.rootErrors().getFirst().message()).isEqualTo("Global error");
@@ -171,10 +171,10 @@ class StructuredResultDeserializerTest {
                 {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["address",0,"street","city"],"errors":[{"message":"Invalid","code":"Invalid","args":[]}]}]}}\
                 """;
 
-        Result<String> result = mapper.readValue(json, new TypeReference<Result<String>>() {});
+        Result<String> result = mapper.readValue(json, new TypeReference<>() {});
 
         assertThat(result).isInstanceOf(Result.Err.class);
-        ValidationErrors errors = ((Result.Err) result).errors();
+        ValidationErrors errors = result.errors();
         
         FieldKey expectedKey = FieldKey.of("address", 0, "street", "city");
         assertThat(errors.fieldErrors()).containsKey(expectedKey);
@@ -187,10 +187,10 @@ class StructuredResultDeserializerTest {
                 {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["password"],"errors":[{"message":"Required","code":"Required","args":[]},{"message":"Must be at least 8 characters","code":"Must be at least {0} characters","args":[8]},{"message":"Must contain a number","code":"Must contain a number","args":[]}]}]}}\
                 """;
 
-        Result<String> result = mapper.readValue(json, new TypeReference<Result<String>>() {});
+        Result<String> result = mapper.readValue(json, new TypeReference<>() {});
 
         assertThat(result).isInstanceOf(Result.Err.class);
-        ValidationErrors errors = ((Result.Err) result).errors();
+        ValidationErrors errors = result.errors();
         
         FieldKey passwordKey = FieldKey.of("password");
         List<TemplateString> fieldErrors = errors.fieldErrors().get(passwordKey);
@@ -205,10 +205,10 @@ class StructuredResultDeserializerTest {
 
     @Test
     void givenSerializedOkResult_whenDeserialize_thenMatchesOriginal() {
-        Result<String> original = Result.ok("test value");
+        Result<String> original = Result.ok("test valid");
         
         String json = mapper.writeValueAsString(original);
-        Result<String> deserialized = mapper.readValue(json, new TypeReference<Result<String>>() {});
+        Result<String> deserialized = mapper.readValue(json, new TypeReference<>() {});
 
         assertThat(deserialized).isEqualTo(original);
     }
@@ -218,7 +218,7 @@ class StructuredResultDeserializerTest {
         Result<String> original = Result.errorAt("field", "Error with {0} args", 2);
         
         String json = mapper.writeValueAsString(original);
-        Result<String> deserialized = mapper.readValue(json, new TypeReference<Result<String>>() {});
+        Result<String> deserialized = mapper.readValue(json, new TypeReference<>() {});
 
         assertThat(deserialized).isEqualTo(original);
     }
@@ -232,7 +232,7 @@ class StructuredResultDeserializerTest {
         Result<String> original = Result.error(errors);
         
         String json = mapper.writeValueAsString(original);
-        Result<String> deserialized = mapper.readValue(json, new TypeReference<Result<String>>() {});
+        Result<String> deserialized = mapper.readValue(json, new TypeReference<>() {});
 
         assertThat(deserialized).isEqualTo(original);
     }
@@ -264,7 +264,7 @@ class StructuredResultDeserializerTest {
 
         assertThat(response.id()).isEqualTo("456");
         assertThat(response.result()).isInstanceOf(Result.Err.class);
-        ValidationErrors errors = ((Result.Err) response.result()).errors();
+        ValidationErrors errors = response.result().errors();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("field"));
     }
 }
