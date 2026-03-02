@@ -11,7 +11,7 @@ fully i18n-compatible `Result<T>` with accumulated `ValidationErrors`.
 - **Error accumulation**: Collect multiple validation errors instead of failing fast
 - **Dual error handling**: Separates expected validation failures (`JavalidationException`) from unexpected programming errors
 - **Flexible validation styles**: Functional approach with `Result<T>` or imperative style with `JavalidationException`
-- **Stream-based validation**: Specialized collectors (`toResultList()`, `toListOrThrow()`, `toPartitioned()`) for validating collections
+- **Stream-based validation**: Specialized collectors (`toResultList()`, `toListOrThrow()`, `toPartialResult()`) for validating collections
 
 **Type Safety & Composition:**
 - **Type-safe error handling**: `Result<T>` sealed type (`Ok`/`Err`) ensures exhaustive handling at compile-time without `ClassCastException` risk
@@ -812,21 +812,21 @@ user.age.minimum=Must be at least {0} years old
 
 ### Partial Success
 
-Process valid items even when some fail validation:
+Process successful items even when some fail validation:
 
 ```java
 import static io.github.raniagus.javalidation.ResultCollector.*;
 
 public ProcessOrderResult processOrder(Order order) {
-    PartitionedResult<List<Item>> partitioned = order.items().stream()
+    PartialResult<List<Item>> partial = order.items().stream()
             .map(this::validateItem)
-            .collect(withIndex(toPartitioned()));
+            .collect(withIndex(toPartialResult()));
 
-    // Continue with valid items
-    processValidItems(partitioned.value());
+    // Continue with successful items
+    processValidItems(partial.success());
 
     // Return partial success with errors for invalid items
-    return new ProcessOrderResult(partitioned.errors());
+    return new ProcessOrderResult(partial.errors());
 }
 
 public Result<Item> validateItem(Item item) {
@@ -940,14 +940,14 @@ public void validateItemsList(Validation validation, List<Item> items) {
 
 ### ResultCollector
 
-| Method                                   | Description                                                      |
-|------------------------------------------|------------------------------------------------------------------|
-| `toResultList()` / `toResultList(int)`   | Returns `Result<List<T>>` (functional style)                     |
-| `toListOrThrow()` / `toListOrThrow(int)` | Returns `List<T>` or throws (imperative style)                   |
-| `toPartitioned()` / `toPartitioned(int)` | Returns valid items + errors (partial success)                   |
-| `into(Validation)`                       | Accumulates errors into existing `Validation` (mutable state)    |
-| `withIndex(Collector<...>)`              | Wraps collector to add `[0]`, `[1]`, etc. prefixes               |
-| `withPrefix(Object, Collector<...>)`     | Wraps collector to add field prefix to all errors                |
+| Method                                       | Description                                                   |
+|----------------------------------------------|---------------------------------------------------------------|
+| `toResultList()` / `toResultList(int)`       | Returns `Result<List<T>>` (functional style)                  |
+| `toListOrThrow()` / `toListOrThrow(int)`     | Returns `List<T>` or throws (imperative style)                |
+| `toPartialResult()` / `toPartialResult(int)` | Returns successful items + errors (partial success)           |
+| `into(Validation)`                           | Accumulates errors into existing `Validation` (mutable state) |
+| `withIndex(Collector<...>)`                  | Wraps collector to add `[0]`, `[1]`, etc. prefixes            |
+| `withPrefix(Object, Collector<...>)`         | Wraps collector to add field prefix to all errors             |
 
 > [!NOTE]
 > The optional `int` parameter provides an `initialCapacity` hint for ArrayList optimization.

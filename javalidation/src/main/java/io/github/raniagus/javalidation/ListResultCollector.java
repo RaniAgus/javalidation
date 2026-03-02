@@ -85,25 +85,25 @@ public abstract class ListResultCollector<T extends @Nullable Object, R, SELF ex
         }
     }
 
-    public static final class ToPartitioned<T extends @Nullable Object> extends ListResultCollector<T, PartitionedResult<List<T>>, ToPartitioned<T>> {
-        ToPartitioned() {
+    public static final class ToPartialResult<T extends @Nullable Object> extends ListResultCollector<T, PartialResult<List<T>>, ToPartialResult<T>> {
+        ToPartialResult() {
             super();
         }
 
-        ToPartitioned(int initialCapacity) {
+        ToPartialResult(int initialCapacity) {
             super(initialCapacity);
         }
 
         @Override
-        public ToPartitioned<T> combine(ToPartitioned<T> other) {
+        public ToPartialResult<T> combine(ToPartialResult<T> other) {
             this.values.addAll(other.values);
             this.validation.addAll(other.validation);
             return this;
         }
 
         @Override
-        protected PartitionedResult<List<T>> finish(List<T> values, Validation validation) {
-            return new PartitionedResult<>(List.copyOf(values), validation.finish());
+        protected PartialResult<List<T>> finish(List<T> values, Validation validation) {
+            return new PartialResult<>(List.copyOf(values), validation.finish());
         }
     }
 }

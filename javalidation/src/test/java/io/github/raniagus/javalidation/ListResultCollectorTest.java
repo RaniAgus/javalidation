@@ -1,7 +1,7 @@
 package io.github.raniagus.javalidation;
 
 import static io.github.raniagus.javalidation.ResultCollector.toListOrThrow;
-import static io.github.raniagus.javalidation.ResultCollector.toPartitioned;
+import static io.github.raniagus.javalidation.ResultCollector.toPartialResult;
 import static io.github.raniagus.javalidation.ResultCollector.toResultList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -182,44 +182,44 @@ class ListResultCollectorTest {
     }
 
     @Nested
-    class ToPartitionedTests {
+    class ToPartialResultTests {
 
         @Test
-        void givenAllOkResults_whenToPartitioned_thenReturnsAllValuesWithNoErrors() {
+        void givenAllOkResults_whenToPartialResult_thenReturnsAllValuesWithNoErrors() {
             Result<String> result1 = Result.ok("value1");
             Result<String> result2 = Result.ok("value2");
             Result<String> result3 = Result.ok("value3");
 
             var partitioned = Stream.of(result1, result2, result3)
-                    .collect(toPartitioned());
+                    .collect(toPartialResult());
 
-            assertThat(partitioned.value()).containsExactly("value1", "value2", "value3");
+            assertThat(partitioned.success()).containsExactly("value1", "value2", "value3");
             assertThat(partitioned.errors().isEmpty()).isTrue();
         }
 
         @Test
-        void givenAllOkResults_whenToPartitionedWithCapacity_thenReturnsAllValuesWithNoErrors() {
+        void givenAllOkResults_whenToPartialResultWithCapacity_thenReturnsAllValuesWithNoErrors() {
             Result<String> result1 = Result.ok("value1");
             Result<String> result2 = Result.ok("value2");
             Result<String> result3 = Result.ok("value3");
 
             var partitioned = Stream.of(result1, result2, result3)
-                    .collect(toPartitioned(3));
+                    .collect(toPartialResult(3));
 
-            assertThat(partitioned.value()).containsExactly("value1", "value2", "value3");
+            assertThat(partitioned.success()).containsExactly("value1", "value2", "value3");
             assertThat(partitioned.errors().isEmpty()).isTrue();
         }
 
         @Test
-        void givenFailingResults_whenToPartitioned_thenReturnsValidValuesAndErrors() {
+        void givenFailingResults_whenToPartialResult_thenReturnsValidValuesAndErrors() {
             Result<String> result1 = Result.ok("value1");
             Result<String> result2 = Result.errorAt("field", "error");
             Result<String> result3 = Result.error("root");
 
             var partitioned = Stream.of(result1, result2, result3)
-                    .collect(toPartitioned());
+                    .collect(toPartialResult());
 
-            assertThat(partitioned.value()).containsExactly("value1");
+            assertThat(partitioned.success()).containsExactly("value1");
             assertThat(partitioned.errors()).isEqualTo(new ValidationErrors(
                     List.of(TemplateString.of("root")),
                     Map.of(FieldKey.of("field"), List.of(TemplateString.of("error")))
@@ -227,15 +227,15 @@ class ListResultCollectorTest {
         }
 
         @Test
-        void givenFailingResults_whenToPartitionedWithCapacity_thenReturnsValidValuesAndErrors() {
+        void givenFailingResults_whenToPartialResultWithCapacity_thenReturnsValidValuesAndErrors() {
             Result<String> result1 = Result.ok("value1");
             Result<String> result2 = Result.errorAt("field", "error");
             Result<String> result3 = Result.error("root");
 
             var partitioned = Stream.of(result1, result2, result3)
-                    .collect(toPartitioned(3));
+                    .collect(toPartialResult(3));
 
-            assertThat(partitioned.value()).containsExactly("value1");
+            assertThat(partitioned.success()).containsExactly("value1");
             assertThat(partitioned.errors()).isEqualTo(new ValidationErrors(
                     List.of(TemplateString.of("root")),
                     Map.of(FieldKey.of("field"), List.of(TemplateString.of("error")))
@@ -243,14 +243,14 @@ class ListResultCollectorTest {
         }
 
         @Test
-        void givenOnlyFailingResults_whenToPartitioned_thenReturnsEmptyListAndErrors() {
+        void givenOnlyFailingResults_whenToPartialResult_thenReturnsEmptyListAndErrors() {
             Result<String> result1 = Result.errorAt("field1", "error1");
             Result<String> result2 = Result.errorAt("field2", "error2");
 
             var partitioned = Stream.of(result1, result2)
-                    .collect(toPartitioned());
+                    .collect(toPartialResult());
 
-            assertThat(partitioned.value()).isEmpty();
+            assertThat(partitioned.success()).isEmpty();
             assertThat(partitioned.errors()).isEqualTo(new ValidationErrors(
                     List.of(),
                     Map.of(
@@ -261,16 +261,16 @@ class ListResultCollectorTest {
         }
 
         @Test
-        void givenMixedResults_whenToPartitioned_thenReturnsBothValidValuesAndErrors() {
+        void givenMixedResults_whenToPartialResult_thenReturnsBothValidValuesAndErrors() {
             Result<String> result1 = Result.ok("value1");
             Result<String> result2 = Result.errorAt("field2", "error2");
             Result<String> result3 = Result.ok("value3");
             Result<String> result4 = Result.errorAt("field4", "error4");
 
             var partitioned = Stream.of(result1, result2, result3, result4)
-                    .collect(toPartitioned());
+                    .collect(toPartialResult());
 
-            assertThat(partitioned.value()).containsExactly("value1", "value3");
+            assertThat(partitioned.success()).containsExactly("value1", "value3");
             assertThat(partitioned.errors()).isEqualTo(new ValidationErrors(
                     List.of(),
                     Map.of(

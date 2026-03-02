@@ -9,7 +9,7 @@ class PartitionedResultTest {
 
     @Test
     void givenEmptyErrors_whenHasErrors_thenReturnsFalse() {
-        var partitioned = new PartitionedResult<>("value", ValidationErrors.empty());
+        var partitioned = new PartialResult<>("value", ValidationErrors.empty());
 
         assertThat(partitioned.hasErrors()).isFalse();
     }
@@ -17,14 +17,14 @@ class PartitionedResultTest {
     @Test
     void givenNonEmptyErrors_whenHasErrors_thenReturnsTrue() {
         var errors = ValidationErrors.of("error");
-        var partitioned = new PartitionedResult<>("value", errors);
+        var partitioned = new PartialResult<>("value", errors);
 
         assertThat(partitioned.hasErrors()).isTrue();
     }
 
     @Test
     void givenEmptyErrors_whenToResult_thenReturnsOk() {
-        var partitioned = new PartitionedResult<>("success", ValidationErrors.empty());
+        var partitioned = new PartialResult<>("success", ValidationErrors.empty());
 
         var result = partitioned.toResult();
 
@@ -34,7 +34,7 @@ class PartitionedResultTest {
     @Test
     void givenNonEmptyErrors_whenToResult_thenReturnsErr() {
         var errors = ValidationErrors.of("validation failed");
-        var partitioned = new PartitionedResult<>("value", errors);
+        var partitioned = new PartialResult<>("value", errors);
 
         var result = partitioned.toResult();
 

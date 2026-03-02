@@ -1,7 +1,7 @@
 package io.github.raniagus.javalidation;
 
 import static io.github.raniagus.javalidation.ResultCollector.toListOrThrow;
-import static io.github.raniagus.javalidation.ResultCollector.toPartitioned;
+import static io.github.raniagus.javalidation.ResultCollector.toPartialResult;
 import static io.github.raniagus.javalidation.ResultCollector.toResultList;
 import static io.github.raniagus.javalidation.ResultCollector.withIndex;
 import static io.github.raniagus.javalidation.ResultCollector.withPrefix;
@@ -75,15 +75,15 @@ class ResultCollectorWrapperTest {
         }
 
         @Test
-        void givenFailingResults_whenWithIndexToPartitioned_thenReturnsPartitionedWithIndexedErrors() {
+        void givenFailingResults_whenWithIndexToPartialResult_thenReturnsPartitionedWithIndexedErrors() {
             Result<String> result1 = Result.ok("value1");
             Result<String> result2 = Result.errorAt("field", "error");
             Result<String> result3 = Result.ok("value3");
 
             var partitioned = Stream.of(result1, result2, result3)
-                    .collect(withIndex(toPartitioned()));
+                    .collect(withIndex(toPartialResult()));
 
-            assertThat(partitioned.value()).containsExactly("value1", "value3");
+            assertThat(partitioned.success()).containsExactly("value1", "value3");
             assertThat(partitioned.errors()).isEqualTo(new ValidationErrors(
                     List.of(),
                     Map.of(FieldKey.of(1, "field"), List.of(TemplateString.of("error")))
@@ -192,15 +192,15 @@ class ResultCollectorWrapperTest {
         }
 
         @Test
-        void givenFailingResults_whenWithPrefixToPartitioned_thenReturnsPartitionedWithPrefixedErrors() {
+        void givenFailingResults_whenWithPrefixToPartialResult_thenReturnsPartitionedWithPrefixedErrors() {
             Result<String> result1 = Result.ok("value1");
             Result<String> result2 = Result.errorAt("price", "must be positive");
             Result<String> result3 = Result.ok("value3");
 
             var partitioned = Stream.of(result1, result2, result3)
-                    .collect(withPrefix("items", toPartitioned()));
+                    .collect(withPrefix("items", toPartialResult()));
 
-            assertThat(partitioned.value()).containsExactly("value1", "value3");
+            assertThat(partitioned.success()).containsExactly("value1", "value3");
             assertThat(partitioned.errors()).isEqualTo(new ValidationErrors(
                     List.of(),
                     Map.of(FieldKey.of("items", "price"), List.of(TemplateString.of("must be positive")))
@@ -270,16 +270,16 @@ class ResultCollectorWrapperTest {
         }
 
         @Test
-        void givenWithPrefixAndWithIndex_whenToPartitioned_thenAppliesBothPrefixAndIndex() {
+        void givenWithPrefixAndWithIndex_whenToPartialResult_thenAppliesBothPrefixAndIndex() {
             Result<String> result1 = Result.ok("value1");
             Result<String> result2 = Result.errorAt("field", "error2");
             Result<String> result3 = Result.ok("value3");
             Result<String> result4 = Result.errorAt("field", "error4");
 
             var partitioned = Stream.of(result1, result2, result3, result4)
-                    .collect(withPrefix("users", withIndex(toPartitioned())));
+                    .collect(withPrefix("users", withIndex(toPartialResult())));
 
-            assertThat(partitioned.value()).containsExactly("value1", "value3");
+            assertThat(partitioned.success()).containsExactly("value1", "value3");
             assertThat(partitioned.errors()).isEqualTo(new ValidationErrors(
                     List.of(),
                     Map.of(

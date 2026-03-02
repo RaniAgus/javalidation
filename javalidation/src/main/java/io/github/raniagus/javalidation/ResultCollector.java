@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
  * <ul>
  *   <li>{@link #toListOrThrow()} - Collects into a {@link List}, throwing on errors</li>
  *   <li>{@link #toResultList()} - Collects into a {@link Result} of {@link List}</li>
- *   <li>{@link #toPartitioned()} - Collects valid items and errors separately</li>
+ *   <li>{@link #toPartialResult()} - Collects valid items and errors separately</li>
  * </ul>
  * <p>
  * By default, collectors do not automatically index errors. Use the {@link #withIndex(Collector)} wrapper
@@ -44,7 +44,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @see Result
  * @see ValidationErrors
- * @see PartitionedResult
+ * @see PartialResult
  */
 public interface ResultCollector<T extends @Nullable Object, R, SELF extends ResultCollector<T, R, SELF>> {
 
@@ -369,7 +369,7 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
     /**
      * Returns a {@link Collector} that partitions {@link Result} elements into success values and errors.
      * <p>
-     * This collector returns a {@link PartitionedResult} containing both:
+     * This collector returns a {@link PartialResult} containing both:
      * <ul>
      *   <li>A list of all successfully validated values (from {@link Result.Ok})</li>
      *   <li>All accumulated validation errors (from {@link Result.Err})</li>
@@ -386,10 +386,10 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
      * <pre>{@code
      * var partitioned = items.stream()
      *     .map(this::validateUser)
-     *     .collect(toPartitioned());
+     *     .collect(toPartialResult());
      *
-     * // Process valid items even if some failed
-     * List<User> validUsers = partitioned.value();
+     * // Process successful items even if some failed
+     * List<User> validUsers = partitioned.success();
      * ValidationErrors errors = partitioned.errors();
      *
      * if (errors.isNotEmpty()) {
@@ -402,31 +402,31 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
      * <pre>{@code
      * var partitioned = items.stream()
      *     .map(this::validateUser)
-     *     .collect(withIndex(toPartitioned()));
+     *     .collect(withIndex(toPartialResult()));
      *
      * // Errors include index prefixes: "[0].email", "[3].age", etc.
      * }</pre>
      *
      * @param <T> the type of the success values
      * @return a collector that produces a partitioned result
-     * @see #toPartitioned(int)
+     * @see #toPartialResult(int)
      * @see #withIndex(Collector)
      * @see #withPrefix(Object, Collector)
-     * @see PartitionedResult
+     * @see PartialResult
      */
-    static <T extends @Nullable Object> Collector<Result<T>, ListResultCollector.ToPartitioned<T>, PartitionedResult<List<T>>> toPartitioned() {
+    static <T extends @Nullable Object> Collector<Result<T>, ListResultCollector.ToPartialResult<T>, PartialResult<List<T>>> toPartialResult() {
         return Collector.of(
-                ListResultCollector.ToPartitioned::new,
-                ListResultCollector.ToPartitioned::add,
-                ListResultCollector.ToPartitioned::combine,
-                ListResultCollector.ToPartitioned::finish);
+                ListResultCollector.ToPartialResult::new,
+                ListResultCollector.ToPartialResult::add,
+                ListResultCollector.ToPartialResult::combine,
+                ListResultCollector.ToPartialResult::finish);
     }
 
     /**
      * Returns a {@link Collector} that partitions {@link Result} elements into success values and errors,
      * with an initial capacity hint for performance optimization.
      * <p>
-     * This collector returns a {@link PartitionedResult} containing both:
+     * This collector returns a {@link PartialResult} containing both:
      * <ul>
      *   <li>A list of all successfully validated values (from {@link Result.Ok})</li>
      *   <li>All accumulated validation errors (from {@link Result.Err})</li>
@@ -443,10 +443,10 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
      * List<Order> orders = getOrders(); // size = 200
      * var partitioned = orders.stream()
      *     .map(this::validateOrder)
-     *     .collect(withPrefix("orders", withIndex(toPartitioned(orders.size()))));
+     *     .collect(withPrefix("orders", withIndex(toPartialResult(orders.size()))));
      *
-     * // Process valid orders even if some failed
-     * processValidOrders(partitioned.value());
+     * // Process successful orders even if some failed
+     * processValidOrders(partitioned.success());
      *
      * if (partitioned.errors().isNotEmpty()) {
      *     // Errors: "orders[0].total", "orders[5].items", etc.
@@ -457,18 +457,18 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
      * @param initialCapacity the initial capacity for the result list (performance hint)
      * @param <T>             the type of the success values
      * @return a collector that produces a partitioned result
-     * @see #toPartitioned()
+     * @see #toPartialResult()
      * @see #withIndex(Collector)
      * @see #withPrefix(Object, Collector)
-     * @see PartitionedResult
+     * @see PartialResult
      */
-    static <T extends @Nullable Object> Collector<Result<T>, ListResultCollector.ToPartitioned<T>, PartitionedResult<List<T>>> toPartitioned(
+    static <T extends @Nullable Object> Collector<Result<T>, ListResultCollector.ToPartialResult<T>, PartialResult<List<T>>> toPartialResult(
             int initialCapacity
     ) {
         return Collector.of(
-                () -> new ListResultCollector.ToPartitioned<>(initialCapacity),
-                ListResultCollector.ToPartitioned::add,
-                ListResultCollector.ToPartitioned::combine,
-                ListResultCollector.ToPartitioned::finish);
+                () -> new ListResultCollector.ToPartialResult<>(initialCapacity),
+                ListResultCollector.ToPartialResult::add,
+                ListResultCollector.ToPartialResult::combine,
+                ListResultCollector.ToPartialResult::finish);
     }
 }
