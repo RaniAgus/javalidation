@@ -1,6 +1,7 @@
 package io.github.raniagus.javalidation.validator.processor;
 
 import jakarta.validation.constraints.*;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 import javax.lang.model.element.AnnotationMirror;
@@ -46,6 +47,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.NotNull.message");
         return new NullSafeWriter.NotNull(resolveMessage(message));
@@ -56,6 +58,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.NotEmpty.message");
         return new NullSafeWriter.NullSafeAccessor("isEmpty", resolveMessage(message));
@@ -66,6 +69,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Null.message");
         return new NullSafeWriter.Null(resolveMessage(message));
@@ -76,6 +80,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.NotBlank.message");
         return new NullSafeWriter.NullSafeAccessor("isBlank", resolveMessage(message));
@@ -86,6 +91,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Size.message");
         int min = getAnnotationIntValue(annotationMirror, "min", 0);
@@ -109,6 +115,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Min.message");
         long value = getAnnotationLongValue(annotationMirror, "value", 0);
@@ -132,6 +139,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Max.message");
         long value = getAnnotationLongValue(annotationMirror, "value", 0);
@@ -155,6 +163,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Positive.message");
         return new NullUnsafeWriter.NumericCompare(
@@ -176,6 +185,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.PositiveOrZero.message");
         return new NullUnsafeWriter.NumericCompare(
@@ -197,6 +207,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Negative.message");
         return new NullUnsafeWriter.NumericCompare(
@@ -218,6 +229,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.NegativeOrZero.message");
         return new NullUnsafeWriter.NumericCompare(
@@ -234,6 +246,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Email.message");
         return new NullUnsafeWriter.Pattern(
@@ -247,6 +260,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String regexp = getAnnotationStringValue(annotationMirror, "regexp", "");
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Pattern.message");
@@ -263,6 +277,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.AssertTrue.message");
         return new NullUnsafeWriter.EqualTo("true", resolveMessage(message));
@@ -273,6 +288,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.AssertFalse.message");
         return new NullUnsafeWriter.EqualTo("false", resolveMessage(message));
@@ -288,6 +304,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String value = getAnnotationStringValue(annotationMirror, "value", "0");
         boolean inclusive = getAnnotationBooleanValue(annotationMirror, "inclusive", true);
@@ -316,6 +333,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String value = getAnnotationStringValue(annotationMirror, "value", "0");
         boolean inclusive = getAnnotationBooleanValue(annotationMirror, "inclusive", true);
@@ -344,6 +362,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Digits.message");
         int integer = getAnnotationIntValue(annotationMirror, "integer", 0);
@@ -367,6 +386,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Future.message");
         return new NullUnsafeWriter.TemporalCompare(
@@ -383,6 +403,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.FutureOrPresent.message");
         return new NullUnsafeWriter.TemporalCompare(
@@ -399,6 +420,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Past.message");
         return new NullUnsafeWriter.TemporalCompare(
@@ -415,6 +437,7 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.PastOrPresent.message");
         return new NullUnsafeWriter.TemporalCompare(
@@ -485,6 +508,18 @@ public final class JakartaAnnotationParser {
             }
         }
         return null;
+    }
+
+    static void warnIfGroupsPresent(AnnotationMirror annotation, TypeAdapter type) {
+        Object value = getAnnotationValue(annotation, "groups");
+        if (value instanceof List<?> list && !list.isEmpty()) {
+            type.printMessage(
+                    javax.tools.Diagnostic.Kind.WARNING,
+                    "groups attribute on @" + annotation.getAnnotationType().asElement().getSimpleName()
+                            + " is not supported and will be ignored",
+                    annotation
+            );
+        }
     }
 
 }

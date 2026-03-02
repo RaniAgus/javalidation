@@ -348,35 +348,37 @@ public class ValidatorProcessor extends AbstractProcessor {
     // -- Field writers --
 
     private FieldWriter parseFieldWriter(RecordComponentElement component) {
+        var typeAdapter = new TypeAdapter(component.asType(), component, processingEnv);
+
         if (component.asType().getKind().isPrimitive()) {
             return new FieldWriter.PrimitiveWriter(
                     component.getSimpleName().toString(),
-                    parseNullUnsafeWriters(component.asType())
+                    parseNullUnsafeWriters(typeAdapter)
             );
         }
 
         return new FieldWriter.ObjectWriter(
                 component.getSimpleName().toString(),
-                parseNullSafeWriter(component.asType()),
-                parseNullUnsafeWriters(component.asType())
+                parseNullSafeWriter(typeAdapter),
+                parseNullUnsafeWriters(typeAdapter)
         );
     }
 
-    private @Nullable NullSafeWriter parseNullSafeWriter(TypeMirror type) {
-        if (shouldSkip(type)) {
+    private @Nullable NullSafeWriter parseNullSafeWriter(TypeAdapter typeAdapter) {
+        if (shouldSkip(typeAdapter.type())) {
             return null;
         }
-        return JakartaAnnotationParser.parseNullSafeWriter(new TypeAdapter(type, processingEnv));
+        return JakartaAnnotationParser.parseNullSafeWriter(typeAdapter);
     }
 
-    private List<NullUnsafeWriter> parseNullUnsafeWriters(TypeMirror type) {
-        if (shouldSkip(type)) {
+    private List<NullUnsafeWriter> parseNullUnsafeWriters(TypeAdapter typeAdapter) {
+        if (shouldSkip(typeAdapter.type())) {
             return List.of();
         }
 
-        return Stream.<NullUnsafeWriter>concat(
-                JakartaAnnotationParser.parseNullUnsafeWriters(new TypeAdapter(type, processingEnv)),
-                Stream.of(parseNested(type), parseIterable(type), parseMap(type)).filter(Objects::nonNull)
+        return Stream.concat(
+                JakartaAnnotationParser.parseNullUnsafeWriters(typeAdapter),
+                Stream.of(parseNested(typeAdapter.type()), parseIterable(typeAdapter.type()), parseMap(typeAdapter.type())).filter(Objects::nonNull)
         ).toList();
     }
 
@@ -412,8 +414,8 @@ public class ValidatorProcessor extends AbstractProcessor {
             return null;
         }
 
-        var nullSafeWriter = parseNullSafeWriter(itemType);
-        var nullUnsafeWriters = parseNullUnsafeWriters(itemType);
+        var nullSafeWriter = parseNullSafeWriter(new TypeAdapter(itemType, null, processingEnv));
+        var nullUnsafeWriters = parseNullUnsafeWriters(new TypeAdapter(itemType, null, processingEnv));
 
         if (nullSafeWriter == null && nullUnsafeWriters.isEmpty()) {
             return null;
@@ -457,10 +459,10 @@ public class ValidatorProcessor extends AbstractProcessor {
             return null;
         }
 
-        var keyNullSafeWriter = parseNullSafeWriter(mapType.getKey());
-        var keyNullUnsafeWriters = parseNullUnsafeWriters(mapType.getKey());
-        var valueNullSafeWriter = parseNullSafeWriter(mapType.getValue());
-        var valueNullUnsafeWriters = parseNullUnsafeWriters(mapType.getValue());
+        var keyNullSafeWriter = parseNullSafeWriter(new TypeAdapter(mapType.getKey(), null, processingEnv));
+        var keyNullUnsafeWriters = parseNullUnsafeWriters(new TypeAdapter(mapType.getKey(), null, processingEnv));
+        var valueNullSafeWriter = parseNullSafeWriter(new TypeAdapter(mapType.getValue(), null, processingEnv));
+        var valueNullUnsafeWriters = parseNullUnsafeWriters(new TypeAdapter(mapType.getValue(), null, processingEnv));
 
         if (keyNullSafeWriter == null && keyNullUnsafeWriters.isEmpty()
                 && valueNullSafeWriter == null && valueNullUnsafeWriters.isEmpty()) {

@@ -3,14 +3,16 @@ package io.github.raniagus.javalidation.validator.processor;
 import java.lang.annotation.Annotation;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import javax.tools.Diagnostic;
 import org.jspecify.annotations.Nullable;
 
-public record TypeAdapter(TypeMirror type, ProcessingEnvironment processingEnv) {
+public record TypeAdapter(TypeMirror type, @Nullable Element element, ProcessingEnvironment processingEnv) {
     /**
      * Check if the type is a decimal type (BigDecimal, BigInteger, CharSequence, Number, or primitive numeric types).
      */
@@ -84,4 +86,13 @@ public record TypeAdapter(TypeMirror type, ProcessingEnvironment processingEnv) 
         }
         return null;
     }
+
+    public void printMessage(Diagnostic.Kind kind, String msg, AnnotationMirror annotation) {
+        if (element != null) {
+            processingEnv.getMessager().printMessage(kind, msg, element, annotation);
+        } else {
+            processingEnv.getMessager().printMessage(kind, msg);
+        }
+    }
+
 }
