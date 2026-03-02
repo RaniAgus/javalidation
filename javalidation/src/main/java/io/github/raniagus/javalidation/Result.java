@@ -479,47 +479,10 @@ public sealed interface Result<T extends @Nullable Object> {
     }
 
     /**
-     * Adds additional validation logic to this result.
-     * <p>
-     * If this result is {@link Ok}, runs the predicate function which can add errors to a {@link Validation}.
-     * If this result is {@link Err}, returns the existing errors without running the predicate.
-     * <p>
-     * This enables imperative-style validation within the functional pipeline:
-     * <pre>{@code
-     * Result<Person> result = Result.ok(person)
-     *     .check((p, v) -> {
-     *         if (p.age() < 18) {
-     *             v.addErrorAt("age", "Must be 18 or older");
-     *         }
-     *         if (p.name().length() < 2) {
-     *             v.addErrorAt("name", "Name too short");
-     *         }
-     *     });
-     * }</pre>
-     *
-     * @param predicate a function that receives the value and a validation to add errors to
-     * @return a new result with any additional errors, or the existing errors
-     */
-    default Result<T> check(BiConsumer<T, Validation> predicate) {
-        return switch (this) {
-            case Ok<T>(T value) -> {
-                Validation validation = Validation.create();
-                predicate.accept(value, validation);
-                yield validation.asResult(value);
-            }
-            case Err<T> error -> error;
-        };
-    }
-
-    /**
      * Filters the success value using a predicate, adding a root error if the predicate fails.
      * <p>
      * If this result is {@link Ok} and the predicate returns {@code false}, returns {@link Err} with
      * the given error message. Otherwise, preserves the current state.
-     * <p>
-     * <b>Note on chaining:</b> Chaining multiple {@code ensure()} calls creates a fail-fast pipeline
-     * where the first failed ensure stops execution. To accumulate multiple validation errors,
-     * use {@link #check(BiConsumer)} or combine separate {@link Result}s with {@link #and(Result)}.
      * <p>
      * Example:
      * <pre>{@code
@@ -532,15 +495,19 @@ public sealed interface Result<T extends @Nullable Object> {
      * @param message the error message template (supports MessageFormat placeholders)
      * @param args arguments for the message template
      * @return this result if the predicate passes or this is already {@link Err}, otherwise a new {@link Err}
-     * @see #check(BiConsumer)
      * @see #and(Result)
      */
     default Result<T> ensure(Predicate<T> predicate, String message, Object... args) {
-        return check((value, validation) -> {
-            if (!predicate.test(value)) {
-                validation.addError(message, args);
+        return switch (this) {
+            case Ok<T>(T value) -> {
+                if (predicate.test(value)) {
+                    yield this;
+                } else {
+                    yield new Err<>(ValidationErrors.of(message, args));
+                }
             }
-        });
+            case Err<T> self -> self;
+        };
     }
 
     /**
@@ -566,15 +533,19 @@ public sealed interface Result<T extends @Nullable Object> {
      * @param message the error message template (supports MessageFormat placeholders)
      * @param args arguments for the message template
      * @return this result if the predicate passes or this is already {@link Err}, otherwise a new {@link Err}
-     * @see #check(BiConsumer)
      * @see #and(Result)
      */
     default Result<T> ensureAt(Predicate<T> predicate, Object field, String message, Object... args) {
-        return check((value, validation) -> {
-            if (!predicate.test(value)) {
-                validation.addErrorAt(field, message, args);
+        return switch (this) {
+            case Ok<T>(T value) -> {
+                if (predicate.test(value)) {
+                    yield this;
+                } else {
+                    yield new Err<>(ValidationErrors.at(field, message, args));
+                }
             }
-        });
+            case Err<T> self -> self;
+        };
     }
 
     /**

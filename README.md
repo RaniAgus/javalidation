@@ -890,25 +890,6 @@ public void validateItemsList(Validation validation, List<Item> items) {
 }
 ```
 
-### Imperative Validation inside `Result<T>` chain
-
-```java
-Result<Order> validateOrder(Order order) {
-    return Result.ok(order)
-            .check((o, validation) -> {
-                if (o.items().isEmpty()) {
-                    validation.addError("Order must contain at least one item");
-                }
-
-                double total = o.items().stream().mapToDouble(Item::price).sum();
-                if (total > 10000 && o.paymentMethod().equals(PaymentMethod.CASH)) {
-                    validation.addErrorAt("paymentMethod",
-                            "Cash payments limited to {0} for orders over {1}", 1000, 10000);
-                }
-            });
-}
-```
-
 ## API Reference
 
 ### Result<T>
@@ -924,7 +905,6 @@ Result<Order> validateOrder(Order order) {
 | `flatMap(Function)`                              | Chain validations                         |
 | `ensure(Predicate, String, Object...)`           | Conditional validation                    |
 | `ensureAt(Predicate, Object, String, Object...)` | Conditional validation (for fields)       |
-| `check(BiConsumer)`                              | Add imperative validation logic           |
 | `and(Result)`                                    | Start applicative combiner chain          |
 | `or(Result)` / `or(Supplier)`                    | Provide fallback                          |
 | `fold(Function, Function)`                       | Handle both cases                         |
