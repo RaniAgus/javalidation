@@ -378,7 +378,7 @@ public class ValidatorProcessor extends AbstractProcessor {
 
         return Stream.concat(
                 JakartaAnnotationParser.parseNullUnsafeWriters(typeAdapter),
-                Stream.of(parseNested(typeAdapter.type()), parseIterable(typeAdapter.type()), parseMap(typeAdapter.type())).filter(Objects::nonNull)
+                Stream.of(parseNested(typeAdapter.type()), parseIterable(typeAdapter), parseMap(typeAdapter)).filter(Objects::nonNull)
         ).toList();
     }
 
@@ -404,18 +404,20 @@ public class ValidatorProcessor extends AbstractProcessor {
 
     // -- Iterable --
 
-    private @Nullable NullUnsafeWriter parseIterable(TypeMirror fieldType) {
-        if (!isIterable(fieldType)) {
+    private @Nullable NullUnsafeWriter parseIterable(TypeAdapter typeAdapter) {
+        if (!isIterable(typeAdapter.type())) {
             return null;
         }
 
-        TypeMirror itemType = getIterableItemType(fieldType);
+        TypeMirror itemType = getIterableItemType(typeAdapter.type());
         if (itemType == null) {
             return null;
         }
 
-        var nullSafeWriter = parseNullSafeWriter(new TypeAdapter(itemType, null, processingEnv));
-        var nullUnsafeWriters = parseNullUnsafeWriters(new TypeAdapter(itemType, null, processingEnv));
+        TypeAdapter itemTypeAdapter = new TypeAdapter(itemType, typeAdapter.element(), processingEnv);
+
+        NullSafeWriter nullSafeWriter = parseNullSafeWriter(itemTypeAdapter);
+        List<NullUnsafeWriter> nullUnsafeWriters = parseNullUnsafeWriters(itemTypeAdapter);
 
         if (nullSafeWriter == null && nullUnsafeWriters.isEmpty()) {
             return null;
@@ -449,20 +451,23 @@ public class ValidatorProcessor extends AbstractProcessor {
 
     // -- Map --
 
-    private @Nullable NullUnsafeWriter parseMap(TypeMirror fieldType) {
-        if (!isMap(fieldType)) {
+    private @Nullable NullUnsafeWriter parseMap(TypeAdapter typeAdapter) {
+        if (!isMap(typeAdapter.type())) {
             return null;
         }
 
-        var mapType = getMapType(fieldType);
+        var mapType = getMapType(typeAdapter.type());
         if (mapType == null) {
             return null;
         }
 
-        var keyNullSafeWriter = parseNullSafeWriter(new TypeAdapter(mapType.getKey(), null, processingEnv));
-        var keyNullUnsafeWriters = parseNullUnsafeWriters(new TypeAdapter(mapType.getKey(), null, processingEnv));
-        var valueNullSafeWriter = parseNullSafeWriter(new TypeAdapter(mapType.getValue(), null, processingEnv));
-        var valueNullUnsafeWriters = parseNullUnsafeWriters(new TypeAdapter(mapType.getValue(), null, processingEnv));
+        TypeAdapter keyAdapter = new TypeAdapter(mapType.getKey(), typeAdapter.element(), processingEnv);
+        NullSafeWriter keyNullSafeWriter = parseNullSafeWriter(keyAdapter);
+        List<NullUnsafeWriter> keyNullUnsafeWriters = parseNullUnsafeWriters(keyAdapter);
+
+        TypeAdapter valueAdapter = new TypeAdapter(mapType.getValue(), typeAdapter.element(), processingEnv);
+        NullSafeWriter valueNullSafeWriter = parseNullSafeWriter(valueAdapter);
+        List<NullUnsafeWriter> valueNullUnsafeWriters = parseNullUnsafeWriters(valueAdapter);
 
         if (keyNullSafeWriter == null && keyNullUnsafeWriters.isEmpty()
                 && valueNullSafeWriter == null && valueNullUnsafeWriters.isEmpty()) {

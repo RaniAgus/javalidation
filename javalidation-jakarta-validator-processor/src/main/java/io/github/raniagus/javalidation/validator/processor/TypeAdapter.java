@@ -12,7 +12,7 @@ import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import org.jspecify.annotations.Nullable;
 
-public record TypeAdapter(TypeMirror type, @Nullable Element element, ProcessingEnvironment processingEnv) {
+public record TypeAdapter(TypeMirror type, Element element, ProcessingEnvironment processingEnv) {
     /**
      * Check if the type is a decimal type (BigDecimal, BigInteger, CharSequence, Number, or primitive numeric types).
      */
@@ -88,11 +88,7 @@ public record TypeAdapter(TypeMirror type, @Nullable Element element, Processing
     }
 
     public void printMessage(Diagnostic.Kind kind, String msg, AnnotationMirror annotation) {
-        if (element != null) {
-            processingEnv.getMessager().printMessage(kind, msg, element, annotation);
-        } else {
-            processingEnv.getMessager().printMessage(kind, msg);
-        }
+        processingEnv.getMessager().printMessage(kind, msg, element, annotation);
     }
 
 }
