@@ -77,5 +77,22 @@ class ValidationCollectorTest {
                             FieldKey.of("items", "field"), List.of(TemplateString.of("error")))
             ));
         }
+
+        @Test
+        void givenFailingResults_whenIntoWithIndexPrefix_thenValidationContainsAllErrors() {
+            Validation validation = Validation.create();
+            Result<String> result1 = Result.ok("value1");
+            Result<String> result2 = Result.errorAt("field", "error");
+            Result<String> result3 = Result.error("root");
+
+            validation = Stream.of(result1, result2, result3)
+                    .collect(withPrefix(0, into(validation)));
+
+            assertThat(validation.finish()).isEqualTo(new ValidationErrors(
+                    List.of(),
+                    Map.of(FieldKey.of(0), List.of(TemplateString.of("root")),
+                            FieldKey.of(0, "field"), List.of(TemplateString.of("error")))
+            ));
+        }
     }
 }

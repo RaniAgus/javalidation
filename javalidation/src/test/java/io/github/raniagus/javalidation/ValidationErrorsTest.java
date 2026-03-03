@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 class ValidationErrorsTest {
 
-    // -- withPrefix(String) --
+    // -- withPrefix(String...) --
 
     @Test
     void givenRootErrors_whenWithPrefix_thenConvertsToFieldErrors() {
@@ -29,7 +29,18 @@ class ValidationErrorsTest {
         assertThat(prefixed.fieldErrors().get(FieldKey.of("form","email"))).containsExactly(TemplateString.of("invalid"));
     }
 
-    // -- withPrefix(Object, Object...) --
+    // -- withPrefix(int...) --
+
+    @Test
+    void givenFieldErrors_whenWithPrefixInt_thenBuildsPrefix() {
+        var errors = ValidationErrors.at("field", "error");
+
+        var prefixed = errors.withPrefix(0, 1);
+
+        assertThat(prefixed.fieldErrors()).containsOnlyKeys(FieldKey.of(0, 1, "field"));
+    }
+
+    // -- withPrefix(Object...) --
 
     @Test
     void givenFieldErrors_whenWithPrefixVarargs_thenBuildsPrefix() {

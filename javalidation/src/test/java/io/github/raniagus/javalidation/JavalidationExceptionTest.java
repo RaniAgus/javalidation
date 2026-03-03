@@ -14,6 +14,13 @@ class JavalidationExceptionTest {
     }
 
     @Test
+    void givenSingleIndexError_whenGetMessage_thenReturnsErrorCount() {
+        var exception = JavalidationException.at(0, "Must not be empty");
+
+        assertThat(exception.getMessage()).isEqualTo("Validation failed with 1 error(s)");
+    }
+
+    @Test
     void givenSingleRootError_whenGetMessage_thenReturnsErrorCount() {
         var exception = JavalidationException.of("Something went wrong");
 

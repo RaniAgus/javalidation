@@ -1,8 +1,10 @@
 package io.github.raniagus.javalidation.jackson;
 
 import io.github.raniagus.javalidation.FieldKey;
+import io.github.raniagus.javalidation.FieldKeyPart;
 import io.github.raniagus.javalidation.ValidationErrors;
 import io.github.raniagus.javalidation.format.TemplateStringFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,7 +24,7 @@ record StructuredValidationErrorsDto(
 
         var fieldDtos = errors.fieldErrors().entrySet().stream()
                 .map(entry -> new StructuredFieldErrorDto(
-                        entry.getKey().parts(),
+                        Arrays.stream(entry.getKey().parts()).map(FieldKeyPart::objValue).toArray(),
                         entry.getValue().stream()
                                 .map(ts -> StructuredErrorDto.from(ts, formatter))
                                 .toList()

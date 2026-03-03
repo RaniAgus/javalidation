@@ -1,7 +1,9 @@
 package io.github.raniagus.javalidation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
+import java.util.List;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -11,24 +13,83 @@ class FieldKeyTest {
     class FactoryMethodTests {
 
         @Test
-        void givenMessageAndVarargs_whenOf_thenCreatesFieldKey() {
-            FieldKey ts = FieldKey.of("age", 18);
+        void givenStringSegments_whenOf_thenCreatesPathWithStringKeys() {
+            FieldKey key = FieldKey.of("user", "address");
 
-            assertThat(ts.parts()).containsExactly("age", 18);
+            assertThat(key.parts()).containsExactly(
+                    new FieldKeyPart.StringKey("user"),
+                    new FieldKeyPart.StringKey("address")
+            );
         }
 
         @Test
-        void givenNoArgs_whenOf_thenCreatesFieldKeyWithEmptyArgs() {
-            FieldKey ts = FieldKey.of("message");
+        void givenMixedSegments_whenOf_thenCreatesPathWithStringAndIntKeys() {
+            FieldKey key = FieldKey.of("addresses", 0, "street");
 
-            assertThat(ts.parts()).containsExactly("message");
+            assertThat(key.parts()).containsExactly(
+                    new FieldKeyPart.StringKey("addresses"),
+                    new FieldKeyPart.IntKey(0),
+                    new FieldKeyPart.StringKey("street")
+            );
         }
 
         @Test
-        void givenMultipleArgs_whenOf_thenCreatesFieldKeyWithAllArgs() {
-            FieldKey ts = FieldKey.of("Value must be between {0} and {1}", 10, 100);
+        void givenUnknownSegmentTypes_whenOf_thenThrowsIllegalArgumentException() {
+            assertThatThrownBy(() -> FieldKey.of("user", 3.14, true))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Unsupported key type: java.lang.Boolean");
+        }
 
-            assertThat(ts.parts()).containsExactly("Value must be between {0} and {1}", 10, 100);
+        @Test
+        void givenSingleSegment_whenOf_thenCreatesPathWithOneKey() {
+            FieldKey key = FieldKey.of("name");
+
+            assertThat(key.parts()).containsExactly(new FieldKeyPart.StringKey("name"));
+        }
+
+        @Test
+        void givenFieldKeyPartArray_whenOf_thenCreatesPathFromParts() {
+            FieldKey key = FieldKey.of(
+                    new FieldKeyPart.StringKey("items"),
+                    new FieldKeyPart.IntKey(2)
+            );
+
+            assertThat(key.parts()).containsExactly(
+                    new FieldKeyPart.StringKey("items"),
+                    new FieldKeyPart.IntKey(2)
+            );
+        }
+
+        @Test
+        void givenPrefixAndAdditionalParts_whenOf_thenPrependsPrefixToPath() {
+            List<FieldKeyPart> prefix = List.of(
+                    new FieldKeyPart.StringKey("user"),
+                    new FieldKeyPart.StringKey("profile")
+            );
+
+            FieldKey key = FieldKey.of(prefix, new FieldKeyPart.StringKey("email"));
+
+            assertThat(key.parts()).containsExactly(
+                    new FieldKeyPart.StringKey("user"),
+                    new FieldKeyPart.StringKey("profile"),
+                    new FieldKeyPart.StringKey("email")
+            );
+        }
+
+        @Test
+        void givenExistingKey_whenWithPrefix_thenPrependsSegmentsToPath() {
+            FieldKey key = FieldKey.of("street");
+
+            FieldKey prefixed = key.withPrefix(
+                    new FieldKeyPart.StringKey("user"),
+                    new FieldKeyPart.StringKey("address")
+            );
+
+            assertThat(prefixed.parts()).containsExactly(
+                    new FieldKeyPart.StringKey("user"),
+                    new FieldKeyPart.StringKey("address"),
+                    new FieldKeyPart.StringKey("street")
+            );
         }
     }
 
@@ -36,72 +97,64 @@ class FieldKeyTest {
     class EqualsTests {
 
         @Test
-        void givenSameMessageAndArgs_whenCompared_thenEqual() {
-            FieldKey ts1 = FieldKey.of("age", 18);
-            FieldKey ts2 = FieldKey.of("age", 18);
+        void givenSamePath_whenCompared_thenEqual() {
+            FieldKey key1 = FieldKey.of("user", "address", "street");
+            FieldKey key2 = FieldKey.of("user", "address", "street");
 
-            assertThat(ts1).isEqualTo(ts2);
+            assertThat(key1).isEqualTo(key2);
         }
 
         @Test
-        void givenDifferentMessage_whenCompared_thenNotEqual() {
-            FieldKey ts1 = FieldKey.of("age", 18);
-            FieldKey ts2 = FieldKey.of("Age should be {0}", 18);
+        void givenDifferentStringSegment_whenCompared_thenNotEqual() {
+            FieldKey key1 = FieldKey.of("user", "address");
+            FieldKey key2 = FieldKey.of("user", "profile");
 
-            assertThat(ts1).isNotEqualTo(ts2);
+            assertThat(key1).isNotEqualTo(key2);
         }
 
         @Test
-        void givenDifferentArgs_whenCompared_thenNotEqual() {
-            FieldKey ts1 = FieldKey.of("age", 18);
-            FieldKey ts2 = FieldKey.of("age", 21);
+        void givenDifferentIndexSegment_whenCompared_thenNotEqual() {
+            FieldKey key1 = FieldKey.of("items", 0);
+            FieldKey key2 = FieldKey.of("items", 1);
 
-            assertThat(ts1).isNotEqualTo(ts2);
+            assertThat(key1).isNotEqualTo(key2);
         }
 
         @Test
-        void givenDifferentNumberOfArgs_whenCompared_thenNotEqual() {
-            FieldKey ts1 = FieldKey.of("Value must be {0}", 10);
-            FieldKey ts2 = FieldKey.of("Value must be {0}", 10, 100);
+        void givenDifferentDepth_whenCompared_thenNotEqual() {
+            FieldKey key1 = FieldKey.of("user", "address");
+            FieldKey key2 = FieldKey.of("user", "address", "street");
 
-            assertThat(ts1).isNotEqualTo(ts2);
+            assertThat(key1).isNotEqualTo(key2);
         }
 
         @Test
-        void givenNoArgs_whenCompared_thenEqual() {
-            FieldKey ts1 = FieldKey.of("message");
-            FieldKey ts2 = FieldKey.of("message");
+        void givenSingleSegmentPath_whenCompared_thenEqual() {
+            FieldKey key1 = FieldKey.of("name");
+            FieldKey key2 = FieldKey.of("name");
 
-            assertThat(ts1).isEqualTo(ts2);
+            assertThat(key1).isEqualTo(key2);
         }
 
         @Test
         void givenSelf_whenCompared_thenEqual() {
-            FieldKey ts = FieldKey.of("age", 18);
+            FieldKey key = FieldKey.of("user", "address");
 
-            assertThat(ts).isEqualTo(ts);
+            assertThat(key).isEqualTo(key);
         }
 
         @Test
         void givenNull_whenCompared_thenNotEqual() {
-            FieldKey ts = FieldKey.of("age", 18);
+            FieldKey key = FieldKey.of("user", "address");
 
-            assertThat(ts).isNotEqualTo(null);
+            assertThat(key).isNotEqualTo(null);
         }
 
         @Test
         void givenDifferentType_whenCompared_thenNotEqual() {
-            FieldKey ts = FieldKey.of("age", 18);
+            FieldKey key = FieldKey.of("user");
 
-            assertThat(ts).isNotEqualTo("age");
-        }
-
-        @Test
-        void givenArraysWithSameElements_whenCompared_thenEqual() {
-            FieldKey ts1 = FieldKey.of("Between {0} and {1}", 10, 100);
-            FieldKey ts2 = FieldKey.of("Between {0} and {1}", 10, 100);
-
-            assertThat(ts1).isEqualTo(ts2);
+            assertThat(key).isNotEqualTo("user");
         }
     }
 
@@ -109,46 +162,140 @@ class FieldKeyTest {
     class HashCodeTests {
 
         @Test
-        void givenSameMessageAndArgs_whenHashCode_thenEqual() {
-            FieldKey ts1 = FieldKey.of("age", 18);
-            FieldKey ts2 = FieldKey.of("age", 18);
+        void givenSamePath_whenHashCode_thenEqual() {
+            FieldKey key1 = FieldKey.of("user", "address", "street");
+            FieldKey key2 = FieldKey.of("user", "address", "street");
 
-            assertThat(ts1.hashCode()).isEqualTo(ts2.hashCode());
+            assertThat(key1.hashCode()).isEqualTo(key2.hashCode());
         }
 
         @Test
-        void givenDifferentMessage_whenHashCode_thenMayDiffer() {
-            FieldKey ts1 = FieldKey.of("age", 18);
-            FieldKey ts2 = FieldKey.of("Age should be {0}", 18);
+        void givenDifferentStringSegment_whenHashCode_thenMayDiffer() {
+            FieldKey key1 = FieldKey.of("user", "address");
+            FieldKey key2 = FieldKey.of("user", "profile");
 
-            // Hash codes are not required to be different, but very likely will be
-            assertThat(ts1.hashCode()).isNotEqualTo(ts2.hashCode());
+            assertThat(key1.hashCode()).isNotEqualTo(key2.hashCode());
         }
 
         @Test
-        void givenDifferentArgs_whenHashCode_thenMayDiffer() {
-            FieldKey ts1 = FieldKey.of("age", 18);
-            FieldKey ts2 = FieldKey.of("age", 21);
+        void givenDifferentIndexSegment_whenHashCode_thenMayDiffer() {
+            FieldKey key1 = FieldKey.of("items", 0);
+            FieldKey key2 = FieldKey.of("items", 1);
 
-            assertThat(ts1.hashCode()).isNotEqualTo(ts2.hashCode());
+            assertThat(key1.hashCode()).isNotEqualTo(key2.hashCode());
         }
 
         @Test
-        void givenNoArgs_whenHashCode_thenConsistent() {
-            FieldKey ts1 = FieldKey.of("message");
-            FieldKey ts2 = FieldKey.of("message");
+        void givenSingleSegmentPath_whenHashCode_thenConsistent() {
+            FieldKey key1 = FieldKey.of("name");
+            FieldKey key2 = FieldKey.of("name");
 
-            assertThat(ts1.hashCode()).isEqualTo(ts2.hashCode());
+            assertThat(key1.hashCode()).isEqualTo(key2.hashCode());
         }
 
         @Test
         void givenSameInstance_whenHashCodeCalledMultipleTimes_thenConsistent() {
-            FieldKey ts = FieldKey.of("age", 18);
+            FieldKey key = FieldKey.of("user", "address");
 
-            int hash1 = ts.hashCode();
-            int hash2 = ts.hashCode();
+            int hash1 = key.hashCode();
+            int hash2 = key.hashCode();
 
             assertThat(hash1).isEqualTo(hash2);
+        }
+    }
+
+    @Nested
+    class CompareToTests {
+
+        @Test
+        void givenEqualPaths_whenCompareTo_thenReturnsZero() {
+            FieldKey key1 = FieldKey.of("user", "address");
+            FieldKey key2 = FieldKey.of("user", "address");
+
+            assertThat(key1.compareTo(key2)).isEqualTo(0);
+        }
+
+        @Test
+        void givenAlphabeticallyLesserFirstSegment_whenCompareTo_thenReturnsNegative() {
+            FieldKey key1 = FieldKey.of("address");
+            FieldKey key2 = FieldKey.of("user");
+
+            assertThat(key1.compareTo(key2)).isLessThan(0);
+        }
+
+        @Test
+        void givenAlphabeticallyGreaterFirstSegment_whenCompareTo_thenReturnsPositive() {
+            FieldKey key1 = FieldKey.of("user");
+            FieldKey key2 = FieldKey.of("address");
+
+            assertThat(key1.compareTo(key2)).isGreaterThan(0);
+        }
+
+        @Test
+        void givenSamePrefixButShorterPath_whenCompareTo_thenShorterIsLess() {
+            FieldKey key1 = FieldKey.of("user");
+            FieldKey key2 = FieldKey.of("user", "address");
+
+            assertThat(key1.compareTo(key2)).isLessThan(0);
+        }
+
+        @Test
+        void givenSamePrefixButLongerPath_whenCompareTo_thenLongerIsGreater() {
+            FieldKey key1 = FieldKey.of("user", "address");
+            FieldKey key2 = FieldKey.of("user");
+
+            assertThat(key1.compareTo(key2)).isGreaterThan(0);
+        }
+
+        @Test
+        void givenLesserIndexSegment_whenCompareTo_thenReturnsNegative() {
+            FieldKey key1 = FieldKey.of("items", 0);
+            FieldKey key2 = FieldKey.of("items", 1);
+
+            assertThat(key1.compareTo(key2)).isLessThan(0);
+        }
+
+        @Test
+        void givenGreaterIndexSegment_whenCompareTo_thenReturnsPositive() {
+            FieldKey key1 = FieldKey.of("items", 2);
+            FieldKey key2 = FieldKey.of("items", 1);
+
+            assertThat(key1.compareTo(key2)).isGreaterThan(0);
+        }
+
+        @Test
+        void givenStringKeyVsIntKeyAtSamePosition_whenCompareTo_thenStringIsLess() {
+            // StringKey < IntKey regardless of values
+            FieldKey key1 = FieldKey.of(new FieldKeyPart.StringKey("z"));
+            FieldKey key2 = FieldKey.of(new FieldKeyPart.IntKey(0));
+
+            assertThat(key1.compareTo(key2)).isLessThan(0);
+        }
+
+        @Test
+        void givenIntKeyVsStringKeyAtSamePosition_whenCompareTo_thenIntIsGreater() {
+            // IntKey > StringKey regardless of values
+            FieldKey key1 = FieldKey.of(new FieldKeyPart.IntKey(0));
+            FieldKey key2 = FieldKey.of(new FieldKeyPart.StringKey("z"));
+
+            assertThat(key1.compareTo(key2)).isGreaterThan(0);
+        }
+
+        @Test
+        void givenFirstSegmentDiffers_whenCompareTo_thenLaterSegmentsAreIgnored() {
+            FieldKey key1 = FieldKey.of("a", "z");
+            FieldKey key2 = FieldKey.of("b", "a");
+
+            assertThat(key1.compareTo(key2)).isLessThan(0);
+        }
+
+        @Test
+        void givenCompareToIsConsistentWithEquals_whenBothEqualAndCompared_thenZero() {
+            FieldKey key1 = FieldKey.of("user", "addresses", 0, "street");
+            FieldKey key2 = FieldKey.of("user", "addresses", 0, "street");
+
+            assertThat(key1.compareTo(key2)).isEqualTo(0);
+            assertThat(key1).isEqualTo(key2);
         }
     }
 
@@ -156,47 +303,31 @@ class FieldKeyTest {
     class ToStringTests {
 
         @Test
-        void givenMessageAndArgs_whenToString_thenContainsBoth() {
-            FieldKey ts = FieldKey.of("age", 18);
+        void givenStringPath_whenToString_thenShowsSegments() {
+            FieldKey key = FieldKey.of("user", "address");
 
-            String result = ts.toString();
-
-            assertThat(result).isEqualTo("""
-                    FieldKey{parts=[age, 18]}\
-                    """);
+            assertThat(key.toString()).isEqualTo("FieldKey{parts=[user, address]}");
         }
 
         @Test
-        void givenNoArgs_whenToString_thenContainsMessageAndEmptyArray() {
-            FieldKey ts = FieldKey.of("message");
+        void givenMixedPath_whenToString_thenShowsStringAndIntSegments() {
+            FieldKey key = FieldKey.of("addresses", 0, "street");
 
-            String result = ts.toString();
-
-            assertThat(result).isEqualTo("""
-                    FieldKey{parts=[message]}\
-                    """);
+            assertThat(key.toString()).isEqualTo("FieldKey{parts=[addresses, 0, street]}");
         }
 
         @Test
-        void givenMultipleArgs_whenToString_thenContainsAllArgs() {
-            FieldKey ts = FieldKey.of("items", 10, 100);
+        void givenSingleSegmentPath_whenToString_thenShowsOneSegment() {
+            FieldKey key = FieldKey.of("name");
 
-            String result = ts.toString();
-
-            assertThat(result).isEqualTo("""
-                    FieldKey{parts=[items, 10, 100]}\
-                    """);
+            assertThat(key.toString()).isEqualTo("FieldKey{parts=[name]}");
         }
 
         @Test
-        void givenStringArg_whenToString_thenFormatsCorrectly() {
-            FieldKey ts = FieldKey.of("user", "name");
+        void givenIndexOnlyPath_whenToString_thenShowsIntSegment() {
+            FieldKey key = FieldKey.of(new FieldKeyPart.IntKey(3));
 
-            String result = ts.toString();
-
-            assertThat(result).isEqualTo("""
-                    FieldKey{parts=[user, name]}\
-                    """);
+            assertThat(key.toString()).isEqualTo("FieldKey{parts=[3]}");
         }
     }
 }

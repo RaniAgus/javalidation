@@ -68,6 +68,19 @@ class ValidationTest {
     }
 
     @Test
+    void givenSameIndexFieldMultipleTimes_whenAddFieldError_thenAccumulatesErrors() {
+        var validation = Validation.create()
+                .addErrorAt(0, "error 1")
+                .addErrorAt(0, "error 2");
+
+        var errors = validation.finish();
+        assertThat(errors.fieldErrors().get(FieldKey.of(0))).containsExactly(
+                TemplateString.of("error 1"),
+                TemplateString.of("error 2")
+        );
+    }
+
+    @Test
     void givenDifferentFields_whenAddFieldError_thenAddsToEachField() {
         var validation = Validation.create()
                 .addErrorAt("field1", "error 1")
@@ -75,6 +88,16 @@ class ValidationTest {
 
         var errors = validation.finish();
         assertThat(errors.fieldErrors()).containsOnlyKeys(FieldKey.of("field1"), FieldKey.of("field2"));
+    }
+
+    @Test
+    void givenDifferentIndexFields_whenAddFieldError_thenAddsToEachField() {
+        var validation = Validation.create()
+                .addErrorAt(1, "error 1")
+                .addErrorAt(2, "error 2");
+
+        var errors = validation.finish();
+        assertThat(errors.fieldErrors()).containsOnlyKeys(FieldKey.of(1), FieldKey.of(2));
     }
 
     @Test
@@ -194,7 +217,7 @@ class ValidationTest {
     void givenNoErrors_whenAsResult_thenReturnsOk() {
         var validation = Validation.create();
 
-        var result = validation.asResult(() -> "value");
+        var result = validation.asResult("value");
         assertThat(result.getOrThrow()).isEqualTo("value");
     }
 
@@ -203,7 +226,7 @@ class ValidationTest {
         var validation = Validation.create()
                 .addErrorAt("field", "error");
 
-        var result = validation.asResult(() -> "value");
+        var result = validation.asResult("value");
         assertThatThrownBy(result::getOrThrow)
                 .isInstanceOf(JavalidationException.class);
     }
@@ -311,14 +334,14 @@ class ValidationTest {
         var validation = Validation.create();
 
         validation.withField("address", () -> {
-            validation.withField("street", () -> {
+            validation.withField(0, () -> {
                 validation.addError("required");
             });
         });
 
         var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("address", "street"));
-        assertThat(errors.fieldErrors().get(FieldKey.of("address", "street")))
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("address", 0));
+        assertThat(errors.fieldErrors().get(FieldKey.of("address", 0)))
                 .containsExactly(TemplateString.of("required"));
     }
 

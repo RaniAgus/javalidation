@@ -80,7 +80,17 @@ public class JavalidationException extends RuntimeException {
      * @param message the error message template
      * @param args arguments for the message template
      */
-    public static JavalidationException at(Object field, String message, Object... args) {
+    public static JavalidationException at(String field, String message, Object... args) {
+        return new JavalidationException(ValidationErrors.at(field, message, args));
+    }
+
+    /**
+     * @see #at(String, String, Object...)
+     * @param field the field index
+     * @param message the error message template
+     * @param args arguments for the message template
+     */
+    public static JavalidationException at(int field, String message, Object... args) {
         return new JavalidationException(ValidationErrors.at(field, message, args));
     }
 

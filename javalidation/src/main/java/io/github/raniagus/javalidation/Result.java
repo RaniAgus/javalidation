@@ -529,22 +529,45 @@ public sealed interface Result<T extends @Nullable Object> {
      * }</pre>
      *
      * @param predicate the condition to test
-     * @param field the field name or index for the error
+     * @param field the field name for the error (e.g. {@code "email"}, {@code "address.street"})
      * @param message the error message template (supports MessageFormat placeholders)
      * @param args arguments for the message template
      * @return this result if the predicate passes or this is already {@link Err}, otherwise a new {@link Err}
+     * @see #ensureAt(Predicate, int, String, Object...)
      * @see #and(Result)
      */
-    default Result<T> ensureAt(Predicate<T> predicate, Object field, String message, Object... args) {
+    default Result<T> ensureAt(Predicate<T> predicate, String field, String message, Object... args) {
+        return ensureAt(predicate, () -> ValidationErrors.at(field, message, args));
+    }
+
+    /**
+     * Filters the success value using a predicate, adding an indexed field error if the predicate fails.
+     * <p>
+     * Behaves like {@link #ensureAt(Predicate, String, String, Object...)} but uses a numeric index
+     * as the field key, suitable for validating elements within a collection.
+     *
+     * @param predicate the condition to test
+     * @param field the 0-based index of the element
+     * @param message the error message template (supports MessageFormat placeholders)
+     * @param args arguments for the message template
+     * @return this result if the predicate passes or this is already {@link Err}, otherwise a new {@link Err}
+     * @see #ensureAt(Predicate, String, String, Object...)
+     * @see #and(Result)
+     */
+    default Result<T> ensureAt(Predicate<T> predicate, int field, String message, Object... args) {
+        return ensureAt(predicate, () -> ValidationErrors.at(field, message, args));
+    }
+
+    private Result<T> ensureAt(Predicate<T> predicate, Supplier<ValidationErrors> at) {
         return switch (this) {
             case Ok<T>(T value) -> {
                 if (predicate.test(value)) {
                     yield this;
                 } else {
-                    yield new Err<>(ValidationErrors.at(field, message, args));
+                    yield new Err<>(at.get());
                 }
             }
-            case Err<T> self -> self;
+            case Result.Err<T> self -> self;
         };
     }
 
@@ -704,7 +727,7 @@ public sealed interface Result<T extends @Nullable Object> {
     }
 
     /**
-     * Creates a failed result with a single field error.
+     * Creates a failed result with a single named field error.
      * <p>
      * Example:
      * <pre>{@code
@@ -712,13 +735,33 @@ public sealed interface Result<T extends @Nullable Object> {
      * Result<Integer> ageResult = Result.errorAt("age", "Must be at least {0}", 18);
      * }</pre>
      *
-     * @param field the field name or identifier
+     * @param field the field name (e.g. {@code "email"}, {@code "address.street"})
      * @param message the error message template (supports MessageFormat placeholders)
      * @param args arguments for the message template
      * @param <T> the type parameter (phantom type, as no value exists)
      * @return an {@link Err} result containing the field error
+     * @see #errorAt(int, String, Object...)
      */
-    static <T extends @Nullable Object> Result<T> errorAt(Object field, String message, Object... args) {
+    static <T extends @Nullable Object> Result<T> errorAt(String field, String message, Object... args) {
+        return new Err<>(ValidationErrors.at(field, message, args));
+    }
+
+    /**
+     * Creates a failed result with a single indexed field error.
+     * <p>
+     * Useful when the failing element is identified by position, e.g. in a collection:
+     * <pre>{@code
+     * Result<Item> item = Result.errorAt(2, "Must not be null");
+     * }</pre>
+     *
+     * @param field the 0-based index of the element
+     * @param message the error message template (supports MessageFormat placeholders)
+     * @param args arguments for the message template
+     * @param <T> the type parameter (phantom type, as no value exists)
+     * @return an {@link Err} result containing the field error
+     * @see #errorAt(String, String, Object...)
+     */
+    static <T extends @Nullable Object> Result<T> errorAt(int field, String message, Object... args) {
         return new Err<>(ValidationErrors.at(field, message, args));
     }
 

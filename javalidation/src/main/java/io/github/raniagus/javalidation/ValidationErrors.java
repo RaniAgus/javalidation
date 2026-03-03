@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  * <pre>{@code
  * // Validate nested objects with prefixes
  * ValidationErrors addressErrors = validateAddress(address);
- * ValidationErrors prefixed = addressErrors.withPrefix("user.address");
+ * ValidationErrors prefixed = addressErrors.withPrefix("user", "address");
  * // Errors become: "user.address.street", "user.address.zipCode", etc.
  * }</pre>
  * <p>
@@ -102,20 +102,39 @@ public record ValidationErrors(
     }
 
     /**
-     * Creates a {@code ValidationErrors} with a single field error.
+     * Creates a {@code ValidationErrors} with a single named field error.
      * <p>
      * The message supports MessageFormat placeholders:
      * <pre>{@code
      * ValidationErrors errors = ValidationErrors.at("age", "Must be at least {0}", 18);
      * }</pre>
      *
-     * @param field the field name or identifier
+     * @param field the field name (e.g. {@code "email"}, {@code "address.street"})
      * @param message the error message template
      * @param args optional arguments for the message template
      * @return validation errors containing the single field error
+     * @see #at(int, String, Object...)
      */
-    public static ValidationErrors at(Object field, String message, Object... args) {
-        return at(FieldKey.of(field), message, args);
+    public static ValidationErrors at(String field, String message, Object... args) {
+        return at(FieldKey.of(new FieldKeyPart.StringKey(field)), message, args);
+    }
+
+    /**
+     * Creates a {@code ValidationErrors} with a single indexed field error.
+     * <p>
+     * Useful when validating collection elements directly:
+     * <pre>{@code
+     * ValidationErrors errors = ValidationErrors.at(0, "Must not be null");
+     * }</pre>
+     *
+     * @param field the 0-based index of the element
+     * @param message the error message template
+     * @param args optional arguments for the message template
+     * @return validation errors containing the single field error
+     * @see #at(String, String, Object...)
+     */
+    public static ValidationErrors at(int field, String message, Object... args) {
+        return at(FieldKey.of(new FieldKeyPart.IntKey(field)), message, args);
     }
 
     /**
@@ -161,24 +180,57 @@ public record ValidationErrors(
     }
 
     /**
-     * Returns a new {@code ValidationErrors} with all field paths prefixed by concatenating the given objects.
+     * Returns a new {@code ValidationErrors} with all field paths prefixed with the given string segments.
+     *
+     * @param prefix the string parts to prepend (e.g. {@code "items"}, {@code "address"})
+     * @return a new {@code ValidationErrors} with prefixed field paths
+     */
+    public ValidationErrors withPrefix(String... prefix) {
+        FieldKeyPart[] prefixParts = Arrays.stream(prefix)
+                .map(FieldKeyPart.StringKey::new)
+                .toArray(FieldKeyPart[]::new);
+        return withPrefix(prefixParts);
+    }
+
+    /**
+     * Returns a new {@code ValidationErrors} with all field paths prefixed with the given numeric index segments.
      * <p>
-     * This is a convenience method for building prefixes from multiple parts, particularly useful
-     * for array/list indices.
+     * Each {@link Number} is converted to an {@code int} via {@link Number#intValue()}.
+     *
+     * @param prefix the numeric parts to prepend (e.g. {@code 0}, {@code 1})
+     * @return a new {@code ValidationErrors} with prefixed field paths
+     */
+    public ValidationErrors withPrefix(Number... prefix) {
+        FieldKeyPart[] prefixParts = Arrays.stream(prefix)
+                .map(Number::intValue)
+                .map(FieldKeyPart.IntKey::new)
+                .toArray(FieldKeyPart[]::new);
+        return withPrefix(prefixParts);
+    }
+
+    /**
+     * Returns a new {@code ValidationErrors} with all field paths prefixed with the given mixed segments.
+     * Each element is treated as a string segment unless it is an {@link Integer}, which becomes an index segment.
      * <p>
      * Example:
      * <pre>{@code
      * for (int i = 0; i < items.size(); i++) {
-     *     ValidationErrors itemErrors = validateItem(items.get(i));
-     *     ValidationErrors prefixed = itemErrors.withPrefix("items", i);
-     *     // produces: "items[0]", "items[1]", etc.
+     *     ValidationErrors prefixed = validateItem(items.get(i)).withPrefix("items", i);
+     *     // produces: "items[0].field", "items[1].field", etc.
      * }
      * }</pre>
      *
-     * @param prefix the parts to concatenate into a prefix (e.g. "items", i)
+     * @param prefix the parts to prepend, mixed strings and integers
      * @return a new {@code ValidationErrors} with prefixed field paths
      */
     public ValidationErrors withPrefix(Object... prefix) {
+        FieldKeyPart[] prefixParts = Arrays.stream(prefix)
+                .map(FieldKeyPart::of)
+                .toArray(FieldKeyPart[]::new);
+        return withPrefix(prefixParts);
+    }
+
+    private ValidationErrors withPrefix(FieldKeyPart... prefix) {
         Map<FieldKey, List<TemplateString>> prefixedFieldErrors = new HashMap<>(fieldErrors.size() + 1);
         if (!rootErrors.isEmpty()) {
             prefixedFieldErrors.put(FieldKey.of(prefix), rootErrors);

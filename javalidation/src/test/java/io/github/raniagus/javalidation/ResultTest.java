@@ -3,6 +3,7 @@ package io.github.raniagus.javalidation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class ResultTest {
@@ -168,6 +169,14 @@ class ResultTest {
 
         var errors = result.errors();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("root", "field"));
+    }
+
+    @Test
+    void givenErr_whenWithPrefixIndex_thenPrefixesErrorField() {
+        var result = Result.<String>errorAt(0, "error").withPrefix("root");
+
+        var errors = result.errors();
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("root", 0));
     }
 
     @Test
@@ -570,6 +579,31 @@ class ResultTest {
 
         var errors = result.errors();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("username"));
+    }
+
+    @Test
+    void givenOkAndFailingIndexPredicate_whenFilterWithField_thenReturnsIndexErr() {
+        var result = Result.ok(List.of("hi")).ensureAt(
+                s -> s.getFirst().length() >= 5,
+                0,
+                "Must be at least 5 characters"
+        );
+
+        var errors = result.errors();
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of(0));
+    }
+
+    @Test
+    void givenErr_whenFilterWithField_thenPreservesError() {
+        var result = Result.<String>error("initial error").ensureAt(
+                s -> s.length() >= 5,
+                "username",
+                "Must be at least 5 characters"
+        );
+
+        var errors = result.errors();
+        assertThat(errors.rootErrors()).hasSize(1);
+        assertThat(errors.fieldErrors()).doesNotContainKey(FieldKey.of("username"));
     }
 
     private void raiseJavalidationException() {

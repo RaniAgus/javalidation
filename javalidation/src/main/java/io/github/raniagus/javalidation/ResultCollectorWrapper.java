@@ -21,7 +21,7 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
     }
 
     @Override
-    public void add(Result<T> result, Object... prefix) {
+    public void add(Result<T> result, FieldKeyPart... prefix) {
         resultCollector.add(result, prefix);
     }
 
@@ -39,13 +39,13 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
 
         @Override
         public void add(Result<T> result) {
-            super.add(result, index++);
+            super.add(result, new FieldKeyPart.IntKey(index++));
         }
 
         @Override
-        public void add(Result<T> result, Object... parts) {
-            Object[] newPrefix = Arrays.copyOf(parts, parts.length + 1);
-            newPrefix[parts.length] = index++;
+        public void add(Result<T> result, FieldKeyPart... parts) {
+            FieldKeyPart[] newPrefix = Arrays.copyOf(parts, parts.length + 1);
+            newPrefix[parts.length] = new FieldKeyPart.IntKey(index++);
             super.add(result, newPrefix);
         }
 
@@ -56,14 +56,14 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
     }
 
     public static class WithPrefix<T extends @Nullable Object, R, C extends ResultCollector<T, R, C>> extends ResultCollectorWrapper<T, R, C, WithPrefix<T, R, C>> {
-        private final Object prefix;
+        private final FieldKeyPart prefix;
 
-        public WithPrefix(C collector, Object prefix) {
+        public WithPrefix(C collector, FieldKeyPart prefix) {
             super(collector);
             this.prefix = prefix;
         }
 
-        public WithPrefix(Collector<Result<T>, C, R> collector, Object prefix) {
+        public WithPrefix(Collector<Result<T>, C, R> collector, FieldKeyPart prefix) {
             super(collector);
             this.prefix = prefix;
         }
@@ -74,8 +74,8 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
         }
 
         @Override
-        public void add(Result<T> result, Object... parts) {
-            Object[] newPrefix = Arrays.copyOf(parts, parts.length + 1);
+        public void add(Result<T> result, FieldKeyPart... parts) {
+            FieldKeyPart[] newPrefix = Arrays.copyOf(parts, parts.length + 1);
             newPrefix[parts.length] = prefix;
             super.add(result, newPrefix);
         }

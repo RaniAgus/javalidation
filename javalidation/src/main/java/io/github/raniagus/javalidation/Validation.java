@@ -67,7 +67,7 @@ import org.jspecify.annotations.Nullable;
  * @see JavalidationException
  */
 public class Validation {
-    private final List<Object> prefix = new ArrayList<>();
+    private final List<FieldKeyPart> prefix = new ArrayList<>();
     private final List<TemplateString> rootErrors = new ArrayList<>();
     private final Map<FieldKey, List<TemplateString>> fieldErrors = new HashMap<>();
 
@@ -128,9 +128,34 @@ public class Validation {
      * @return this validation for method chaining
      * @throws NullPointerException if field or message is null
      */
-    public Validation addErrorAt(Object field, String message, Object... args) {
+    public Validation addErrorAt(String field, String message, Object... args) {
         Objects.requireNonNull(field);
         Objects.requireNonNull(message);
+        return addErrorAt(new FieldKeyPart.StringKey(field), message, args);
+    }
+
+    /**
+     * Adds an indexed field-specific validation error.
+     * <p>
+     * Useful when accumulating errors for individual elements in a collection without using
+     * {@link #withEach(Iterable, java.util.function.Consumer)}:
+     * <pre>{@code
+     * validation.addErrorAt(0, "Must not be null");
+     * }</pre>
+     *
+     * @param field the 0-based index of the element
+     * @param message the error message template (must not be null)
+     * @param args optional arguments for the message template
+     * @return this validation for method chaining
+     * @throws NullPointerException if message is null
+     * @see #addErrorAt(String, String, Object...)
+     */
+    public Validation addErrorAt(int field, String message, Object... args) {
+        Objects.requireNonNull(message);
+        return addErrorAt(new FieldKeyPart.IntKey(field), message, args);
+    }
+
+    private Validation addErrorAt(FieldKeyPart field, String message, Object... args) {
         fieldErrors.computeIfAbsent(FieldKey.of(prefix, field), k -> new ArrayList<>(1))
                 .add(new TemplateString(message, args));
         return this;
@@ -140,7 +165,11 @@ public class Validation {
         Objects.requireNonNull(field);
         Objects.requireNonNull(messages);
         if (!messages.isEmpty()) {
-            fieldErrors.computeIfAbsent(field.withPrefix(prefix.toArray()), k -> new ArrayList<>(messages.size()))
+            fieldErrors
+                    .computeIfAbsent(
+                            field.withPrefix(prefix.toArray(FieldKeyPart[]::new)),
+                            k -> new ArrayList<>(messages.size())
+                    )
                     .addAll(messages);
         }
     }
@@ -191,9 +220,30 @@ public class Validation {
      * @return this validation for method chaining
      * @throws NullPointerException if field or runnable is null
      */
-    public Validation withField(Object field, Runnable runnable) {
+    public Validation withField(String field, Runnable runnable) {
         Objects.requireNonNull(field);
         Objects.requireNonNull(runnable);
+        return withField(new FieldKeyPart.StringKey(field), runnable);
+    }
+
+    /**
+     * Validates a nested element by executing validation logic within an indexed scoped context.
+     * <p>
+     * Behaves like {@link #withField(String, Runnable)} but uses a numeric index as the key segment,
+     * which is rendered as {@code [n]} by formatters that support bracket notation.
+     *
+     * @param field the 0-based index to use as prefix
+     * @param runnable the validation logic to execute within the field context (must not be null)
+     * @return this validation for method chaining
+     * @throws NullPointerException if runnable is null
+     * @see #withField(String, Runnable)
+     */
+    public Validation withField(int field, Runnable runnable) {
+        Objects.requireNonNull(runnable);
+        return withField(new FieldKeyPart.IntKey(field), runnable);
+    }
+
+    private Validation withField(FieldKeyPart field, Runnable runnable) {
         prefix.add(field);
         runnable.run();
         prefix.removeLast();
@@ -204,7 +254,7 @@ public class Validation {
      * Validates each element of an iterable within an indexed scoped context.
      * <p>
      * For each element, the consumer is executed with a numeric index prefix (0-based).
-     * This mirrors {@link #withField(Object, Runnable)} but for collections, automatically
+     * This mirrors {@link #withField(int, Runnable)} but for collections, automatically
      * managing index-based prefixes.
      * <p>
      * Root errors added within the consumer become field errors for the element's index.
@@ -271,7 +321,7 @@ public class Validation {
         Objects.requireNonNull(consumer);
         int index = 0;
         for (T item : items) {
-            prefix.add(index);
+            prefix.add(new FieldKeyPart.IntKey(index));
             consumer.accept(item, index++);
             prefix.removeLast();
         }
