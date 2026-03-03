@@ -133,8 +133,8 @@ public record ValidationErrors(
      * @return validation errors containing the single field error
      * @see #at(String, String, Object...)
      */
-    public static ValidationErrors at(int field, String message, Object... args) {
-        return at(FieldKey.of(new FieldKeyPart.IntKey(field)), message, args);
+    public static ValidationErrors at(Number field, String message, Object... args) {
+        return at(FieldKey.of(new FieldKeyPart.IntKey(field.intValue())), message, args);
     }
 
     /**

@@ -150,9 +150,10 @@ public class Validation {
      * @throws NullPointerException if message is null
      * @see #addErrorAt(String, String, Object...)
      */
-    public Validation addErrorAt(int field, String message, Object... args) {
+    public Validation addErrorAt(Number field, String message, Object... args) {
+        Objects.requireNonNull(field);
         Objects.requireNonNull(message);
-        return addErrorAt(new FieldKeyPart.IntKey(field), message, args);
+        return addErrorAt(new FieldKeyPart.IntKey(field.intValue()), message, args);
     }
 
     private Validation addErrorAt(FieldKeyPart field, String message, Object... args) {
@@ -238,9 +239,10 @@ public class Validation {
      * @throws NullPointerException if runnable is null
      * @see #withField(String, Runnable)
      */
-    public Validation withField(int field, Runnable runnable) {
+    public Validation withField(Number field, Runnable runnable) {
+        Objects.requireNonNull(field);
         Objects.requireNonNull(runnable);
-        return withField(new FieldKeyPart.IntKey(field), runnable);
+        return withField(new FieldKeyPart.IntKey(field.intValue()), runnable);
     }
 
     private Validation withField(FieldKeyPart field, Runnable runnable) {
@@ -254,7 +256,7 @@ public class Validation {
      * Validates each element of an iterable within an indexed scoped context.
      * <p>
      * For each element, the consumer is executed with a numeric index prefix (0-based).
-     * This mirrors {@link #withField(int, Runnable)} but for collections, automatically
+     * This mirrors {@link #withField(Number, Runnable)} but for collections, automatically
      * managing index-based prefixes.
      * <p>
      * Root errors added within the consumer become field errors for the element's index.

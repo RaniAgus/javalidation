@@ -189,10 +189,25 @@ public sealed interface Result<T extends @Nullable Object> {
      * @return a new result with prefixed errors if this is {@link Err}, or the same {@link Ok} instance
      */
     default Result<T> withPrefix(Object... prefix) {
-        return switch (this) {
-            case Ok<T> self -> self;
-            case Err<T>(ValidationErrors errors) -> new Err<>(errors.withPrefix(prefix));
-        };
+        return mapErr(err -> err.withPrefix(prefix));
+    }
+
+    /**
+     * @see #withPrefix(Object...)
+     * @param prefix the string parts to concatenate into a prefix (e.g. for nested fields)
+     * @return a new result with prefixed errors if this is {@link Err}, or the same {@link Ok} instance
+     */
+    default Result<T> withPrefix(String... prefix) {
+        return mapErr(err -> err.withPrefix(prefix));
+    }
+
+    /**
+     * @see #withPrefix(Object...)
+     * @param prefix the numeric parts to concatenate into a prefix (e.g. for indexed fields)
+     * @return a new result with prefixed errors if this is {@link Err}, or the same {@link Ok} instance
+     */
+    default Result<T> withPrefix(Number... prefix) {
+        return mapErr(err -> err.withPrefix(prefix));
     }
 
     /**
@@ -237,10 +252,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * @return this result if {@link Ok}, otherwise the fallback result with merged errors
      */
     default Result<T> or(Supplier<Result<T>> supplier) {
-        return switch (this) {
-            case Ok<T> self -> self;
-            case Err<T>(ValidationErrors errors) -> supplier.get().mapErr(errors::mergeWith);
-        };
+        return flatMapErr(errors -> supplier.get().mapErr(errors::mergeWith));
     }
 
     /**
@@ -258,10 +270,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * @return this result if {@link Ok}, otherwise the fallback result with merged errors
      */
     default Result<T> or(Result<T> other) {
-        return switch (this) {
-            case Ok<T> self -> self;
-            case Err<T>(ValidationErrors errors) -> other.mapErr(errors::mergeWith);
-        };
+        return flatMapErr(errors -> other.mapErr(errors::mergeWith));
     }
 
     /**
@@ -298,14 +307,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * for the complete rationale.
      */
     default <U extends @Nullable Object> Result<U> map(Function<T, U> mapper) {
-        try {
-            return switch (this) {
-                case Ok<T>(T value) -> new Ok<>(mapper.apply(value));
-                case Err<T>(ValidationErrors errors) -> new Err<>(errors);
-            };
-        } catch (JavalidationException e) {
-            return new Err<>(e.getErrors());
-        }
+        return flatMap(mapper.andThen(Ok::new));
     }
 
     /**
@@ -326,10 +328,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * @return the same result if {@link Ok}, or a new result with transformed errors
      */
     default Result<T> mapErr(Function<ValidationErrors, ValidationErrors> mapper) {
-        return switch (this) {
-            case Ok<T> self -> self;
-            case Err<T>(ValidationErrors errors) -> new Err<>(mapper.apply(errors));
-        };
+        return flatMapErr(mapper.andThen(Err::new));
     }
 
     /**
@@ -352,10 +351,14 @@ public sealed interface Result<T extends @Nullable Object> {
      * @return this result if {@link Ok}, otherwise the result produced by the mapper
      */
     default Result<T> flatMapErr(Function<ValidationErrors, Result<T>> mapper) {
-        return switch (this) {
-            case Ok<T> ok -> ok;
-            case Err<T>(ValidationErrors errors) -> mapper.apply(errors);
-        };
+        try {
+            return switch (this) {
+                case Ok<T> ok -> ok;
+                case Err<T>(ValidationErrors errors) -> mapper.apply(errors);
+            };
+        } catch (JavalidationException e) {
+            return new Err<>(e.getErrors());
+        }
     }
 
     /**
@@ -384,10 +387,7 @@ public sealed interface Result<T extends @Nullable Object> {
             Function<T, U> onSuccess,
             Function<ValidationErrors, ValidationErrors> onError
     ) {
-        return switch (this) {
-            case Ok<T>(T value) -> new Ok<>(onSuccess.apply(value));
-            case Err<T>(ValidationErrors errors) -> new Err<>(onError.apply(errors));
-        };
+        return map(onSuccess).mapErr(onError);
     }
 
     /**
@@ -498,16 +498,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * @see #and(Result)
      */
     default Result<T> ensure(Predicate<T> predicate, String message, Object... args) {
-        return switch (this) {
-            case Ok<T>(T value) -> {
-                if (predicate.test(value)) {
-                    yield this;
-                } else {
-                    yield new Err<>(ValidationErrors.of(message, args));
-                }
-            }
-            case Err<T> self -> self;
-        };
+        return ensure(predicate, () -> ValidationErrors.of(message, args));
     }
 
     /**
@@ -533,11 +524,11 @@ public sealed interface Result<T extends @Nullable Object> {
      * @param message the error message template (supports MessageFormat placeholders)
      * @param args arguments for the message template
      * @return this result if the predicate passes or this is already {@link Err}, otherwise a new {@link Err}
-     * @see #ensureAt(Predicate, int, String, Object...)
+     * @see #ensureAt(Predicate, Number, String, Object...)
      * @see #and(Result)
      */
     default Result<T> ensureAt(Predicate<T> predicate, String field, String message, Object... args) {
-        return ensureAt(predicate, () -> ValidationErrors.at(field, message, args));
+        return ensure(predicate, () -> ValidationErrors.at(field, message, args));
     }
 
     /**
@@ -554,21 +545,12 @@ public sealed interface Result<T extends @Nullable Object> {
      * @see #ensureAt(Predicate, String, String, Object...)
      * @see #and(Result)
      */
-    default Result<T> ensureAt(Predicate<T> predicate, int field, String message, Object... args) {
-        return ensureAt(predicate, () -> ValidationErrors.at(field, message, args));
+    default Result<T> ensureAt(Predicate<T> predicate, Number field, String message, Object... args) {
+        return ensure(predicate, () -> ValidationErrors.at(field, message, args));
     }
 
-    private Result<T> ensureAt(Predicate<T> predicate, Supplier<ValidationErrors> at) {
-        return switch (this) {
-            case Ok<T>(T value) -> {
-                if (predicate.test(value)) {
-                    yield this;
-                } else {
-                    yield new Err<>(at.get());
-                }
-            }
-            case Result.Err<T> self -> self;
-        };
+    private Result<T> ensure(Predicate<T> predicate, Supplier<ValidationErrors> errorsSupplier) {
+        return flatMap(value -> predicate.test(value) ? this : new Err<>(errorsSupplier.get()));
     }
 
     /**
@@ -740,7 +722,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * @param args arguments for the message template
      * @param <T> the type parameter (phantom type, as no value exists)
      * @return an {@link Err} result containing the field error
-     * @see #errorAt(int, String, Object...)
+     * @see #errorAt(Number, String, Object...)
      */
     static <T extends @Nullable Object> Result<T> errorAt(String field, String message, Object... args) {
         return new Err<>(ValidationErrors.at(field, message, args));
@@ -761,7 +743,7 @@ public sealed interface Result<T extends @Nullable Object> {
      * @return an {@link Err} result containing the field error
      * @see #errorAt(String, String, Object...)
      */
-    static <T extends @Nullable Object> Result<T> errorAt(int field, String message, Object... args) {
+    static <T extends @Nullable Object> Result<T> errorAt(Number field, String message, Object... args) {
         return new Err<>(ValidationErrors.at(field, message, args));
     }
 

@@ -349,7 +349,7 @@ class ValidationTest {
     void givenNullField_whenWithField_thenThrowsNullPointerException() {
         var validation = Validation.create();
 
-        assertThatThrownBy(() -> validation.withField(null, () -> {}))
+        assertThatThrownBy(() -> validation.withField((String) null, () -> {}))
                 .isInstanceOf(NullPointerException.class);
     }
 

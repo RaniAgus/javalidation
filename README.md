@@ -894,72 +894,72 @@ public void validateItemsList(Validation validation, List<Item> items) {
 
 ### Result<T>
 
-| Method                                           | Description                               |
-|--------------------------------------------------|-------------------------------------------|
-| `of(Supplier<T>)`/ `of(Runnable)`                | Wrap supplier or runnable in try-catch    |
-| `ok(T)`                                          | Create successful result                  |
-| `error(String, Object...)`                       | Create failed result with root error      |
-| `errorAt(String, String, Object...)`             | Create failed result with field error     |
-| `error(ValidationErrors)`                        | Create failed result from existing errors |
-| `map(Function)`                                  | Transform success value                   |
-| `flatMap(Function)`                              | Chain validations                         |
-| `ensure(Predicate, String, Object...)`           | Conditional validation                    |
-| `ensureAt(Predicate, Object, String, Object...)` | Conditional validation (for fields)       |
-| `and(Result)`                                    | Start applicative combiner chain          |
-| `or(Result)` / `or(Supplier)`                    | Provide fallback                          |
-| `fold(Function, Function)`                       | Handle both cases                         |
-| `getOrThrow()`                                   | Extract value or throw                    |
-| `getOrElse(T)` / `getOrElse(Supplier)`           | Extract value or default                  |
-| `withPrefix(Object...)`                          | Namespace errors for nested objects       |
+| Method                                                    | Description                               |
+|-----------------------------------------------------------|-------------------------------------------|
+| `of(Supplier<T>)`/ `of(Runnable)`                         | Wrap supplier or runnable in try-catch    |
+| `ok(T)`                                                   | Create successful result                  |
+| `error(String, Object...)`                                | Create failed result with root error      |
+| `errorAt(String / Number, String, Object...)`             | Create failed result with field error     |
+| `error(ValidationErrors)`                                 | Create failed result from existing errors |
+| `map(Function)`                                           | Transform success value                   |
+| `flatMap(Function)`                                       | Chain validations                         |
+| `ensure(Predicate, String, Object...)`                    | Conditional validation                    |
+| `ensureAt(Predicate, String / Number, String, Object...)` | Conditional validation for fields         |
+| `and(Result)`                                             | Start applicative combiner chain          |
+| `or(Result)` / `or(Supplier)`                             | Provide fallback                          |
+| `fold(Function, Function)`                                | Handle both cases                         |
+| `getOrThrow()`                                            | Extract value or throw                    |
+| `getOrElse(T)` / `getOrElse(Supplier)`                    | Extract value or default                  |
+| `withPrefix(String / Number...)`                          | Namespace errors for nested objects       |
 
 ### ValidationErrors
 
-| Method                          | Description                    |
-|---------------------------------|--------------------------------|
-| `empty()`                       | Create empty errors            |
-| `of(String, Object...)`         | Create with single root error  |
-| `at(Object, String, Object...)` | Create with single field error |
-| `mergeWith(ValidationErrors)`   | Merge two error sets           |
-| `withPrefix(Object...)`         | Add prefix to all fields       |
-| `isEmpty()` / `isNotEmpty()`    | Check if errors exist          |
-| `count()`                       | Total number of errors         |
+| Method                                   | Description                    |
+|------------------------------------------|--------------------------------|
+| `empty()`                                | Create empty errors            |
+| `of(String, Object...)`                  | Create with single root error  |
+| `at(String / Number, String, Object...)` | Create with single field error |
+| `mergeWith(ValidationErrors)`            | Merge two error sets           |
+| `withPrefix(String / Number...)`         | Add prefix to all fields       |
+| `isEmpty()` / `isNotEmpty()`             | Check if errors exist          |
+| `count()`                                | Total number of errors         |
 
 ### Validation
 
-| Method                                      | Description                                                |
-|---------------------------------------------|------------------------------------------------------------|
-| `create()`                                  | Create new empty validation                                |
-| `addError(String, Object...)`               | Add root-level error                                       |
-| `addErrorAt(Object, String, Object...)`     | Add field-specific error                                   |
-| `addAll(ValidationErrors)`                  | Merge errors                                               |
-| `addAll(FieldKey, ValidationErrors)`        | Merge errors with prefix                                   |
-| `withField(Object, Runnable)`               | Scope validation under a field prefix                      |
-| `withEach(Iterable, Consumer / BiConsumer)` | Scope validation over a collection (optionally with index) |
-| `check()`                                   | Throw if errors exist                                      |
-| `asResult(Supplier)`                        | Convert to Result                                          |
+| Method                                           | Description                                                |
+|--------------------------------------------------|------------------------------------------------------------|
+| `create()`                                       | Create new empty validation                                |
+| `addError(String, Object...)`                    | Add root-level error                                       |
+| `addErrorAt(String / Number, String, Object...)` | Add field-specific error                                   |
+| `addAll(ValidationErrors)`                       | Merge errors                                               |
+| `addAll(FieldKey, ValidationErrors)`             | Merge errors with prefix                                   |
+| `withField(String / Number, Runnable)`           | Scope validation under a field prefix                      |
+| `withEach(Iterable, Consumer / BiConsumer)`      | Scope validation over a collection (optionally with index) |
+| `check()`                                        | Throw if errors exist                                      |
+| `asResult(Supplier)`                             | Convert to Result                                          |
 
 ### ResultCollector
 
-| Method                                       | Description                                                   |
-|----------------------------------------------|---------------------------------------------------------------|
-| `toResultList()` / `toResultList(int)`       | Returns `Result<List<T>>` (functional style)                  |
-| `toListOrThrow()` / `toListOrThrow(int)`     | Returns `List<T>` or throws (imperative style)                |
-| `toPartialResult()` / `toPartialResult(int)` | Returns successful items + errors (partial success)           |
-| `into(Validation)`                           | Accumulates errors into existing `Validation` (mutable state) |
-| `withIndex(Collector<...>)`                  | Wraps collector to add `[0]`, `[1]`, etc. prefixes            |
-| `withPrefix(Object, Collector<...>)`         | Wraps collector to add field prefix to all errors             |
+| Method                                        | Description                                                   |
+|-----------------------------------------------|---------------------------------------------------------------|
+| `toResultList()` / `toResultList(int)`        | Returns `Result<List<T>>` (functional style)                  |
+| `toListOrThrow()` / `toListOrThrow(int)`      | Returns `List<T>` or throws (imperative style)                |
+| `toPartialResult()` / `toPartialResult(int)`  | Returns successful items + errors (partial success)           |
+| `into(Validation)`                            | Accumulates errors into existing `Validation` (mutable state) |
+| `withIndex(Collector<...>)`                   | Wraps collector to add `[0]`, `[1]`, etc. prefixes            |
+| `withPrefix(String / Number, Collector<...>)` | Wraps collector to add field prefix to all errors             |
 
 > [!NOTE]
 > The optional `int` parameter provides an `initialCapacity` hint for ArrayList optimization.
 
 ### JavalidationException
 
-| Method                          | Description                       |
-|---------------------------------|-----------------------------------|
-| `of(ValidationErrors)`          | Create from ValidationErrors      |
-| `of(String, Object...)`         | Create with root error            |
-| `at(String, String, Object...)` | Create with field error           |
-| `getErrors()`                   | Get accumulated errors            |
+| Method                                   | Description                       |
+|------------------------------------------|-----------------------------------|
+| `of(ValidationErrors)`                   | Create from ValidationErrors      |
+| `of(String, Object...)`                  | Create with root error            |
+| `at(String / Number, String, Object...)` | Create with field error           |
+| `getErrors()`                            | Get accumulated errors            |
 
 ## License
 
