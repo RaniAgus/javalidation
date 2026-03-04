@@ -113,7 +113,7 @@ public record ValidationErrors(
      * @param message the error message template
      * @param args optional arguments for the message template
      * @return validation errors containing the single field error
-     * @see #at(int, String, Object...)
+     * @see #at(Number, String, Object...)
      */
     public static ValidationErrors at(String field, String message, Object... args) {
         return at(FieldKey.of(new FieldKeyPart.StringKey(field)), message, args);
