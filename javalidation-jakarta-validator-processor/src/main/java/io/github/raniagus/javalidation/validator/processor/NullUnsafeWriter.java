@@ -55,7 +55,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
             return switch (kind) {
                 case BIG_DECIMAL, NUMBER, CHAR_SEQUENCE -> Stream.of("java.math.BigDecimal");
                 case BIG_INTEGER -> Stream.of("java.math.BigInteger");
-                default -> Stream.empty();
+                case BYTE, SHORT, INTEGER, LONG -> Stream.empty();
             };
         }
 
@@ -149,7 +149,9 @@ public interface NullUnsafeWriter extends ValidationWriter {
                 case LONG, INTEGER, SHORT, BYTE -> "Instant.ofEpochMilli(%s)".formatted(variable);
                 case DATE -> "Instant.ofEpochMilli(%s.getTime())".formatted(variable);
                 case CALENDAR -> "Instant.ofEpochMilli(%s.getTimeInMillis())".formatted(variable);
-                default -> variable;
+                case INSTANT, LOCAL_DATE, LOCAL_TIME, LOCAL_DATE_TIME, OFFSET_DATE_TIME,
+                     OFFSET_TIME, ZONED_DATE_TIME, YEAR, YEAR_MONTH, MONTH_DAY,
+                     HIJRAH_DATE, JAPANESE_DATE, MINGUO_DATE, THAI_BUDDHIST_DATE -> variable;
             };
         }
     }
@@ -186,9 +188,8 @@ public interface NullUnsafeWriter extends ValidationWriter {
         @Override
         public Stream<String> imports() {
             return switch (kind) {
-                case BIG_DECIMAL, NUMBER, CHAR_SEQUENCE -> Stream.of("java.math.BigDecimal");
-                case BIG_INTEGER -> Stream.of("java.math.BigInteger");
-                default -> Stream.empty();
+                case CHAR_SEQUENCE, BIG_DECIMAL -> Stream.empty();
+                case BIG_INTEGER, NUMBER, BYTE, SHORT, INTEGER, LONG -> Stream.of("java.math.BigDecimal");
             };
         }
 
@@ -201,8 +202,10 @@ public interface NullUnsafeWriter extends ValidationWriter {
                     """.formatted(out.getVariable(), pattern));
             } else {
                 String bdExpr = switch (kind) {
-                    case BIG_DECIMAL, NUMBER -> "new BigDecimal(%s.toString()).stripTrailingZeros()".formatted(out.getVariable());
-                    default -> "new BigDecimal(%s.toString())".formatted(out.getVariable());
+                    case CHAR_SEQUENCE -> throw new IllegalStateException("CHAR_SEQUENCE should be handled separately");
+                    case BIG_DECIMAL -> "%s.stripTrailingZeros()".formatted(out.getVariable());
+                    case BIG_INTEGER, NUMBER -> "new BigDecimal(%s.toString()).stripTrailingZeros()".formatted(out.getVariable());
+                    case BYTE, SHORT, INTEGER, LONG -> "BigDecimal.valueOf(%s)".formatted(out.getVariable());
                 };
                 out.write("var %s_bd = %s;".formatted(out.getVariable(), bdExpr));
                 out.write("""

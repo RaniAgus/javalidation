@@ -54,6 +54,8 @@ class JakartaValidationsTest {
             "DecimalMaxInclusiveRecord",
             "DecimalMaxExclusiveRecord",
             "DigitsRecord",
+            "DigitsPrimitiveRecord",
+            "DigitsNumberRecord",
             "NotNullAndSizeRecord",
             "NotNullAndMinRecord",
     })
