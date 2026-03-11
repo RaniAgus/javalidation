@@ -181,6 +181,11 @@ public class ValidatorProcessor extends AbstractProcessor {
             return Stream.empty();
         }
 
+        if (typeElement.getKind() == ElementKind.RECORD
+                && discoveredClassNames.contains(getValidatorFullName(typeElement))) {
+            return getRecordAndNestedValidAnnotated(typeElement, visited);
+        }
+
         Stream<TypeElement> fromParams = getMethodAndConstructorParams(typeElement)
                 .filter(this::isAnnotatedWithValid)
                 .flatMap(e -> getRecordsFromParam(e, visited));
