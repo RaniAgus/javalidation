@@ -11,7 +11,7 @@ fully i18n-compatible `Result<T>` with accumulated `ValidationErrors`.
 - **Error accumulation**: Collect multiple validation errors instead of failing fast
 - **Dual error handling**: Separates expected validation failures (`JavalidationException`) from unexpected programming errors
 - **Flexible validation styles**: Functional approach with `Result<T>` or imperative style with `JavalidationException`
-- **Stream-based validation**: Specialized collectors (`toResultList()`, `toListOrThrow()`, `toPartialResult()`) for validating collections
+- **Stream-based validation**: Specialized collectors (`toResultList()`, `toListOrThrow()`, `toPartialResult()`, `toValidation()`) for validating collections
 
 **Type Safety & Composition:**
 - **Type-safe error handling**: `Result<T>` sealed type (`Ok`/`Err`) ensures exhaustive handling at compile-time without `ClassCastException` risk
@@ -883,10 +883,10 @@ public void validateItemsList(Validation validation, List<Item> items) {
         }
     });
 
-    // Alternative: the same approach but with ResultCollector.into(Validation) for Stream<Result<T>>
+    // Alternative: the same approach but with ResultCollector.addErrorsTo(Validation) for Stream<Result<T>>
     items.stream()
             .map(this::validateItemResult) // Must return Result<T>
-            .collect(withIndex(into(validation))); // Mutates Validation instance
+            .collect(withIndex(addErrorsTo(validation))); // Mutates Validation instance
 }
 ```
 
@@ -940,14 +940,15 @@ public void validateItemsList(Validation validation, List<Item> items) {
 
 ### ResultCollector
 
-| Method                                        | Description                                                   |
-|-----------------------------------------------|---------------------------------------------------------------|
-| `toResultList()` / `toResultList(int)`        | Returns `Result<List<T>>` (functional style)                  |
-| `toListOrThrow()` / `toListOrThrow(int)`      | Returns `List<T>` or throws (imperative style)                |
-| `toPartialResult()` / `toPartialResult(int)`  | Returns successful items + errors (partial success)           |
-| `into(Validation)`                            | Accumulates errors into existing `Validation` (mutable state) |
-| `withIndex(Collector<...>)`                   | Wraps collector to add `[0]`, `[1]`, etc. prefixes            |
-| `withPrefix(String / Number, Collector<...>)` | Wraps collector to add field prefix to all errors             |
+| Method                                        | Description                                                             |
+|-----------------------------------------------|-------------------------------------------------------------------------|
+| `toResultList()` / `toResultList(int)`        | Returns `Result<List<T>>` (functional style)                            |
+| `toListOrThrow()` / `toListOrThrow(int)`      | Returns `List<T>` or throws (imperative style)                          |
+| `toPartialResult()` / `toPartialResult(int)`  | Returns successful items + errors (partial success)                     |
+| `toValidation()`                              | Returns `Validation` with accumulated errors, discarding success values |
+| `addErrorsTo(Validation)`                     | Accumulates errors into existing `Validation` (mutable state)           |
+| `withIndex(Collector<...>)`                   | Wraps collector to add `[0]`, `[1]`, etc. prefixes                      |
+| `withPrefix(String / Number, Collector<...>)` | Wraps collector to add field prefix to all errors                       |
 
 > [!NOTE]
 > The optional `int` parameter provides an `initialCapacity` hint for ArrayList optimization.

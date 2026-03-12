@@ -59,18 +59,6 @@ public record ValidationErrors(
         Map<FieldKey, List<TemplateString>> fieldErrors
 ) {
     /**
-     * Compact constructor that ensures deep immutability through defensive copying.
-     * <p>
-     * Creates unmodifiable copies of both the root errors list and the field errors map,
-     * including copies of each list within the map.
-     */
-    public ValidationErrors {
-        rootErrors = List.copyOf(rootErrors);
-        fieldErrors = Map.copyOf(fieldErrors.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> List.copyOf(e.getValue()))));
-    }
-
-    /**
      * Creates an empty {@code ValidationErrors} with no errors.
      * <p>
      * Example:

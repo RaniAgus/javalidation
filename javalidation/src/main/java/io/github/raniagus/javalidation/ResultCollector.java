@@ -182,11 +182,11 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
      *
      * users.stream()
      *     .map(this::validateUser)
-     *     .collect(withPrefix("users", into(validation)));
+     *     .collect(withPrefix("users", addErrorsTo(validation)));
      *
      * orders.stream()
      *     .map(this::validateOrder)
-     *     .collect(withPrefix("orders", into(validation)));
+     *     .collect(withPrefix("orders", addErrorsTo(validation)));
      *
      * validation.check(); // throws if any errors accumulated
      * }</pre>
@@ -197,13 +197,57 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
      * @see #withPrefix(String, Collector)
      * @see Validation
      */
-    static <T extends @Nullable Object> Collector<Result<T>, ValidationCollector<T>, Validation> into(Validation validation) {
+    static <T extends @Nullable Object> Collector<Result<T>, ValidationCollector<T>, Validation> addErrorsTo(Validation validation) {
         return Collector.of(
                 () -> new ValidationCollector<>(validation),
                 ValidationCollector::add,
                 ValidationCollector::combine,
                 ValidationCollector::finish
         );
+    }
+
+    /**
+     * Returns a {@link Collector} that collects errors from {@link Result} elements into a new
+     * {@link ValidationErrors} object, discarding success values.
+     * <p>
+     * Unlike {@link #addErrorsTo(Validation)}, this collector creates a fresh {@link Validation}
+     * internally and returns the accumulated {@link ValidationErrors} at the end.
+     * <p>
+     * <strong>Example:</strong>
+     * <pre>{@code
+     * ValidationErrors errors = items.stream()
+     *     .map(this::validateItem)
+     *     .collect(withIndex(toValidationErrors()));
+     * }</pre>
+     *
+     * @param <T> the type of the success values (discarded)
+     * @return a collector that produces a {@link ValidationErrors} with all accumulated errors
+     * @see #addErrorsTo(Validation)
+     * @see #withIndex(Collector)
+     * @see #withPrefix(String, Collector)
+     */
+    /**
+     * Returns a {@link Collector} that collects errors from {@link Result} elements into a new
+     * {@link Validation} object, discarding success values.
+     * <p>
+     * Unlike {@link #addErrorsTo(Validation)}, this collector creates a fresh {@link Validation}
+     * internally and returns it at the end.
+     * <p>
+     * <strong>Example:</strong>
+     * <pre>{@code
+     * Validation validation = items.stream()
+     *     .map(this::validateItem)
+     *     .collect(withIndex(toValidation()));
+     * }</pre>
+     *
+     * @param <T> the type of the success values (discarded)
+     * @return a collector that produces a {@link Validation} with all accumulated errors
+     * @see #addErrorsTo(Validation)
+     * @see #withIndex(Collector)
+     * @see #withPrefix(String, Collector)
+     */
+    static <T extends @Nullable Object> Collector<Result<T>, ValidationCollector<T>, Validation> toValidation() {
+        return addErrorsTo(Validation.create());
     }
 
     /**
