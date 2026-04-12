@@ -56,6 +56,7 @@ class JakartaValidationsTest {
             "DigitsRecord",
             "DigitsPrimitiveRecord",
             "DigitsNumberRecord",
+            "DigitsCharSequenceRecord",
             "NotNullAndSizeRecord",
             "NotNullAndMinRecord",
     })
@@ -646,6 +647,53 @@ class JakartaValidationsTest {
         @Test
         void tooManyFractionDigits_hasFieldError() {
             assertThat(validator.validate(new DigitsRecord(new BigDecimal("12345.678"))))
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Digits.message", 5, 2));
+        }
+    }
+
+    @Nested
+    class DigitsCharSequence {
+        DigitsCharSequenceRecordValidator validator = new DigitsCharSequenceRecordValidator();
+
+        @Test
+        void nullValue_noErrors() {
+            assertThat(validator.validate(new DigitsCharSequenceRecord(null)))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void validIntegerOnly_noErrors() {
+            assertThat(validator.validate(new DigitsCharSequenceRecord("12345")))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void validDecimal_noErrors() {
+            assertThat(validator.validate(new DigitsCharSequenceRecord("12345.67")))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void negativeValidDecimal_noErrors() {
+            assertThat(validator.validate(new DigitsCharSequenceRecord("-12345.67")))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void tooManyIntegerDigits_hasFieldError() {
+            assertThat(validator.validate(new DigitsCharSequenceRecord("123456.7")))
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Digits.message", 5, 2));
+        }
+
+        @Test
+        void tooManyFractionDigits_hasFieldError() {
+            assertThat(validator.validate(new DigitsCharSequenceRecord("12345.678")))
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Digits.message", 5, 2));
+        }
+
+        @Test
+        void nonNumericValue_hasFieldError() {
+            assertThat(validator.validate(new DigitsCharSequenceRecord("abc")))
                     .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Digits.message", 5, 2));
         }
     }

@@ -158,10 +158,22 @@ public interface NullUnsafeWriter extends ValidationWriter {
 
     record Pattern(String regex, String message, Object... args) implements NullUnsafeWriter {
         @Override
+        public Stream<String> imports() {
+            return Stream.of("java.util.regex.Pattern");
+        }
+
+        @Override
+        public void writePropertiesTo(ValidationOutput out) {
+            out.write("""
+                    private static final Pattern %s_PATTERN = Pattern.compile("%s");
+                    """.formatted(out.getVariable().toUpperCase(), regex));
+        }
+
+        @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (!%s.toString().matches("%s")) {\
-                    """.formatted(out.getVariable(), regex));
+                    if (!%s_PATTERN.matcher(%s.toString()).matches()) {\
+                    """.formatted(out.getVariable().toUpperCase(), out.getVariable()));
             out.incrementIndentationLevel();
             out.write("""
                     validation.addError("%s"%s);\
@@ -188,18 +200,28 @@ public interface NullUnsafeWriter extends ValidationWriter {
         @Override
         public Stream<String> imports() {
             return switch (kind) {
-                case CHAR_SEQUENCE, BIG_DECIMAL -> Stream.empty();
+                case CHAR_SEQUENCE -> Stream.of("java.util.regex.Pattern");
+                case BIG_DECIMAL -> Stream.empty();
                 case BIG_INTEGER, NUMBER, BYTE, SHORT, INTEGER, LONG -> Stream.of("java.math.BigDecimal");
             };
         }
 
         @Override
-        public void writeBodyTo(ValidationOutput out) {
+        public void writePropertiesTo(ValidationOutput out) {
             if (kind == NumericKind.CHAR_SEQUENCE) {
                 String pattern = "^-?\\\\d{0," + integer + "}(\\\\.\\\\d{0," + fraction + "})?$";
                 out.write("""
-                    if (!%s.toString().matches("%s")) {\
-                    """.formatted(out.getVariable(), pattern));
+                        private static final Pattern %s_DIGITS_PATTERN = Pattern.compile("%s");
+                        """.formatted(out.getVariable().toUpperCase(), pattern));
+            }
+        }
+
+        @Override
+        public void writeBodyTo(ValidationOutput out) {
+            if (kind == NumericKind.CHAR_SEQUENCE) {
+                out.write("""
+                    if (!%s_DIGITS_PATTERN.matcher(%s.toString()).matches()) {\
+                    """.formatted(out.getVariable().toUpperCase(), out.getVariable()));
             } else {
                 String bdExpr = switch (kind) {
                     case CHAR_SEQUENCE -> throw new IllegalStateException("CHAR_SEQUENCE should be handled separately");
