@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class DecimalMaxInclusiveRecordValidator implements InitializableValidator<DecimalMaxInclusiveRecord> {
 
+    private static final BigDecimal VALUE_LE_10_5 = new BigDecimal("10.5");
+
     @Override
     public void initialize(ValidatorsHolder holder) {
     }
@@ -20,7 +22,7 @@ public class DecimalMaxInclusiveRecordValidator implements InitializableValidato
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!(value.compareTo(new BigDecimal("10.5")) <= 0)) {
+            if (!(value.compareTo(VALUE_LE_10_5) <= 0)) {
                 validation.addError("io.github.raniagus.javalidation.constraints.DecimalMax.message", "10.5");
             }
         });

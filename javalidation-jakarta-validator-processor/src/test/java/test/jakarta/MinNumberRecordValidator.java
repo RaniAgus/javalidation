@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class MinNumberRecordValidator implements InitializableValidator<MinNumberRecord> {
 
+    private static final BigDecimal VALUE_GE_10 = new BigDecimal("10");
+
     @Override
     public void initialize(ValidatorsHolder holder) {
     }
@@ -20,7 +22,7 @@ public class MinNumberRecordValidator implements InitializableValidator<MinNumbe
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!(new BigDecimal(value.toString()).compareTo(new BigDecimal("10")) >= 0)) {
+            if (!(new BigDecimal(value.toString()).compareTo(VALUE_GE_10) >= 0)) {
                 validation.addError("io.github.raniagus.javalidation.constraints.Min.message", 10);
             }
         });

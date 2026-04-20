@@ -60,12 +60,26 @@ public interface NullUnsafeWriter extends ValidationWriter {
         }
 
         @Override
+        public void writePropertiesTo(ValidationOutput out) {
+            String fieldName = constantName(out.getVariable());
+            switch (kind) {
+                case BIG_DECIMAL, NUMBER, CHAR_SEQUENCE -> out.write("""
+                        private static final BigDecimal %s = new BigDecimal("%s");
+                        """.formatted(fieldName, value));
+                case BIG_INTEGER -> out.write("""
+                        private static final BigInteger %s = new BigInteger("%s");
+                        """.formatted(fieldName, value));
+                case BYTE, SHORT, INTEGER, LONG -> { /* primitives: no caching needed */ }
+            }
+        }
+
+        @Override
         public void writeBodyTo(ValidationOutput out) {
+            String fieldName = constantName(out.getVariable());
             String comparison = switch (kind) {
-                case BIG_DECIMAL -> "%s.compareTo(new BigDecimal(\"%s\")) %s 0".formatted(out.getVariable(), value, operator);
-                case BIG_INTEGER -> "%s.compareTo(new BigInteger(\"%s\")) %s 0".formatted(out.getVariable(), value, operator);
+                case BIG_DECIMAL, BIG_INTEGER -> "%s.compareTo(%s) %s 0".formatted(out.getVariable(), fieldName, operator);
                 case BYTE, SHORT, INTEGER, LONG -> "%s %s %s".formatted(out.getVariable(), operator, value);
-                case NUMBER, CHAR_SEQUENCE -> "new BigDecimal(%s.toString()).compareTo(new BigDecimal(\"%s\")) %s 0".formatted(out.getVariable(), value, operator);
+                case NUMBER, CHAR_SEQUENCE -> "new BigDecimal(%s.toString()).compareTo(%s) %s 0".formatted(out.getVariable(), fieldName, operator);
             };
             out.write("""
                     if (!(%s)) {\
@@ -76,6 +90,18 @@ public interface NullUnsafeWriter extends ValidationWriter {
                     """.formatted(message, formatArg()));
             out.decrementIndentationLevel();
             out.write("}");
+        }
+
+        private String constantName(String variable) {
+            String opSuffix = switch (operator) {
+                case ">=" -> "GE";
+                case ">"  -> "GT";
+                case "<=" -> "LE";
+                case "<"  -> "LT";
+                default   -> operator;
+            };
+            String valueSuffix = value.toString().replace("-", "N").replace(".", "_");
+            return variable.toUpperCase() + "_" + opSuffix + "_" + valueSuffix;
         }
 
         private String formatArg() {
