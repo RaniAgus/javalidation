@@ -37,7 +37,7 @@ public final class JakartaAnnotationParser {
                 parseDigitsAnnotation(type),
                 parseFutureAnnotation(type),
                 parseFutureOrPresentAnnotation(type),
-                paresPastAnnotation(type),
+                parsePastAnnotation(type),
                 parsePastOrPresentAnnotation(type)
         ).filter(Objects::nonNull);
     }
@@ -250,7 +250,7 @@ public final class JakartaAnnotationParser {
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Email.message");
         return new NullUnsafeWriter.Pattern(
-                "^[^@]+@[^@]+\\\\.[^@]+$", // TODO: check email validation regex
+                "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
                 resolveMessage(message)
         );
     }
@@ -410,7 +410,7 @@ public final class JakartaAnnotationParser {
                 "isBefore", false, temporalKind, resolveMessage(message));
     }
 
-    public static @Nullable NullUnsafeWriter paresPastAnnotation(TypeAdapter type) {
+    public static @Nullable NullUnsafeWriter parsePastAnnotation(TypeAdapter type) {
         TemporalKind temporalKind = type.getTemporalKind();
         if (temporalKind == null) {
             return null;

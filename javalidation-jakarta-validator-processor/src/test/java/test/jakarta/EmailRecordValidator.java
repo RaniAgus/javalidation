@@ -10,7 +10,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class EmailRecordValidator implements InitializableValidator<EmailRecord> {
-    private static final Pattern VALUE_PATTERN = Pattern.compile("^[^@]+@[^@]+\\.[^@]+$");
+    private static final Pattern VALUE_PATTERN = Pattern.compile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$");
 
     @Override
     public void initialize(ValidatorsHolder holder) {
