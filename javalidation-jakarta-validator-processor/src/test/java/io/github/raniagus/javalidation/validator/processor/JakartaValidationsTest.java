@@ -246,14 +246,56 @@ class JakartaValidationsTest {
         }
 
         @Test
+        void validEmailWithSubdomain_noErrors() {
+            assertThat(validator.validate(new EmailRecord("user@mail.example.com")))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void validEmailWithPlusTag_noErrors() {
+            assertThat(validator.validate(new EmailRecord("user+tag@example.com")))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void validEmailWithDots_noErrors() {
+            assertThat(validator.validate(new EmailRecord("first.last@example.com")))
+                    .isEqualTo(ValidationErrors.empty());
+        }
+
+        @Test
+        void emptyString_hasFieldError() {
+            assertThat(validator.validate(new EmailRecord("")))
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Email.message"));
+        }
+
+        @Test
         void missingAt_hasFieldError() {
             assertThat(validator.validate(new EmailRecord("userexample.com")))
                     .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Email.message"));
         }
 
         @Test
+        void missingLocal_hasFieldError() {
+            assertThat(validator.validate(new EmailRecord("@example.com")))
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Email.message"));
+        }
+
+        @Test
         void missingDomain_hasFieldError() {
             assertThat(validator.validate(new EmailRecord("user@")))
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Email.message"));
+        }
+
+        @Test
+        void multipleAt_hasFieldError() {
+            assertThat(validator.validate(new EmailRecord("user@@example.com")))
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Email.message"));
+        }
+
+        @Test
+        void spacesInEmail_hasFieldError() {
+            assertThat(validator.validate(new EmailRecord("user name@example.com")))
                     .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Email.message"));
         }
     }
