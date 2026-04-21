@@ -1,5 +1,7 @@
 package io.github.raniagus.javalidation;
 
+import java.util.Arrays;
+
 /**
  * A type-safe part of a {@link FieldKey} path, representing either a named string segment or a
  * numeric index segment.
@@ -26,6 +28,25 @@ public sealed interface FieldKeyPart extends Comparable<FieldKeyPart> {
         } else {
             throw new IllegalArgumentException("Unsupported key type: " + key.getClass().getName());
         }
+    }
+
+    static FieldKeyPart[] arrayOf(Object... keys) {
+        return Arrays.stream(keys)
+                .map(FieldKeyPart::of)
+                .toArray(FieldKeyPart[]::new);
+    }
+
+    static FieldKeyPart[] arrayOf(Number... keys) {
+        return Arrays.stream(keys)
+                .map(Number::intValue)
+                .map(IntKey::new)
+                .toArray(FieldKeyPart[]::new);
+    }
+
+    static FieldKeyPart[] arrayOf(String... keys) {
+        return Arrays.stream(keys)
+                .map(StringKey::new)
+                .toArray(FieldKeyPart[]::new);
     }
 
     /**

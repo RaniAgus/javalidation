@@ -1,7 +1,6 @@
 package io.github.raniagus.javalidation;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Immutable container for accumulated validation errors.
@@ -174,10 +173,7 @@ public record ValidationErrors(
      * @return a new {@code ValidationErrors} with prefixed field paths
      */
     public ValidationErrors withPrefix(String... prefix) {
-        FieldKeyPart[] prefixParts = Arrays.stream(prefix)
-                .map(FieldKeyPart.StringKey::new)
-                .toArray(FieldKeyPart[]::new);
-        return withPrefix(prefixParts);
+        return withPrefix(FieldKeyPart.arrayOf(prefix));
     }
 
     /**
@@ -189,11 +185,7 @@ public record ValidationErrors(
      * @return a new {@code ValidationErrors} with prefixed field paths
      */
     public ValidationErrors withPrefix(Number... prefix) {
-        FieldKeyPart[] prefixParts = Arrays.stream(prefix)
-                .map(Number::intValue)
-                .map(FieldKeyPart.IntKey::new)
-                .toArray(FieldKeyPart[]::new);
-        return withPrefix(prefixParts);
+        return withPrefix(FieldKeyPart.arrayOf(prefix));
     }
 
     /**
@@ -212,10 +204,7 @@ public record ValidationErrors(
      * @return a new {@code ValidationErrors} with prefixed field paths
      */
     public ValidationErrors withPrefix(Object... prefix) {
-        FieldKeyPart[] prefixParts = Arrays.stream(prefix)
-                .map(FieldKeyPart::of)
-                .toArray(FieldKeyPart[]::new);
-        return withPrefix(prefixParts);
+        return withPrefix(FieldKeyPart.arrayOf(prefix));
     }
 
     private ValidationErrors withPrefix(FieldKeyPart... prefix) {
@@ -272,6 +261,8 @@ public record ValidationErrors(
      * @return the total number of errors
      */
     public int count() {
-        return rootErrors.size() + fieldErrors.values().stream().mapToInt(List::size).sum();
+        return rootErrors.size() + fieldErrors.values().stream()
+                .mapToInt(List::size)
+                .sum();
     }
 }

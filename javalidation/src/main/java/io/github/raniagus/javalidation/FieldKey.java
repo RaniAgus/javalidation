@@ -36,10 +36,7 @@ public record FieldKey(FieldKeyPart[] parts) implements Comparable<FieldKey> {
      * @return a new {@code FieldKey}
      */
     public static FieldKey of(String... key) {
-        FieldKeyPart[] parts = Arrays.stream(key)
-                .map(FieldKeyPart.StringKey::new)
-                .toArray(FieldKeyPart[]::new);
-        return new FieldKey(parts);
+        return new FieldKey(FieldKeyPart.arrayOf(key));
     }
 
     /**
@@ -47,15 +44,11 @@ public record FieldKey(FieldKeyPart[] parts) implements Comparable<FieldKey> {
      * <p>
      * Each element is converted to an {@code int} via {@link Number#intValue()}.
      *
-     * @param key the numeric segments
+     * @param keys the numeric segments
      * @return a new {@code FieldKey}
      */
-    public static FieldKey of(Number... key) {
-        FieldKeyPart[] parts = Arrays.stream(key)
-                .map(Number::intValue)
-                .map(FieldKeyPart.IntKey::new)
-                .toArray(FieldKeyPart[]::new);
-        return new FieldKey(parts);
+    public static FieldKey of(Number... keys) {
+        return new FieldKey(FieldKeyPart.arrayOf(keys));
     }
 
     /**
@@ -71,10 +64,7 @@ public record FieldKey(FieldKeyPart[] parts) implements Comparable<FieldKey> {
      * @throws IllegalArgumentException if any element is neither a {@link String} nor a {@link Number}
      */
     public static FieldKey of(Object... key) {
-        FieldKeyPart[] parts = Arrays.stream(key)
-                .map(FieldKeyPart::of)
-                .toArray(FieldKeyPart[]::new);
-        return new FieldKey(parts);
+        return new FieldKey(FieldKeyPart.arrayOf(key));
     }
 
     /**
