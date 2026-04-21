@@ -36,9 +36,9 @@ class ValidateAnnotationTest {
                 .withProcessors(new ValidatorProcessor())
                 .compile(sourceFile, triggerFile);
 
-        assertThat(compilation).failed();
+        assertThat(compilation).succeeded();
         assertThat(compilation)
-                .hadErrorContaining("@Valid can only be applied to records, but it was applied to test.InvalidClass");
+                .hadWarningContaining("@Valid can only be applied to records, but it was applied to test.InvalidClass");
     }
 
     @Test

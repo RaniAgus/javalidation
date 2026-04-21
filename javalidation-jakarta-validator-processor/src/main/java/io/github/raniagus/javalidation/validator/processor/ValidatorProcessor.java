@@ -218,7 +218,7 @@ public class ValidatorProcessor extends AbstractProcessor {
         }
 
         processingEnv.getMessager().printMessage(
-                Diagnostic.Kind.ERROR,
+                Diagnostic.Kind.WARNING,
                 "@Valid can only be applied to records, but it was applied to " + referred,
                 param
         );
@@ -235,7 +235,7 @@ public class ValidatorProcessor extends AbstractProcessor {
                         return getRecordAndNestedValidAnnotated(subtype, visited);
                     }
                     processingEnv.getMessager().printMessage(
-                            Diagnostic.Kind.ERROR,
+                            Diagnostic.Kind.WARNING,
                             "Permitted subtype " + subtype + " is not a record, skipping",
                             param
                     );
