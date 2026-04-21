@@ -208,30 +208,10 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
 
     /**
      * Returns a {@link Collector} that collects errors from {@link Result} elements into a new
-     * {@link ValidationErrors} object, discarding success values.
-     * <p>
-     * Unlike {@link #addErrorsTo(Validation)}, this collector creates a fresh {@link Validation}
-     * internally and returns the accumulated {@link ValidationErrors} at the end.
-     * <p>
-     * <strong>Example:</strong>
-     * <pre>{@code
-     * ValidationErrors errors = items.stream()
-     *     .map(this::validateItem)
-     *     .collect(withIndex(toValidationErrors()));
-     * }</pre>
-     *
-     * @param <T> the type of the success values (discarded)
-     * @return a collector that produces a {@link ValidationErrors} with all accumulated errors
-     * @see #addErrorsTo(Validation)
-     * @see #withIndex(Collector)
-     * @see #withPrefix(String, Collector)
-     */
-    /**
-     * Returns a {@link Collector} that collects errors from {@link Result} elements into a new
      * {@link Validation} object, discarding success values.
      * <p>
      * Unlike {@link #addErrorsTo(Validation)}, this collector creates a fresh {@link Validation}
-     * internally and returns it at the end.
+     * internally and returns the accumulated {@link ValidationErrors} at the end.
      * <p>
      * <strong>Example:</strong>
      * <pre>{@code
