@@ -1,5 +1,7 @@
 package test.jakarta;
 
+import io.github.raniagus.javalidation.Constraint;
+import io.github.raniagus.javalidation.Constraints;
 import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.validator.InitializableValidator;
 import io.github.raniagus.javalidation.validator.ValidatorsHolder;
@@ -10,19 +12,19 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class PastRecordValidator implements InitializableValidator<PastRecord> {
+    private static final Constraint<Instant> VALUE_PAST = Constraints.past(Instant::now);
 
+    
     @Override
     public void initialize(ValidatorsHolder holder) {
     }
-
+    
     @Override
     public void validate(Validation validation, PastRecord root) {
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!(value.isBefore(Instant.now()) == true)) {
-                validation.addError("io.github.raniagus.javalidation.constraints.Past.message");
-            }
+            VALUE_PAST.validate(validation, value);
         });
     }
 }

@@ -1,5 +1,7 @@
 package test.collection;
 
+import io.github.raniagus.javalidation.Constraint;
+import io.github.raniagus.javalidation.Constraints;
 import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.validator.InitializableValidator;
 import io.github.raniagus.javalidation.validator.ValidatorsHolder;
@@ -9,11 +11,13 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class PrimitiveIterableRecordValidator implements InitializableValidator<PrimitiveIterableRecord> {
+    private static final Constraint<String> TAGSITEM_SIZE = Constraints.length(3, 10);
 
+    
     @Override
     public void initialize(ValidatorsHolder holder) {
     }
-
+    
     @Override
     public void validate(Validation validation, PrimitiveIterableRecord root) {
         validation.withField("tags", () -> {
@@ -24,9 +28,7 @@ public class PrimitiveIterableRecordValidator implements InitializableValidator<
             }
             validation.withEach(tags, tagsItem -> {
                 if (tagsItem == null) return;
-                if (tagsItem.length() < 3 || tagsItem.length() > 10) {
-                    validation.addError("io.github.raniagus.javalidation.constraints.Size.message", 3, 10);
-                }
+                TAGSITEM_SIZE.validate(validation, tagsItem);
             });
         });
     }

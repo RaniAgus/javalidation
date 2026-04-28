@@ -9,7 +9,7 @@ import io.github.raniagus.javalidation.FieldKey;
 import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.ValidationErrors;
 import io.github.raniagus.javalidation.validator.InitializableValidator;
-import io.github.raniagus.javalidation.validator.Validator;
+import io.github.raniagus.javalidation.Validator;
 import io.github.raniagus.javalidation.validator.ValidatorsHolder;
 import java.util.*;
 import java.util.function.Consumer;

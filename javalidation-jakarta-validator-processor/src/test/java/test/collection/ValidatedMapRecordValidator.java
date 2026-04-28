@@ -1,8 +1,10 @@
 package test.collection;
 
+import io.github.raniagus.javalidation.Constraint;
+import io.github.raniagus.javalidation.Constraints;
 import io.github.raniagus.javalidation.Validation;
+import io.github.raniagus.javalidation.Validator;
 import io.github.raniagus.javalidation.validator.InitializableValidator;
-import io.github.raniagus.javalidation.validator.Validator;
 import io.github.raniagus.javalidation.validator.ValidatorsHolder;
 import javax.annotation.processing.Generated;
 import org.jspecify.annotations.NullMarked;

@@ -16,6 +16,8 @@ public record RecordValidatorClassWriter(
     public Stream<String> imports() {
         return Stream.concat(
                 Stream.of(
+                        "io.github.raniagus.javalidation.Constraint",
+                        "io.github.raniagus.javalidation.Constraints",
                         "io.github.raniagus.javalidation.Validation",
                         "io.github.raniagus.javalidation.validator.InitializableValidator",
                         "io.github.raniagus.javalidation.validator.ValidatorsHolder"

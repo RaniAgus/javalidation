@@ -1,7 +1,4 @@
-package io.github.raniagus.javalidation.validator;
-
-import io.github.raniagus.javalidation.Validation;
-import io.github.raniagus.javalidation.ValidationErrors;
+package io.github.raniagus.javalidation;
 
 public interface Validator<T> {
     default ValidationErrors validate(T value) {

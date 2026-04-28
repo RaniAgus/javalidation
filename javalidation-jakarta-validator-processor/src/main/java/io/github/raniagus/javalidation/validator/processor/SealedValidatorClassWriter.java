@@ -19,7 +19,7 @@ public record SealedValidatorClassWriter(
                 Stream.of(
                         "io.github.raniagus.javalidation.Validation",
                         "io.github.raniagus.javalidation.validator.InitializableValidator",
-                        "io.github.raniagus.javalidation.validator.Validator",
+                        "io.github.raniagus.javalidation.Validator",
                         "io.github.raniagus.javalidation.validator.ValidatorsHolder"
                 ),
                 permittedWriters.stream().flatMap(w -> Stream.of(

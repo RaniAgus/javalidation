@@ -76,6 +76,8 @@ class ValidateAnnotationTest {
                 .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.SimpleRecordValidator", """
                         package test;
                         
+                        import io.github.raniagus.javalidation.Constraint;
+                        import io.github.raniagus.javalidation.Constraints;
                         import io.github.raniagus.javalidation.Validation;
                         import io.github.raniagus.javalidation.validator.InitializableValidator;
                         import io.github.raniagus.javalidation.validator.ValidatorsHolder;
@@ -102,6 +104,7 @@ class ValidateAnnotationTest {
                         package io.github.raniagus.javalidation.validator;
                         
                         import io.github.raniagus.javalidation.ValidationErrors;
+                        import io.github.raniagus.javalidation.Validator;
                         import java.util.Map;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
@@ -188,9 +191,11 @@ class ValidateAnnotationTest {
                 .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.UserRequestValidator", """
                         package test;
                         
+                        import io.github.raniagus.javalidation.Constraint;
+                        import io.github.raniagus.javalidation.Constraints;
                         import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.Validator;
                         import io.github.raniagus.javalidation.validator.InitializableValidator;
-                        import io.github.raniagus.javalidation.validator.Validator;
                         import io.github.raniagus.javalidation.validator.ValidatorsHolder;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
@@ -222,6 +227,8 @@ class ValidateAnnotationTest {
                 .hasSourceEquivalentTo(JavaFileObjects.forSourceString("other.UserAddressValidator", """
                         package other;
                         
+                        import io.github.raniagus.javalidation.Constraint;
+                        import io.github.raniagus.javalidation.Constraints;
                         import io.github.raniagus.javalidation.Validation;
                         import io.github.raniagus.javalidation.validator.InitializableValidator;
                         import io.github.raniagus.javalidation.validator.ValidatorsHolder;
@@ -248,6 +255,7 @@ class ValidateAnnotationTest {
                         package io.github.raniagus.javalidation.validator;
                         
                         import io.github.raniagus.javalidation.ValidationErrors;
+                        import io.github.raniagus.javalidation.Validator;
                         import java.util.Map;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
@@ -334,9 +342,11 @@ class ValidateAnnotationTest {
                 .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.UserRequestValidator", """
                         package test;
                         
+                        import io.github.raniagus.javalidation.Constraint;
+                        import io.github.raniagus.javalidation.Constraints;
                         import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.Validator;
                         import io.github.raniagus.javalidation.validator.InitializableValidator;
-                        import io.github.raniagus.javalidation.validator.Validator;
                         import io.github.raniagus.javalidation.validator.ValidatorsHolder;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
@@ -369,6 +379,8 @@ class ValidateAnnotationTest {
                         """
                         package test;
                         
+                        import io.github.raniagus.javalidation.Constraint;
+                        import io.github.raniagus.javalidation.Constraints;
                         import io.github.raniagus.javalidation.Validation;
                         import io.github.raniagus.javalidation.validator.InitializableValidator;
                         import io.github.raniagus.javalidation.validator.ValidatorsHolder;
@@ -395,6 +407,7 @@ class ValidateAnnotationTest {
                         package io.github.raniagus.javalidation.validator;
                         
                         import io.github.raniagus.javalidation.ValidationErrors;
+                        import io.github.raniagus.javalidation.Validator;
                         import java.util.Map;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
@@ -479,9 +492,11 @@ class ValidateAnnotationTest {
                 .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.UserRequestValidator", """
                         package test;
                         
+                        import io.github.raniagus.javalidation.Constraint;
+                        import io.github.raniagus.javalidation.Constraints;
                         import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.Validator;
                         import io.github.raniagus.javalidation.validator.InitializableValidator;
-                        import io.github.raniagus.javalidation.validator.Validator;
                         import io.github.raniagus.javalidation.validator.ValidatorsHolder;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
@@ -514,9 +529,11 @@ class ValidateAnnotationTest {
                         """
                         package test;
                         
+                        import io.github.raniagus.javalidation.Constraint;
+                        import io.github.raniagus.javalidation.Constraints;
                         import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.Validator;
                         import io.github.raniagus.javalidation.validator.InitializableValidator;
-                        import io.github.raniagus.javalidation.validator.Validator;
                         import io.github.raniagus.javalidation.validator.ValidatorsHolder;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
@@ -548,6 +565,7 @@ class ValidateAnnotationTest {
                         package io.github.raniagus.javalidation.validator;
                         
                         import io.github.raniagus.javalidation.ValidationErrors;
+                        import io.github.raniagus.javalidation.Validator;
                         import java.util.Map;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
@@ -639,9 +657,11 @@ class ValidateAnnotationTest {
                 .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.CircleValidator", """
                         package test;
     
+                        import io.github.raniagus.javalidation.Constraint;
+                        import io.github.raniagus.javalidation.Constraints;
                         import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.Validator;
                         import io.github.raniagus.javalidation.validator.InitializableValidator;
-                        import io.github.raniagus.javalidation.validator.Validator;
                         import io.github.raniagus.javalidation.validator.ValidatorsHolder;
                         import javax.annotation.processing.Generated;
                         import org.jspecify.annotations.NullMarked;
@@ -673,6 +693,8 @@ class ValidateAnnotationTest {
                 .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.CenterValidator", """
                         package test;
 
+                        import io.github.raniagus.javalidation.Constraint;
+                        import io.github.raniagus.javalidation.Constraints;
                         import io.github.raniagus.javalidation.Validation;
                         import io.github.raniagus.javalidation.validator.InitializableValidator;
                         import io.github.raniagus.javalidation.validator.ValidatorsHolder;
@@ -700,6 +722,8 @@ class ValidateAnnotationTest {
                 .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.RectangleValidator", """
                         package test;
     
+                        import io.github.raniagus.javalidation.Constraint;
+                        import io.github.raniagus.javalidation.Constraints;
                         import io.github.raniagus.javalidation.Validation;
                         import io.github.raniagus.javalidation.validator.InitializableValidator;
                         import io.github.raniagus.javalidation.validator.ValidatorsHolder;
@@ -727,8 +751,8 @@ class ValidateAnnotationTest {
                     package test;
 
                     import io.github.raniagus.javalidation.Validation;
+                    import io.github.raniagus.javalidation.Validator;
                     import io.github.raniagus.javalidation.validator.InitializableValidator;
-                    import io.github.raniagus.javalidation.validator.Validator;
                     import io.github.raniagus.javalidation.validator.ValidatorsHolder;
                     import javax.annotation.processing.Generated;
                     import org.jspecify.annotations.NullMarked;
@@ -762,6 +786,7 @@ class ValidateAnnotationTest {
                     package io.github.raniagus.javalidation.validator;
 
                     import io.github.raniagus.javalidation.ValidationErrors;
+                    import io.github.raniagus.javalidation.Validator;
                     import java.util.Map;
                     import javax.annotation.processing.Generated;
                     import org.jspecify.annotations.NullMarked;

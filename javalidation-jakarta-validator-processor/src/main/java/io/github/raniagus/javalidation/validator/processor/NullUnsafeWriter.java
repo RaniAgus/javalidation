@@ -1,44 +1,67 @@
 package io.github.raniagus.javalidation.validator.processor;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
 
 public interface NullUnsafeWriter extends ValidationWriter {
 
+    enum SizeKind {
+        /** {@code String} — uses {@code String.length()}. */
+        LENGTH,
+        /** {@code Collection<?>} — uses {@code Collection.size()}. */
+        COLLECTION,
+        /** {@code Map<?, ?>} — uses {@code Map.size()}. */
+        MAP
+    }
+
     record Size(
-            String accessor,
+            SizeKind kind,
             String message,
             int min,
             int max
     ) implements NullUnsafeWriter {
         @Override
+        public void writePropertiesTo(ValidationOutput out) {
+            String typeName = switch (kind) {
+                case LENGTH -> "String";
+                case COLLECTION -> "java.util.Collection<?>";
+                case MAP -> "java.util.Map<?, ?>";
+            };
+            String method = switch (kind) {
+                case LENGTH -> "length";
+                case COLLECTION -> "size";
+                case MAP -> "sizeMap";
+            };
+            out.write("""
+                    private static final Constraint<%s> %s_SIZE = Constraints.%s(%d, %d);
+                    """.formatted(typeName, out.getVariable().toUpperCase(), method, min, max));
+        }
+
+        @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (%1$s.%2$s() < %3$d || %1$s.%2$s() > %4$d) {\
-                    """.formatted(out.getVariable(), accessor, min, max));
-            out.incrementIndentationLevel();
-            out.write("""
-                    validation.addError("%s", %d, %d);\
-                    """.formatted(message, min, max));
-            out.decrementIndentationLevel();
-            out.write("}");
+                    %s_SIZE.validate(validation, %s);\
+                    """.formatted(out.getVariable().toUpperCase(), out.getVariable()));
         }
     }
 
     record EqualTo(String value, String message) implements NullUnsafeWriter {
         @Override
+        public void writePropertiesTo(ValidationOutput out) {
+            String constSuffix = "true".equals(value) ? "ASSERT_TRUE" : "ASSERT_FALSE";
+            String method = "true".equals(value) ? "assertTrue" : "assertFalse";
+            out.write("""
+                    private static final Constraint<Boolean> %s_%s = Constraints.%s();
+                    """.formatted(out.getVariable().toUpperCase(), constSuffix, method));
+        }
+
+        @Override
         public void writeBodyTo(ValidationOutput out) {
+            String constSuffix = "true".equals(value) ? "ASSERT_TRUE" : "ASSERT_FALSE";
             out.write("""
-                    if (!%s.equals(%s)) {\
-                    """.formatted(out.getVariable(), value));
-            out.incrementIndentationLevel();
-            out.write("""
-                    validation.addError("%s");\
-                    """.formatted(message));
-            out.decrementIndentationLevel();
-            out.write("}");
+                    %s_%s.validate(validation, %s);\
+                    """.formatted(out.getVariable().toUpperCase(), constSuffix, out.getVariable()));
         }
     }
 
@@ -53,46 +76,103 @@ public interface NullUnsafeWriter extends ValidationWriter {
         @Override
         public Stream<String> imports() {
             return switch (kind) {
-                case BIG_DECIMAL, NUMBER, CHAR_SEQUENCE -> Stream.of("java.math.BigDecimal");
+                case BIG_DECIMAL -> Stream.of("java.math.BigDecimal");
                 case BIG_INTEGER -> Stream.of("java.math.BigInteger");
-                case BYTE, SHORT, INTEGER, LONG -> Stream.empty();
+                case BYTE, SHORT, INTEGER, LONG, NUMBER, CHAR_SEQUENCE -> Stream.empty();
             };
         }
 
         @Override
         public void writePropertiesTo(ValidationOutput out) {
-            String fieldName = constantName(out.getVariable());
-            switch (kind) {
-                case BIG_DECIMAL, NUMBER, CHAR_SEQUENCE -> out.write("""
-                        private static final BigDecimal %s = new BigDecimal("%s");
-                        """.formatted(fieldName, value));
-                case BIG_INTEGER -> out.write("""
-                        private static final BigInteger %s = new BigInteger("%s");
-                        """.formatted(fieldName, value));
-                case BYTE, SHORT, INTEGER, LONG -> { /* primitives: no caching needed */ }
-            }
+            String typeName = constraintTypeName();
+            String call = constraintsCall();
+            out.write("""
+                    private static final Constraint<%s> %s = Constraints.%s;
+                    """.formatted(typeName, constantName(out.getVariable()), call));
         }
 
         @Override
         public void writeBodyTo(ValidationOutput out) {
-            String fieldName = constantName(out.getVariable());
-            String comparison = switch (kind) {
-                case BIG_DECIMAL, BIG_INTEGER -> "%s.compareTo(%s) %s 0".formatted(out.getVariable(), fieldName, operator);
-                case BYTE, SHORT, INTEGER, LONG -> "%s %s %s".formatted(out.getVariable(), operator, value);
-                case NUMBER, CHAR_SEQUENCE -> "new BigDecimal(%s.toString()).compareTo(%s) %s 0".formatted(out.getVariable(), fieldName, operator);
+            String constName = constantName(out.getVariable());
+            String arg = needsCast() ? "(long) " + out.getVariable() : out.getVariable();
+            out.write("""
+                    %s.validate(validation, %s);\
+                    """.formatted(constName, arg));
+        }
+
+        private String constraintTypeName() {
+            return switch (kind) {
+                case BYTE, SHORT, INTEGER, LONG -> "Long";
+                case BIG_DECIMAL -> "BigDecimal";
+                case BIG_INTEGER -> "BigInteger";
+                case NUMBER -> "Number";
+                case CHAR_SEQUENCE -> "CharSequence";
             };
-            out.write("""
-                    if (!(%s)) {\
-                    """.formatted(comparison));
-            out.incrementIndentationLevel();
-            out.write("""
-                    validation.addError("%s"%s);\
-                    """.formatted(message, formatArg()));
-            out.decrementIndentationLevel();
-            out.write("}");
+        }
+
+        private String constraintsCall() {
+            if (!useValueAsArg) {
+                // @Positive / @PositiveOrZero / @Negative / @NegativeOrZero
+                String suffix = switch (kind) {
+                    case BYTE, SHORT, INTEGER, LONG -> "";
+                    case BIG_DECIMAL -> "BigDecimal";
+                    case BIG_INTEGER -> "BigInteger";
+                    case NUMBER, CHAR_SEQUENCE -> "Number";
+                };
+                return switch (operator) {
+                    case ">" -> "positive" + suffix + "()";
+                    case ">=" -> "positiveOrZero" + suffix + "()";
+                    case "<" -> "negative" + suffix + "()";
+                    case "<=" -> "negativeOrZero" + suffix + "()";
+                    default -> throw new IllegalStateException("Unexpected operator: " + operator);
+                };
+            }
+
+            if (value instanceof String sv) {
+                // @DecimalMin / @DecimalMax
+                boolean isMin = ">=".equals(operator) || ">".equals(operator);
+                boolean inclusive = ">=".equals(operator) || "<=".equals(operator);
+                String method = isMin ? "decimalMin" : "decimalMax";
+                return inclusive
+                        ? "%s(\"%s\")".formatted(method, sv)
+                        : "%s(\"%s\", false)".formatted(method, sv);
+            }
+
+            // @Min / @Max — value is a long
+            long lv = ((Number) value).longValue();
+            boolean isMin = ">=".equals(operator);
+            return switch (kind) {
+                case BYTE, SHORT, INTEGER, LONG -> isMin
+                        ? "minLong(%dL)".formatted(lv)
+                        : "maxLong(%dL)".formatted(lv);
+                case BIG_DECIMAL -> isMin
+                        ? "minBigDecimal(%dL)".formatted(lv)
+                        : "maxBigDecimal(%dL)".formatted(lv);
+                case BIG_INTEGER -> isMin
+                        ? "minBigInteger(%dL)".formatted(lv)
+                        : "maxBigInteger(%dL)".formatted(lv);
+                case NUMBER, CHAR_SEQUENCE -> isMin
+                        ? "minNumber(%dL)".formatted(lv)
+                        : "maxNumber(%dL)".formatted(lv);
+            };
+        }
+
+        private boolean needsCast() {
+            return kind == NumericKind.BYTE || kind == NumericKind.SHORT || kind == NumericKind.INTEGER;
         }
 
         private String constantName(String variable) {
+            if (!useValueAsArg) {
+                // positive/negative — no value suffix
+                String opPart = switch (operator) {
+                    case ">" -> "GT_0";
+                    case ">=" -> "GE_0";
+                    case "<" -> "LT_0";
+                    case "<=" -> "LE_0";
+                    default -> operator + "_0";
+                };
+                return variable.toUpperCase() + "_" + opPart;
+            }
             String opSuffix = switch (operator) {
                 case ">=" -> "GE";
                 case ">"  -> "GT";
@@ -102,12 +182,6 @@ public interface NullUnsafeWriter extends ValidationWriter {
             };
             String valueSuffix = value.toString().replace("-", "N").replace(".", "_");
             return variable.toUpperCase() + "_" + opSuffix + "_" + valueSuffix;
-        }
-
-        private String formatArg() {
-            if (!useValueAsArg) return "";
-            if (value instanceof String) return ", \"" + value + "\"";
-            return ", " + value;
         }
     }
 
@@ -120,99 +194,83 @@ public interface NullUnsafeWriter extends ValidationWriter {
 
         @Override
         public Stream<String> imports() {
-            return switch (kind) {
-                case INSTANT, LONG, INTEGER, SHORT, BYTE, DATE, CALENDAR -> Stream.of("java.time.Instant");
-                case LOCAL_DATE -> Stream.of("java.time.LocalDate");
-                case LOCAL_TIME -> Stream.of("java.time.LocalTime");
-                case LOCAL_DATE_TIME -> Stream.of("java.time.LocalDateTime");
-                case OFFSET_DATE_TIME -> Stream.of("java.time.OffsetDateTime");
-                case OFFSET_TIME -> Stream.of("java.time.OffsetTime");
-                case ZONED_DATE_TIME -> Stream.of("java.time.ZonedDateTime");
-                case YEAR -> Stream.of("java.time.Year");
-                case YEAR_MONTH -> Stream.of("java.time.YearMonth");
-                case MONTH_DAY -> Stream.of("java.time.MonthDay");
-                case HIJRAH_DATE -> Stream.of("java.time.chrono.HijrahDate");
-                case JAPANESE_DATE -> Stream.of("java.time.chrono.JapaneseDate");
-                case MINGUO_DATE -> Stream.of("java.time.chrono.MinguoDate");
-                case THAI_BUDDHIST_DATE -> Stream.of("java.time.chrono.ThaiBuddhistDate");
-            };
-        }
-
-        @Override
-        public void writeBodyTo(ValidationOutput out) {
-            out.write("""
-                if (!(%s.%s(%s) == %s)) {\
-                """.formatted(normalized(out.getVariable()), accessor, now(), result));
-            out.incrementIndentationLevel();
-            out.write("""
-                validation.addError("%s");\
-                """.formatted(message));
-            out.decrementIndentationLevel();
-            out.write("}");
-        }
-
-        private String now() {
-            return switch (kind) {
-                case INSTANT, LONG, INTEGER, SHORT, BYTE, DATE, CALENDAR -> "Instant.now()";
-                case LOCAL_DATE -> "LocalDate.now()";
-                case LOCAL_TIME -> "LocalTime.now()";
-                case LOCAL_DATE_TIME -> "LocalDateTime.now()";
-                case OFFSET_DATE_TIME -> "OffsetDateTime.now()";
-                case OFFSET_TIME -> "OffsetTime.now()";
-                case ZONED_DATE_TIME -> "ZonedDateTime.now()";
-                case YEAR -> "Year.now()";
-                case YEAR_MONTH -> "YearMonth.now()";
-                case MONTH_DAY -> "MonthDay.now()";
-                case HIJRAH_DATE -> "HijrahDate.now()";
-                case JAPANESE_DATE -> "JapaneseDate.now()";
-                case MINGUO_DATE -> "MinguoDate.now()";
-                case THAI_BUDDHIST_DATE -> "ThaiBuddhistDate.now()";
-            };
-        }
-
-        private String normalized(String variable) {
-            return switch (kind) {
-                case LONG, INTEGER, SHORT, BYTE -> "Instant.ofEpochMilli(%s)".formatted(variable);
-                case DATE -> "Instant.ofEpochMilli(%s.getTime())".formatted(variable);
-                case CALENDAR -> "Instant.ofEpochMilli(%s.getTimeInMillis())".formatted(variable);
-                case INSTANT, LOCAL_DATE, LOCAL_TIME, LOCAL_DATE_TIME, OFFSET_DATE_TIME,
-                     OFFSET_TIME, ZONED_DATE_TIME, YEAR, YEAR_MONTH, MONTH_DAY,
-                     HIJRAH_DATE, JAPANESE_DATE, MINGUO_DATE, THAI_BUDDHIST_DATE -> variable;
-            };
-        }
-    }
-
-    record Pattern(String regex, String message, Object... args) implements NullUnsafeWriter {
-        @Override
-        public Stream<String> imports() {
-            return Stream.of("java.util.regex.Pattern");
+            String path = kind.importPath();
+            return path.isEmpty() ? Stream.empty() : Stream.of(path);
         }
 
         @Override
         public void writePropertiesTo(ValidationOutput out) {
+            String typeName = kind.javaTypeName();
+            String constraintsMethod = constraintsMethod();
+            String nowExpr = kind.nowExpression();
+            String constName = constantName(out.getVariable());
             out.write("""
-                    private static final Pattern %s_PATTERN = Pattern.compile("%s");
+                    private static final Constraint<%s> %s = Constraints.%s(%s);
+                    """.formatted(typeName, constName, constraintsMethod, nowExpr));
+        }
+
+        @Override
+        public void writeBodyTo(ValidationOutput out) {
+            String constName = constantName(out.getVariable());
+            String arg = kind.needsLongCast() ? "(long) " + out.getVariable() : out.getVariable();
+            out.write("""
+                    %s.validate(validation, %s);\
+                    """.formatted(constName, arg));
+        }
+
+        private String constraintsMethod() {
+            // accessor="isBefore", result=true  → past
+            // accessor="isBefore", result=false → futureOrPresent
+            // accessor="isAfter",  result=true  → future
+            // accessor="isAfter",  result=false → pastOrPresent
+            return switch (accessor) {
+                case "isBefore" -> result ? "past" : "futureOrPresent";
+                case "isAfter"  -> result ? "future" : "pastOrPresent";
+                default -> throw new IllegalStateException("Unexpected accessor: " + accessor);
+            };
+        }
+
+        private String constantName(String variable) {
+            String suffix = switch (accessor) {
+                case "isBefore" -> result ? "PAST" : "FUTURE_OR_PRESENT";
+                case "isAfter"  -> result ? "FUTURE" : "PAST_OR_PRESENT";
+                default -> throw new IllegalStateException("Unexpected accessor: " + accessor);
+            };
+            return variable.toUpperCase() + "_" + suffix;
+        }
+    }
+
+    record Pattern(String regex, String message, Object... args) implements NullUnsafeWriter {
+
+        @Override
+        public void writePropertiesTo(ValidationOutput out) {
+            out.write("""
+                    private static final Constraint<String> %s_PATTERN = Constraints.pattern("%s");
                     """.formatted(out.getVariable().toUpperCase(), regex));
         }
 
         @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (!%s_PATTERN.matcher(%s.toString()).matches()) {\
+                    %s_PATTERN.validate(validation, %s);\
                     """.formatted(out.getVariable().toUpperCase(), out.getVariable()));
-            out.incrementIndentationLevel();
+        }
+    }
+
+    record Email(String message) implements NullUnsafeWriter {
+
+        @Override
+        public void writePropertiesTo(ValidationOutput out) {
             out.write("""
-                    validation.addError("%s"%s);\
-                    """.formatted(message, formatArgs()));
-            out.decrementIndentationLevel();
-            out.write("}");
+                    private static final Constraint<String> %s_EMAIL = Constraints.email();
+                    """.formatted(out.getVariable().toUpperCase()));
         }
 
-        private String formatArgs() {
-            if (args.length == 0) return "";
-            return Stream.of(args)
-                    .map(arg -> arg instanceof String ? "\"" + arg + "\"" : arg.toString())
-                    .collect(Collectors.joining(", ", ",", ""));
+        @Override
+        public void writeBodyTo(ValidationOutput out) {
+            out.write("""
+                    %s_EMAIL.validate(validation, %s);\
+                    """.formatted(out.getVariable().toUpperCase(), out.getVariable()));
         }
     }
 
@@ -226,46 +284,36 @@ public interface NullUnsafeWriter extends ValidationWriter {
         @Override
         public Stream<String> imports() {
             return switch (kind) {
-                case CHAR_SEQUENCE -> Stream.of("java.util.regex.Pattern");
-                case BIG_DECIMAL -> Stream.empty();
-                case BIG_INTEGER, NUMBER, BYTE, SHORT, INTEGER, LONG -> Stream.of("java.math.BigDecimal");
+                case BIG_DECIMAL -> Stream.of("java.math.BigDecimal");
+                case BIG_INTEGER -> Stream.of("java.math.BigInteger");
+                case NUMBER, BYTE, SHORT, INTEGER, LONG, CHAR_SEQUENCE -> Stream.empty();
             };
         }
 
         @Override
         public void writePropertiesTo(ValidationOutput out) {
-            if (kind == NumericKind.CHAR_SEQUENCE) {
-                String pattern = "^-?\\\\d{0," + integer + "}(\\\\.\\\\d{0," + fraction + "})?$";
-                out.write("""
-                        private static final Pattern %s_DIGITS_PATTERN = Pattern.compile("%s");
-                        """.formatted(out.getVariable().toUpperCase(), pattern));
-            }
+            String typeName = switch (kind) {
+                case CHAR_SEQUENCE -> "String";
+                case BIG_DECIMAL -> "BigDecimal";
+                case BIG_INTEGER -> "BigInteger";
+                case NUMBER -> "Number";
+                case BYTE, SHORT, INTEGER, LONG -> "Long";
+            };
+            String method = kind == NumericKind.CHAR_SEQUENCE ? "digitsString" : "digits";
+            out.write("""
+                    private static final Constraint<%s> %s_DIGITS = Constraints.%s(%d, %d);
+                    """.formatted(typeName, out.getVariable().toUpperCase(), method, integer, fraction));
         }
 
         @Override
         public void writeBodyTo(ValidationOutput out) {
-            if (kind == NumericKind.CHAR_SEQUENCE) {
-                out.write("""
-                    if (!%s_DIGITS_PATTERN.matcher(%s.toString()).matches()) {\
-                    """.formatted(out.getVariable().toUpperCase(), out.getVariable()));
-            } else {
-                String bdExpr = switch (kind) {
-                    case CHAR_SEQUENCE -> throw new IllegalStateException("CHAR_SEQUENCE should be handled separately");
-                    case BIG_DECIMAL -> "%s.stripTrailingZeros()".formatted(out.getVariable());
-                    case BIG_INTEGER, NUMBER -> "new BigDecimal(%s.toString()).stripTrailingZeros()".formatted(out.getVariable());
-                    case BYTE, SHORT, INTEGER, LONG -> "BigDecimal.valueOf(%s)".formatted(out.getVariable());
-                };
-                out.write("var %s_bd = %s;".formatted(out.getVariable(), bdExpr));
-                out.write("""
-                    if (!(%1$s_bd.precision() - %1$s_bd.scale() <= %2$s && Math.max(%1$s_bd.scale(), 0) <= %3$s)) {\
-                    """.formatted(out.getVariable(), integer, fraction));
-            }
-            out.incrementIndentationLevel();
+            String arg = switch (kind) {
+                case BYTE, SHORT, INTEGER -> "(long) " + out.getVariable();
+                default -> out.getVariable();
+            };
             out.write("""
-                validation.addError("%s", %s, %s);\
-                """.formatted(message, integer, fraction));
-            out.decrementIndentationLevel();
-            out.write("}");
+                    %s_DIGITS.validate(validation, %s);\
+                    """.formatted(out.getVariable().toUpperCase(), arg));
         }
     }
 
@@ -277,7 +325,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
     ) implements NullUnsafeWriter {
         @Override
         public Stream<String> imports() {
-            return Stream.of(referredTypeImport, "io.github.raniagus.javalidation.validator.Validator");
+            return Stream.of(referredTypeImport, "io.github.raniagus.javalidation.Validator");
         }
 
         @Override

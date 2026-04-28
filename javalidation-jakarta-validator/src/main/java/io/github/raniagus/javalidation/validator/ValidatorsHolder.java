@@ -1,6 +1,7 @@
 package io.github.raniagus.javalidation.validator;
 
 import io.github.raniagus.javalidation.ValidationErrors;
+import io.github.raniagus.javalidation.Validator;
 import java.util.HashMap;
 import java.util.Map;
 

@@ -97,8 +97,13 @@ public final class JakartaAnnotationParser {
         int min = getAnnotationIntValue(annotationMirror, "min", 0);
         int max = getAnnotationIntValue(annotationMirror, "max", Integer.MAX_VALUE);
 
+        NullUnsafeWriter.SizeKind sizeKind = type.isOfType("java.util.Map")
+                ? NullUnsafeWriter.SizeKind.MAP
+                : type.isCollection()
+                    ? NullUnsafeWriter.SizeKind.COLLECTION
+                    : NullUnsafeWriter.SizeKind.LENGTH;
         return new NullUnsafeWriter.Size(
-                type.isCollection() || type.isOfType("java.util.Map") ? "size" : "length",
+                sizeKind,
                 resolveMessage(message, "{min}", "{max}"),
                 min,
                 max
@@ -249,10 +254,7 @@ public final class JakartaAnnotationParser {
         warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Email.message");
-        return new NullUnsafeWriter.Pattern(
-                "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
-                resolveMessage(message)
-        );
+        return new NullUnsafeWriter.Email(resolveMessage(message));
     }
 
     public static @Nullable NullUnsafeWriter parsePatternAnnotation(TypeAdapter type) {

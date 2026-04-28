@@ -1,5 +1,7 @@
 package test.jakarta;
 
+import io.github.raniagus.javalidation.Constraint;
+import io.github.raniagus.javalidation.Constraints;
 import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.validator.InitializableValidator;
 import io.github.raniagus.javalidation.validator.ValidatorsHolder;
@@ -9,11 +11,13 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class NotNullAndSizeRecordValidator implements InitializableValidator<NotNullAndSizeRecord> {
+    private static final Constraint<String> VALUE_SIZE = Constraints.length(3, 10);
 
+    
     @Override
     public void initialize(ValidatorsHolder holder) {
     }
-
+    
     @Override
     public void validate(Validation validation, NotNullAndSizeRecord root) {
         validation.withField("value", () -> {
@@ -22,9 +26,7 @@ public class NotNullAndSizeRecordValidator implements InitializableValidator<Not
                 validation.addError("io.github.raniagus.javalidation.constraints.NotNull.message");
                 return;
             }
-            if (value.length() < 3 || value.length() > 10) {
-                validation.addError("io.github.raniagus.javalidation.constraints.Size.message", 3, 10);
-            }
+            VALUE_SIZE.validate(validation, value);
         });
     }
 }

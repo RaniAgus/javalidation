@@ -308,7 +308,7 @@ class JakartaValidationsTest {
         @Test
         void belowMin_hasFieldError() {
             assertThat(validator.validate(new MinRecord(9L)))
-                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Min.message", 10));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Min.message", 10L));
         }
 
         @Test
@@ -332,7 +332,7 @@ class JakartaValidationsTest {
         @Test
         void belowMin_hasFieldError() {
             assertThat(validator.validate(new MinIntegerRecord(9)))
-                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Min.message", 10));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Min.message", 10L));
         }
 
         @Test
@@ -356,7 +356,7 @@ class JakartaValidationsTest {
         @Test
         void belowMin_hasFieldError() {
             assertThat(validator.validate(new MinShortRecord((short) 9)))
-                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Min.message", 10));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Min.message", 10L));
         }
 
         @Test
@@ -380,7 +380,7 @@ class JakartaValidationsTest {
         @Test
         void belowMin_hasFieldError() {
             assertThat(validator.validate(new MinByteRecord((byte) 9)))
-                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Min.message", 10));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Min.message", 10L));
         }
 
         @Test
@@ -410,7 +410,7 @@ class JakartaValidationsTest {
         @Test
         void belowMin_hasFieldError() {
             assertThat(validator.validate(new MinNumberRecord(9L)))
-                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Min.message", 10));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Min.message", 10L));
         }
 
         @Test
@@ -440,7 +440,7 @@ class JakartaValidationsTest {
         @Test
         void belowMin_hasFieldError() {
             assertThat(validator.validate(new MinCharSequenceRecord("9")))
-                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Min.message", 10));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Min.message", 10L));
         }
 
         @Test
@@ -479,7 +479,7 @@ class JakartaValidationsTest {
         @Test
         void abovePrimitiveMax_hasFieldError() {
             assertThat(primitiveValidator.validate(new MaxPrimitiveRecord(101L)))
-                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Max.message", 100));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Max.message", 100L));
         }
 
         @Test
@@ -497,7 +497,7 @@ class JakartaValidationsTest {
         @Test
         void aboveReferenceMax_hasFieldError() {
             assertThat(referenceValidator.validate(new MaxReferenceRecord(101L)))
-                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Max.message", 100));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Max.message", 100L));
         }
 
         @Test
@@ -515,7 +515,7 @@ class JakartaValidationsTest {
         @Test
         void aboveBigIntegerMax_hasFieldError() {
             assertThat(bigIntegerValidator.validate(new MaxBigIntegerRecord(BigInteger.valueOf(101L))))
-                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Max.message", 100));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Max.message", 100L));
         }
 
         @Test
@@ -533,7 +533,7 @@ class JakartaValidationsTest {
         @Test
         void aboveBigDecimalMax_hasFieldError() {
             assertThat(bigDecimalValidator.validate(new MaxBigDecimalRecord(BigDecimal.valueOf(101L))))
-                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Max.message", 100));
+                    .isEqualTo(ValidationErrors.at("value", "io.github.raniagus.javalidation.constraints.Max.message", 100L));
         }
     }
 

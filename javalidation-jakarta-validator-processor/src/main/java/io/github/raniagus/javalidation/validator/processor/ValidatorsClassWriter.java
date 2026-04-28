@@ -15,7 +15,7 @@ public record ValidatorsClassWriter(List<RecordValidatorClassWriter> classWriter
                 Stream.of(
                         "java.util.Map",
                         "io.github.raniagus.javalidation.ValidationErrors",
-                        "io.github.raniagus.javalidation.validator.Validator",
+                        "io.github.raniagus.javalidation.Validator",
                         "io.github.raniagus.javalidation.validator.ValidatorsHolder"
                 ),
                 classWriters.stream().flatMap(writer -> Stream.concat(

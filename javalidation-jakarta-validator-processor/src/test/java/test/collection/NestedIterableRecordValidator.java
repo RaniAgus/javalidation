@@ -1,5 +1,7 @@
 package test.collection;
 
+import io.github.raniagus.javalidation.Constraint;
+import io.github.raniagus.javalidation.Constraints;
 import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.validator.InitializableValidator;
 import io.github.raniagus.javalidation.validator.ValidatorsHolder;
@@ -9,11 +11,11 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class NestedIterableRecordValidator implements InitializableValidator<NestedIterableRecord> {
-
+    
     @Override
     public void initialize(ValidatorsHolder holder) {
     }
-
+    
     @Override
     public void validate(Validation validation, NestedIterableRecord root) {
         validation.withField("scores", () -> {
