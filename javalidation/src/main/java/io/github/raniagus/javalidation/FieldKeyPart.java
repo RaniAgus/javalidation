@@ -1,6 +1,5 @@
 package io.github.raniagus.javalidation;
 
-import java.util.Arrays;
 
 /**
  * A type-safe part of a {@link FieldKey} path, representing either a named string segment or a
@@ -31,22 +30,27 @@ public sealed interface FieldKeyPart extends Comparable<FieldKeyPart> {
     }
 
     static FieldKeyPart[] arrayOf(Object... keys) {
-        return Arrays.stream(keys)
-                .map(FieldKeyPart::of)
-                .toArray(FieldKeyPart[]::new);
+        FieldKeyPart[] result = new FieldKeyPart[keys.length];
+        for (int i = 0; i < keys.length; i++) {
+            result[i] = FieldKeyPart.of(keys[i]);
+        }
+        return result;
     }
 
     static FieldKeyPart[] arrayOf(Number... keys) {
-        return Arrays.stream(keys)
-                .map(Number::intValue)
-                .map(IntKey::new)
-                .toArray(FieldKeyPart[]::new);
+        FieldKeyPart[] result = new FieldKeyPart[keys.length];
+        for (int i = 0; i < keys.length; i++) {
+            result[i] = new IntKey(keys[i].intValue());
+        }
+        return result;
     }
 
     static FieldKeyPart[] arrayOf(String... keys) {
-        return Arrays.stream(keys)
-                .map(StringKey::new)
-                .toArray(FieldKeyPart[]::new);
+        FieldKeyPart[] result = new FieldKeyPart[keys.length];
+        for (int i = 0; i < keys.length; i++) {
+            result[i] = new StringKey(keys[i]);
+        }
+        return result;
     }
 
     /**
