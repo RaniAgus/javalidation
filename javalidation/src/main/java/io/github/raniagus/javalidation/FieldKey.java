@@ -1,7 +1,7 @@
 package io.github.raniagus.javalidation;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
 
 /**
  * Represents the path to a field in a validated object, composed of one or more {@link FieldKeyPart} segments.
@@ -15,7 +15,7 @@ import java.util.List;
  *   <li>{@link #of(String...)} – from string segments</li>
  *   <li>{@link #of(Object...)} – from mixed strings and integers (integers become {@link FieldKeyPart.IntKey})</li>
  *   <li>{@link #of(FieldKeyPart...)} – from explicit parts</li>
- *   <li>{@link #of(java.util.List, FieldKeyPart...)} – from a prefix list plus additional parts</li>
+ *   <li>{@link #of(Collection, FieldKeyPart...)} – from a prefix list plus additional parts</li>
  * </ul>
  * <p>
  * Comparison is lexicographic: segments are compared element-by-element, with {@link FieldKeyPart.StringKey}
@@ -86,8 +86,9 @@ public record FieldKey(FieldKeyPart[] parts) implements Comparable<FieldKey> {
      * @param key    the trailing parts to append after the prefix
      * @return a new {@code FieldKey}
      */
-    public static FieldKey of(List<FieldKeyPart> prefix, FieldKeyPart... key) {
-        FieldKeyPart[] newKey = Arrays.copyOf(prefix.toArray(FieldKeyPart[]::new), prefix.size() + key.length);
+    public static FieldKey of(Collection<FieldKeyPart> prefix, FieldKeyPart... key) {
+        FieldKeyPart[] newKey = new FieldKeyPart[prefix.size() + key.length];
+        prefix.toArray(newKey);
         System.arraycopy(key, 0, newKey, prefix.size(), key.length);
         return new FieldKey(newKey);
     }

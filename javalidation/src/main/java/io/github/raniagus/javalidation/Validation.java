@@ -1,6 +1,8 @@
 package io.github.raniagus.javalidation;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +69,7 @@ import org.jspecify.annotations.Nullable;
  * @see JavalidationException
  */
 public class Validation {
-    private final List<FieldKeyPart> prefix = new ArrayList<>();
+    private final Deque<FieldKeyPart> prefix = new ArrayDeque<>();
     private final List<TemplateString> rootErrors = new ArrayList<>();
     private final Map<FieldKey, List<TemplateString>> fieldErrors = new HashMap<>();
 
@@ -423,8 +425,9 @@ public class Validation {
     /**
      * Converts this mutable validation into an immutable {@link ValidationErrors}.
      * <p>
-     * This creates a snapshot of the current errors. Further modifications to this {@code Validation}
-     * will not affect the returned {@code ValidationErrors}.
+     * This is a terminal operation. The returned {@link ValidationErrors} holds direct references
+     * to this builder's internal collections; do not mutate this {@code Validation} after calling
+     * {@code finish()}.
      * <p>
      * Example:
      * <pre>{@code
@@ -434,7 +437,7 @@ public class Validation {
      * }
      * }</pre>
      *
-     * @return an immutable snapshot of the current validation errors
+     * @return a {@link ValidationErrors} view of the current errors
      */
     public ValidationErrors finish() {
         return new ValidationErrors(rootErrors, fieldErrors);
