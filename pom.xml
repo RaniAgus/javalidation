@@ -37,6 +37,7 @@
 
     <modules>
         <module>javalidation</module>
+        <module>javalidation-assertj</module>
         <module>javalidation-jackson</module>
         <module>javalidation-jakarta-validator</module>
         <module>javalidation-jakarta-validator-processor</module>
@@ -62,6 +63,11 @@
             <dependency>
                 <groupId>io.github.raniagus</groupId>
                 <artifactId>javalidation</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.raniagus</groupId>
+                <artifactId>javalidation-assertj</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
