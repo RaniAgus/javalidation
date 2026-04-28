@@ -1,6 +1,9 @@
 package io.github.raniagus.javalidation;
 
+import static java.util.stream.Collectors.toMap;
+
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Immutable container for accumulated validation errors.
@@ -11,8 +14,7 @@ import java.util.*;
  *   <li><b>Field errors</b>: Validation failures associated with specific field names</li>
  * </ul>
  * <p>
- * This record provides deep immutability through defensive copying in its compact constructor,
- * ensuring thread-safety and safe sharing across contexts.
+ * This record is effectively immutable. See {@link Validation#finish()} for usage contract.
  * <p>
  * Errors are stored as {@link TemplateString} instances, which defer formatting until serialization
  * time. This enables internationalization support where error messages can be formatted differently
@@ -160,10 +162,24 @@ public record ValidationErrors(
      * @return a new {@code ValidationErrors} containing all errors from both
      */
     public ValidationErrors mergeWith(ValidationErrors other) {
-        return Validation.create()
-                .addAll(this)
-                .addAll(other)
-                .finish();
+        return new ValidationErrors(
+                mergeErrors(rootErrors, other.rootErrors),
+                mergeFieldErrors(fieldErrors, other.fieldErrors)
+        );
+    }
+
+    private static List<TemplateString> mergeErrors(List<TemplateString> a, List<TemplateString> b) {
+        return Stream.concat(a.stream(), b.stream())
+                .toList();
+    }
+
+    private static Map<FieldKey, List<TemplateString>> mergeFieldErrors(Map<FieldKey, List<TemplateString>> a, Map<FieldKey, List<TemplateString>> b) {
+        return Stream.concat(a.entrySet().stream(), b.entrySet().stream())
+                .collect(toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        ValidationErrors::mergeErrors
+                ));
     }
 
     /**
