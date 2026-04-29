@@ -67,6 +67,53 @@ public class ValidationErrorsAssert
         return this;
     }
 
+    /**
+     * Asserts the number of root-level errors.
+     */
+    public ValidationErrorsAssert hasRootErrorCount(int expected) {
+        isNotNull();
+        int actual = this.actual.rootErrors().size();
+        if (actual != expected) {
+            failWithMessage("Expected %d root error(s) but found %d:%n%s",
+                    expected, actual, this.actual.rootErrors());
+        }
+        return this;
+    }
+
+    /**
+     * Asserts the total number of field errors across all field keys.
+     */
+    public ValidationErrorsAssert hasFieldErrorCount(int expected) {
+        isNotNull();
+        int actual = this.actual.fieldErrors().values().stream()
+                .mapToInt(List::size)
+                .sum();
+        if (actual != expected) {
+            failWithMessage("Expected %d field error(s) but found %d:%n%s",
+                    expected, actual, this.actual.fieldErrors());
+        }
+        return this;
+    }
+
+    /**
+     * Asserts the number of field errors at the given {@link FieldKey}.
+     */
+    public ValidationErrorsAssert hasFieldErrorCountAt(FieldKey key, int expected) {
+        isNotNull();
+        List<TemplateString> errors = actual.fieldErrors().get(key);
+        if (errors == null) {
+            failWithMessage(
+                    "Expected field errors to contain key <%s> but found keys:%n%s",
+                    key, actual.fieldErrors().keySet());
+            return this;
+        }
+        if (errors.size() != expected) {
+            failWithMessage("Expected %d error(s) at field <%s> but found %d:%n%s",
+                    expected, key, errors.size(), errors);
+        }
+        return this;
+    }
+
     // -- root errors --
 
     /**
@@ -77,19 +124,6 @@ public class ValidationErrorsAssert
         if (!actual.rootErrors().isEmpty()) {
             failWithMessage("Expected no root errors but found %d:%n%s",
                     actual.rootErrors().size(), actual.rootErrors());
-        }
-        return this;
-    }
-
-    /**
-     * Asserts the exact number of root-level errors.
-     */
-    public ValidationErrorsAssert hasRootErrorCount(int expected) {
-        isNotNull();
-        int actual = this.actual.rootErrors().size();
-        if (actual != expected) {
-            failWithMessage("Expected %d root error(s) but found %d:%n%s",
-                    expected, actual, this.actual.rootErrors());
         }
         return this;
     }
@@ -167,12 +201,12 @@ public class ValidationErrorsAssert
     }
 
     /**
-     * Asserts that the given string-keyed field path is present in the field errors, without
-     * inspecting the error messages.
+     * Asserts that the given field path is present in the field errors, without inspecting the error
+     * messages.
      */
-    public ValidationErrorsAssert hasFieldKey(String field) {
+    public ValidationErrorsAssert hasFieldKey(Object... path) {
         isNotNull();
-        FieldKey key = FieldKey.of(field);
+        FieldKey key = FieldKey.of(path);
         if (!actual.fieldErrors().containsKey(key)) {
             failWithMessage("Expected field errors to contain key <%s> but found keys:%n%s",
                     key, actual.fieldErrors().keySet());
@@ -181,37 +215,11 @@ public class ValidationErrorsAssert
     }
 
     /**
-     * Asserts that the given index-keyed field path is present in the field errors, without
-     * inspecting the error messages.
+     * Asserts that the given field path is <em>not</em> present in the field errors.
      */
-    public ValidationErrorsAssert hasFieldKey(int index) {
+    public ValidationErrorsAssert doesNotHaveFieldKey(Object... path) {
         isNotNull();
-        FieldKey key = FieldKey.of(index);
-        if (!actual.fieldErrors().containsKey(key)) {
-            failWithMessage("Expected field errors to contain key <%s> but found keys:%n%s",
-                    key, actual.fieldErrors().keySet());
-        }
-        return this;
-    }
-
-    /**
-     * Asserts that the given string-keyed field path is <em>not</em> present in the field errors.
-     */
-    public ValidationErrorsAssert doesNotHaveFieldKey(String field) {
-        isNotNull();
-        FieldKey key = FieldKey.of(field);
-        if (actual.fieldErrors().containsKey(key)) {
-            failWithMessage("Expected field errors NOT to contain key <%s> but it was present", key);
-        }
-        return this;
-    }
-
-    /**
-     * Asserts that the given index-keyed field path is <em>not</em> present in the field errors.
-     */
-    public ValidationErrorsAssert doesNotHaveFieldKey(int index) {
-        isNotNull();
-        FieldKey key = FieldKey.of(index);
+        FieldKey key = FieldKey.of(path);
         if (actual.fieldErrors().containsKey(key)) {
             failWithMessage("Expected field errors NOT to contain key <%s> but it was present", key);
         }

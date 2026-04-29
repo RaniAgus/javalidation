@@ -298,6 +298,64 @@ class JavalidationAssertionsTest {
                     .hasMessageContaining("2");
         }
 
+        // -- hasFieldErrorCount --
+
+        @Test
+        void givenTwoFieldErrors_whenHasFieldErrorCount_thenSucceeds() {
+            var errors = ValidationErrors.at("name", "required")
+                    .mergeWith(ValidationErrors.at("email", "invalid"));
+
+            assertThat(errors).hasFieldErrorCount(2);
+        }
+
+        @Test
+        void givenFieldErrorsWithMultipleOnSameKey_whenHasFieldErrorCount_thenCountsAll() {
+            var errors = ValidationErrors.at("email", "too short")
+                    .mergeWith(ValidationErrors.at("email", "invalid format"));
+
+            assertThat(errors).hasFieldErrorCount(2);
+        }
+
+        @Test
+        void givenFieldErrors_whenHasFieldErrorCountWrong_thenFails() {
+            var errors = ValidationErrors.at("name", "required")
+                    .mergeWith(ValidationErrors.at("email", "invalid"));
+
+            assertThatThrownBy(() -> assertThat(errors).hasFieldErrorCount(5))
+                    .isInstanceOf(AssertionError.class)
+                    .hasMessageContaining("5")
+                    .hasMessageContaining("2");
+        }
+
+        // -- hasFieldErrorCountAt --
+
+        @Test
+        void givenFieldErrorsAtKey_whenHasFieldErrorCountAt_thenSucceeds() {
+            var errors = ValidationErrors.at("email", "too short")
+                    .mergeWith(ValidationErrors.at("email", "invalid format"));
+
+            assertThat(errors).hasFieldErrorCountAt(FieldKey.of("email"), 2);
+        }
+
+        @Test
+        void givenFieldErrorsAtKey_whenHasFieldErrorCountAtWrong_thenFails() {
+            var errors = ValidationErrors.at("email", "invalid");
+
+            assertThatThrownBy(() -> assertThat(errors).hasFieldErrorCountAt(FieldKey.of("email"), 3))
+                    .isInstanceOf(AssertionError.class)
+                    .hasMessageContaining("3")
+                    .hasMessageContaining("1");
+        }
+
+        @Test
+        void givenMissingKey_whenHasFieldErrorCountAt_thenFails() {
+            var errors = ValidationErrors.at("name", "required");
+
+            assertThatThrownBy(() -> assertThat(errors).hasFieldErrorCountAt(FieldKey.of("email"), 1))
+                    .isInstanceOf(AssertionError.class)
+                    .hasMessageContaining("email");
+        }
+
         // -- hasRootErrorCount failure --
 
         @Test
