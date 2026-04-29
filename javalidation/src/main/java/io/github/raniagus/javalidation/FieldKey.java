@@ -32,11 +32,11 @@ public record FieldKey(FieldKeyPart[] parts) implements Comparable<FieldKey> {
      * <p>
      * Example: {@code FieldKey.of("user", "address")} produces a key for the path {@code "user.address"}.
      *
-     * @param key the string segments
+     * @param path the string segments
      * @return a new {@code FieldKey}
      */
-    public static FieldKey of(String... key) {
-        return new FieldKey(FieldKeyPart.arrayOf(key));
+    public static FieldKey of(String... path) {
+        return new FieldKey(FieldKeyPart.ofPath(path));
     }
 
     /**
@@ -44,11 +44,11 @@ public record FieldKey(FieldKeyPart[] parts) implements Comparable<FieldKey> {
      * <p>
      * Each element is converted to an {@code int} via {@link Number#intValue()}.
      *
-     * @param keys the numeric segments
+     * @param path the numeric segments
      * @return a new {@code FieldKey}
      */
-    public static FieldKey of(Number... keys) {
-        return new FieldKey(FieldKeyPart.arrayOf(keys));
+    public static FieldKey of(Number... path) {
+        return new FieldKey(FieldKeyPart.ofPath(path));
     }
 
     /**
@@ -59,22 +59,22 @@ public record FieldKey(FieldKeyPart[] parts) implements Comparable<FieldKey> {
      * <p>
      * Example: {@code FieldKey.of("items", 0, "price")} produces the path {@code "items[0].price"}.
      *
-     * @param key the mixed segments
+     * @param path the mixed segments
      * @return a new {@code FieldKey}
      * @throws IllegalArgumentException if any element is neither a {@link String} nor a {@link Number}
      */
-    public static FieldKey of(Object... key) {
-        return new FieldKey(FieldKeyPart.arrayOf(key));
+    public static FieldKey of(Object... path) {
+        return new FieldKey(FieldKeyPart.ofPath(path));
     }
 
     /**
      * Creates a {@code FieldKey} directly from {@link FieldKeyPart} instances.
      *
-     * @param key the parts
+     * @param parts the parts
      * @return a new {@code FieldKey}
      */
-    public static FieldKey of(FieldKeyPart... key) {
-        return new FieldKey(key);
+    public static FieldKey of(FieldKeyPart... parts) {
+        return new FieldKey(parts);
     }
 
     /**
@@ -83,13 +83,13 @@ public record FieldKey(FieldKeyPart[] parts) implements Comparable<FieldKey> {
      * Used internally when building keys from a scoped {@link Validation} prefix.
      *
      * @param prefix the leading parts
-     * @param key    the trailing parts to append after the prefix
+     * @param path   the trailing parts to append after the prefix
      * @return a new {@code FieldKey}
      */
-    public static FieldKey of(Collection<FieldKeyPart> prefix, FieldKeyPart... key) {
-        FieldKeyPart[] newKey = new FieldKeyPart[prefix.size() + key.length];
+    public static FieldKey of(Collection<FieldKeyPart> prefix, FieldKeyPart... path) {
+        FieldKeyPart[] newKey = new FieldKeyPart[prefix.size() + path.length];
         prefix.toArray(newKey);
-        System.arraycopy(key, 0, newKey, prefix.size(), key.length);
+        System.arraycopy(path, 0, newKey, prefix.size(), path.length);
         return new FieldKey(newKey);
     }
 
@@ -109,7 +109,9 @@ public record FieldKey(FieldKeyPart[] parts) implements Comparable<FieldKey> {
         int minLength = Math.min(parts.length, other.parts.length);
         for (int i = 0; i < minLength; i++) {
             int cmp = parts[i].compareTo(other.parts[i]);
-            if (cmp != 0) return cmp;
+            if (cmp != 0) {
+                return cmp;
+            }
         }
         return Integer.compare(parts.length, other.parts.length);
     }

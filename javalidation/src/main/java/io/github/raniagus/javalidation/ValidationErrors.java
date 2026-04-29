@@ -189,7 +189,7 @@ public record ValidationErrors(
      * @return a new {@code ValidationErrors} with prefixed field paths
      */
     public ValidationErrors withPrefix(String... prefix) {
-        return withPrefix(FieldKeyPart.arrayOf(prefix));
+        return withPrefix(FieldKeyPart.ofPath(prefix));
     }
 
     /**
@@ -201,7 +201,7 @@ public record ValidationErrors(
      * @return a new {@code ValidationErrors} with prefixed field paths
      */
     public ValidationErrors withPrefix(Number... prefix) {
-        return withPrefix(FieldKeyPart.arrayOf(prefix));
+        return withPrefix(FieldKeyPart.ofPath(prefix));
     }
 
     /**
@@ -220,7 +220,7 @@ public record ValidationErrors(
      * @return a new {@code ValidationErrors} with prefixed field paths
      */
     public ValidationErrors withPrefix(Object... prefix) {
-        return withPrefix(FieldKeyPart.arrayOf(prefix));
+        return withPrefix(FieldKeyPart.ofPath(prefix));
     }
 
     private ValidationErrors withPrefix(FieldKeyPart... prefix) {

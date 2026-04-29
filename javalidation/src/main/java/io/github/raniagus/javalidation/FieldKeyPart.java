@@ -29,7 +29,7 @@ public sealed interface FieldKeyPart extends Comparable<FieldKeyPart> {
         }
     }
 
-    static FieldKeyPart[] arrayOf(Object... keys) {
+    static FieldKeyPart[] ofPath(Object... keys) {
         FieldKeyPart[] result = new FieldKeyPart[keys.length];
         for (int i = 0; i < keys.length; i++) {
             result[i] = FieldKeyPart.of(keys[i]);
@@ -37,7 +37,7 @@ public sealed interface FieldKeyPart extends Comparable<FieldKeyPart> {
         return result;
     }
 
-    static FieldKeyPart[] arrayOf(Number... keys) {
+    static FieldKeyPart[] ofPath(Number... keys) {
         FieldKeyPart[] result = new FieldKeyPart[keys.length];
         for (int i = 0; i < keys.length; i++) {
             result[i] = new IntKey(keys[i].intValue());
@@ -45,7 +45,7 @@ public sealed interface FieldKeyPart extends Comparable<FieldKeyPart> {
         return result;
     }
 
-    static FieldKeyPart[] arrayOf(String... keys) {
+    static FieldKeyPart[] ofPath(String... keys) {
         FieldKeyPart[] result = new FieldKeyPart[keys.length];
         for (int i = 0; i < keys.length; i++) {
             result[i] = new StringKey(keys[i]);
