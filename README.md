@@ -58,19 +58,6 @@ via `JavalidationAssertions.assertThat(...)`:
 </dependency>
 ```
 
-```java
-import static io.github.raniagus.javalidation.assertj.JavalidationAssertions.assertThat;
-
-assertThat(result).isErr()
-    .hasErrorCount(2)
-    .hasRootError("user.invalid")
-    .hasFieldError("email", "user.email.invalid");
-
-assertThat(result).isOk()
-    .get()
-    .isEqualTo(expectedUser);
-```
-
 ### Jackson Module
 
 For Jackson 3.x serialization support:
@@ -526,6 +513,23 @@ public class UserService {
 
 ## Integrations
 
+### AssertJ
+
+Use `JavalidationAssertions.assertThat(...)` for fluent assertions in tests:
+
+```java
+import static io.github.raniagus.javalidation.assertj.JavalidationAssertions.assertThat;
+
+assertThat(result).isErr()
+    .hasErrorCount(2)
+    .hasRootError("user.invalid")
+    .hasFieldError("email", "user.email.invalid");
+
+assertThat(result).isOk()
+    .get()
+    .isEqualTo(expectedUser);
+```
+
 ### Jackson Serialization
 
 Configure Jackson to serialize `Result<T>` and `ValidationErrors`:
@@ -620,7 +624,6 @@ Result<User> failure = Result.errorAt("age", "Must be at least {0} years old", 1
         "key": ["age"],
         "errors": [
           {
-            "message": "Must be at least 18 years old",
             "code": "Must be at least {0} years old",
             "args": [18]
           }
