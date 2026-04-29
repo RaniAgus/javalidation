@@ -12,26 +12,20 @@ public class DotNotationFormatterTest {
     void givenSimpleString_whenFormat_thenReturnSameString() {
         FieldKey key = FieldKey.of("test");
 
-        String result = formatter.format(key);
-
-        assertThat(result).isEqualTo("test");
+        assertThat(formatter.format(key)).isEqualTo("test");
     }
 
     @Test
     void givenNumericValue_whenFormat_thenReturnStringRepresentation() {
         FieldKey key = FieldKey.of(123);
 
-        String result = formatter.format(key);
-
-        assertThat(result).isEqualTo("123");
+        assertThat(formatter.format(key)).isEqualTo("123");
     }
 
     @Test
     void givenNestedValue_whenFormat_thenReturnDotSeparatedString() {
         FieldKey key = FieldKey.of("test", 42, "nested");
 
-        String result = formatter.format(key);
-
-        assertThat(result).isEqualTo("test.42.nested");
+        assertThat(formatter.format(key)).isEqualTo("test.42.nested");
     }
 }

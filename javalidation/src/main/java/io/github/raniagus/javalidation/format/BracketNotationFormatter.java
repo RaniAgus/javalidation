@@ -3,6 +3,19 @@ package io.github.raniagus.javalidation.format;
 import io.github.raniagus.javalidation.FieldKey;
 import io.github.raniagus.javalidation.FieldKeyPart;
 
+/**
+ * A {@link FieldKeyFormatter} that uses bracket notation.
+ * <p>
+ * Examples:
+ * <ul>
+ *   <li>{@code "items"} — single string segment (no brackets for the leading bare name)</li>
+ *   <li>{@code "[0]"} — single index segment</li>
+ *   <li>{@code "items[0][price]"} — mixed path (all non-first segments wrapped in {@code []})</li>
+ * </ul>
+ *
+ * @see BracketNotationParser
+ * @see FieldKeyNotation#BRACKETS
+ */
 public class BracketNotationFormatter implements FieldKeyFormatter {
     @Override
     public String format(FieldKey fieldKey) {
