@@ -44,6 +44,33 @@ The core validation library with zero dependencies:
 </dependency>
 ```
 
+### AssertJ Module
+
+Test utility providing fluent AssertJ assertions for `Result<T>`, `ValidationErrors`, `Validation`, and `PartialResult`
+via `JavalidationAssertions.assertThat(...)`:
+
+```xml
+<dependency>
+  <groupId>io.github.raniagus</groupId>
+  <artifactId>javalidation-assertj</artifactId>
+  <version>0.36.0</version>
+  <scope>test</scope>
+</dependency>
+```
+
+```java
+import static io.github.raniagus.javalidation.assertj.JavalidationAssertions.assertThat;
+
+assertThat(result).isErr()
+    .hasErrorCount(2)
+    .hasRootError("user.invalid")
+    .hasFieldError("email", "user.email.invalid");
+
+assertThat(result).isOk()
+    .get()
+    .isEqualTo(expectedUser);
+```
+
 ### Jackson Module
 
 For Jackson 3.x serialization support:
