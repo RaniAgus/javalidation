@@ -40,5 +40,10 @@
             <artifactId>assertj-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.github.raniagus</groupId>
+            <artifactId>javalidation-assertj</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

@@ -1,18 +1,15 @@
 package io.github.raniagus.javalidation.validator.processor;
 
+import static io.github.raniagus.javalidation.assertj.JavalidationAssertions.assertThat;
 import static com.google.testing.compile.Compiler.javac;
-import static org.assertj.core.api.Assertions.assertThat;
 import static com.google.testing.compile.CompilationSubject.assertThat;
 
 import com.google.testing.compile.JavaFileObjects;
 import io.github.raniagus.javalidation.FieldKey;
-import io.github.raniagus.javalidation.Validation;
-import io.github.raniagus.javalidation.ValidationErrors;
 import io.github.raniagus.javalidation.validator.InitializableValidator;
 import io.github.raniagus.javalidation.validator.Validator;
 import io.github.raniagus.javalidation.validator.ValidatorsHolder;
 import java.util.*;
-import java.util.function.Consumer;
 import javax.tools.JavaFileObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -61,50 +58,49 @@ public class CollectionValidationsTest {
         @Test
         void nullTags_hasFieldError() {
             assertThat(validator.validate(new PrimitiveIterableRecord(null)))
-                    .isEqualTo(ValidationErrors.at("tags", "io.github.raniagus.javalidation.constraints.NotNull.message"));
+                    .hasErrorCount(1)
+                    .hasFieldError("tags", "io.github.raniagus.javalidation.constraints.NotNull.message");
         }
 
         @Test
         void emptyTags_noErrors() {
             assertThat(validator.validate(new PrimitiveIterableRecord(List.of())))
-                    .isEqualTo(ValidationErrors.empty());
+                    .isEmpty();
         }
 
         @Test
         void validTags_noErrors() {
             assertThat(validator.validate(new PrimitiveIterableRecord(List.of("abc", "hello", "world123"))))
-                    .isEqualTo(ValidationErrors.empty());
+                    .isEmpty();
         }
 
         @Test
         void tagTooShort_hasFieldError() {
             assertThat(validator.validate(new PrimitiveIterableRecord(List.of("ab"))))
-                    .isEqualTo(ValidationErrors.at(FieldKey.of("tags", 0), "io.github.raniagus.javalidation.constraints.Size.message", 3, 10));
+                    .hasErrorCount(1)
+                    .hasFieldErrorAt(FieldKey.of("tags", 0), "io.github.raniagus.javalidation.constraints.Size.message", 3, 10);
         }
 
         @Test
         void tagTooLong_hasFieldError() {
             assertThat(validator.validate(new PrimitiveIterableRecord(List.of("abcdefghijk"))))
-                    .isEqualTo(ValidationErrors.at(FieldKey.of("tags", 0), "io.github.raniagus.javalidation.constraints.Size.message", 3, 10));
+                    .hasErrorCount(1)
+                    .hasFieldErrorAt(FieldKey.of("tags", 0), "io.github.raniagus.javalidation.constraints.Size.message", 3, 10);
         }
 
         @Test
         void nullTagItem_noErrors() {
             assertThat(validator.validate(new PrimitiveIterableRecord(Collections.singletonList(null))))
-                    .isEqualTo(ValidationErrors.empty());
+                    .isEmpty();
         }
 
         @Test
         void multipleErrors_allReported() {
-            assertThat(validator.validate(new PrimitiveIterableRecord(List.of("ab", "hello", "abcdefghijk"))))
-                    .isEqualTo(
-                        createValidationErrors(v ->
-                            v.withField("tags", () -> {
-                                v.addErrorAt(0, "io.github.raniagus.javalidation.constraints.Size.message", 3, 10);
-                                v.addErrorAt(2, "io.github.raniagus.javalidation.constraints.Size.message", 3, 10);
-                            })
-                        )
-                    );
+            List<String> tags = List.of("ab", "hello", "abcdefghijk");
+            assertThat(validator.validate(new PrimitiveIterableRecord(tags)))
+                    .hasErrorCount(2)
+                    .hasFieldErrorAt(FieldKey.of("tags", 0), "io.github.raniagus.javalidation.constraints.Size.message", 3, 10)
+                    .hasFieldErrorAt(FieldKey.of("tags", 2), "io.github.raniagus.javalidation.constraints.Size.message", 3, 10);
         }
     }
 
@@ -126,73 +122,65 @@ public class CollectionValidationsTest {
         @Test
         void nullFriends_hasFieldError() {
             assertThat(validator.validate(new ValidatedIterableRecord(null)))
-                    .isEqualTo(ValidationErrors.at("friends", "io.github.raniagus.javalidation.constraints.NotNull.message"));
+                    .hasErrorCount(1)
+                    .hasFieldError("friends", "io.github.raniagus.javalidation.constraints.NotNull.message");
         }
 
         @Test
         void emptyFriends_noErrors() {
             assertThat(validator.validate(new ValidatedIterableRecord(List.of())))
-                    .isEqualTo(ValidationErrors.empty());
+                    .isEmpty();
         }
 
         @Test
         void validFriends_noErrors() {
-            assertThat(validator.validate(new ValidatedIterableRecord(List.of(
+            List<ValidatedIterableRecord.Person> friends = List.of(
                     new ValidatedIterableRecord.Person("Alice"),
                     new ValidatedIterableRecord.Person("Bob")
-            )))).isEqualTo(ValidationErrors.empty());
+            );
+            assertThat(validator.validate(new ValidatedIterableRecord(friends))).isEmpty();
         }
 
         @Test
         void nullFriendItem_hasFieldError() {
             assertThat(validator.validate(new ValidatedIterableRecord(Collections.singletonList(null))))
-                    .isEqualTo(ValidationErrors.at(FieldKey.of("friends", 0), "io.github.raniagus.javalidation.constraints.NotNull.message"));
+                    .hasErrorCount(1)
+                    .hasFieldErrorAt(FieldKey.of("friends", 0), "io.github.raniagus.javalidation.constraints.NotNull.message");
         }
 
         @Test
         void friendWithNullName_hasNestedFieldError() {
-            assertThat(validator.validate(new ValidatedIterableRecord(List.of(
+            List<ValidatedIterableRecord.Person> friends = List.of(
                     new ValidatedIterableRecord.Person(null)
-            )))).isEqualTo(ValidationErrors.at(FieldKey.of("friends", 0, "name"), "io.github.raniagus.javalidation.constraints.NotNull.message"));
+            );
+            assertThat(validator.validate(new ValidatedIterableRecord(friends)))
+                    .hasErrorCount(1)
+                    .hasFieldErrorAt(FieldKey.of("friends", 0, "name"), "io.github.raniagus.javalidation.constraints.NotNull.message");
         }
 
         @Test
         void multipleErrors_allReported() {
-            assertThat(validator.validate(new ValidatedIterableRecord(List.of(
+            List<ValidatedIterableRecord.Person> friends = List.of(
                     new ValidatedIterableRecord.Person(null),
                     new ValidatedIterableRecord.Person("Alice"),
                     new ValidatedIterableRecord.Person(null)
-            )))).isEqualTo(
-                createValidationErrors(v ->
-                    v.withField("friends", () -> {
-                        v.withField(0, () -> {
-                            v.addErrorAt("name", "io.github.raniagus.javalidation.constraints.NotNull.message");
-                        });
-                        v.withField(2, () -> {
-                            v.addErrorAt("name", "io.github.raniagus.javalidation.constraints.NotNull.message");
-                        });
-                    })
-                )
             );
+            assertThat(validator.validate(new ValidatedIterableRecord(friends)))
+                    .hasErrorCount(2)
+                    .hasFieldErrorAt(FieldKey.of("friends", 0, "name"), "io.github.raniagus.javalidation.constraints.NotNull.message")
+                    .hasFieldErrorAt(FieldKey.of("friends", 2, "name"), "io.github.raniagus.javalidation.constraints.NotNull.message");
         }
 
         @Test
         void nullItemAndInvalidItem_allReported() {
-            assertThat(validator.validate(new ValidatedIterableRecord(Arrays.asList(
+            List<ValidatedIterableRecord.Person> friends = Arrays.asList(
                     null,
                     new ValidatedIterableRecord.Person(null)
-            )))).isEqualTo(
-                createValidationErrors(v ->
-                    v.withField("friends", () -> {
-                        v.withField(0, () -> {
-                                v.addError("io.github.raniagus.javalidation.constraints.NotNull.message");
-                        });
-                        v.withField(1, () -> {
-                                v.addErrorAt("name", "io.github.raniagus.javalidation.constraints.NotNull.message");
-                        });
-                    })
-                )
             );
+            assertThat(validator.validate(new ValidatedIterableRecord(friends)))
+                    .hasErrorCount(2)
+                    .hasFieldErrorAt(FieldKey.of("friends", 0), "io.github.raniagus.javalidation.constraints.NotNull.message")
+                    .hasFieldErrorAt(FieldKey.of("friends", 1, "name"), "io.github.raniagus.javalidation.constraints.NotNull.message");
         }
     }
 
@@ -203,57 +191,54 @@ public class CollectionValidationsTest {
         @Test
         void nullScores_hasFieldError() {
             assertThat(validator.validate(new NestedIterableRecord(null)))
-                    .isEqualTo(ValidationErrors.at("scores", "io.github.raniagus.javalidation.constraints.NotEmpty.message"));
+                    .hasErrorCount(1)
+                    .hasFieldError("scores", "io.github.raniagus.javalidation.constraints.NotEmpty.message");
         }
 
         @Test
         void emptyScores_noHasFieldError() {
             assertThat(validator.validate(new NestedIterableRecord(List.of())))
-                    .isEqualTo(ValidationErrors.at("scores", "io.github.raniagus.javalidation.constraints.NotEmpty.message"));
+                    .hasErrorCount(1)
+                    .hasFieldError("scores", "io.github.raniagus.javalidation.constraints.NotEmpty.message");
         }
 
         @Test
         void emptyInnerList_hasFieldError() {
             assertThat(validator.validate(new NestedIterableRecord(List.of(List.of()))))
-                    .isEqualTo(ValidationErrors.at(FieldKey.of("scores", 0), "io.github.raniagus.javalidation.constraints.NotEmpty.message"));
+                    .hasErrorCount(1)
+                    .hasFieldErrorAt(FieldKey.of("scores", 0), "io.github.raniagus.javalidation.constraints.NotEmpty.message");
         }
 
         @Test
         void nullInnerList_hasFieldError() {
             assertThat(validator.validate(new NestedIterableRecord(Collections.singletonList(null))))
-                    .isEqualTo(ValidationErrors.at(FieldKey.of("scores", 0), "io.github.raniagus.javalidation.constraints.NotEmpty.message"));
+                    .hasErrorCount(1)
+                    .hasFieldErrorAt(FieldKey.of("scores", 0), "io.github.raniagus.javalidation.constraints.NotEmpty.message");
         }
 
         @Test
         void nullItemInInnerList_hasFieldError() {
-            assertThat(validator.validate(new NestedIterableRecord(List.of(Collections.singletonList(null)))))
-                    .isEqualTo(ValidationErrors.at(FieldKey.of("scores", 0, 0), "io.github.raniagus.javalidation.constraints.NotNull.message"));
+            List<List<Integer>> scores = List.of(Collections.singletonList(null));
+            assertThat(validator.validate(new NestedIterableRecord(scores)))
+                    .hasErrorCount(1)
+                    .hasFieldErrorAt(FieldKey.of("scores", 0, 0), "io.github.raniagus.javalidation.constraints.NotNull.message");
         }
 
         @Test
         void validScores_noErrors() {
-            assertThat(validator.validate(new NestedIterableRecord(List.of(List.of(1, 2), List.of(3)))))
-                    .isEqualTo(ValidationErrors.empty());
+            List<List<Integer>> scores = List.of(List.of(1, 2), List.of(3));
+            assertThat(validator.validate(new NestedIterableRecord(scores)))
+                    .isEmpty();
         }
 
         @Test
         void multipleErrors_allReported() {
-            assertThat(validator.validate(new NestedIterableRecord(List.of(
-                    Arrays.asList(null, null),
-                    List.of()
-            )))).isEqualTo(
-                    createValidationErrors(v ->
-                        v.withField("scores", () -> {
-                            v.withField(0, () -> {
-                                    v.addErrorAt(0, "io.github.raniagus.javalidation.constraints.NotNull.message");
-                                    v.addErrorAt(1, "io.github.raniagus.javalidation.constraints.NotNull.message");
-                            });
-                            v.withField(1, () -> {
-                                    v.addError("io.github.raniagus.javalidation.constraints.NotEmpty.message");
-                            });
-                        })
-                    )
-            );
+            List<List<Integer>> scores = List.of(Arrays.asList(null, null), List.of());
+            assertThat(validator.validate(new NestedIterableRecord(scores)))
+                    .hasErrorCount(3)
+                    .hasFieldErrorAt(FieldKey.of("scores", 0, 0), "io.github.raniagus.javalidation.constraints.NotNull.message")
+                    .hasFieldErrorAt(FieldKey.of("scores", 0, 1), "io.github.raniagus.javalidation.constraints.NotNull.message")
+                    .hasFieldErrorAt(FieldKey.of("scores", 1), "io.github.raniagus.javalidation.constraints.NotEmpty.message");
         }
     }
 
@@ -264,37 +249,42 @@ public class CollectionValidationsTest {
         @Test
         void nullTags_hasFieldError() {
             assertThat(validator.validate(new PrimitiveMapRecord(null)))
-                    .isEqualTo(ValidationErrors.at("tags", "io.github.raniagus.javalidation.constraints.NotEmpty.message"));
+                    .hasErrorCount(1)
+                    .hasFieldError("tags", "io.github.raniagus.javalidation.constraints.NotEmpty.message");
         }
 
         @Test
         void emptyTags_hasFieldError() {
             assertThat(validator.validate(new PrimitiveMapRecord(Map.of())))
-                    .isEqualTo(ValidationErrors.at("tags", "io.github.raniagus.javalidation.constraints.NotEmpty.message"));
+                    .hasErrorCount(1)
+                    .hasFieldError("tags", "io.github.raniagus.javalidation.constraints.NotEmpty.message");
         }
 
         @Test
         void validTags_noErrors() {
             assertThat(validator.validate(new PrimitiveMapRecord(Map.of("key", "value"))))
-                    .isEqualTo(ValidationErrors.empty());
+                    .isEmpty();
         }
 
         @Test
         void nullKey_hasFieldError() {
             assertThat(validator.validate(new PrimitiveMapRecord(Collections.singletonMap(null, "value"))))
-                    .isEqualTo(ValidationErrors.at("tags", "io.github.raniagus.javalidation.constraints.NotNull.message"));
+                    .hasErrorCount(1)
+                    .hasFieldError("tags", "io.github.raniagus.javalidation.constraints.NotNull.message");
         }
 
         @Test
         void nullValue_hasFieldError() {
             assertThat(validator.validate(new PrimitiveMapRecord(Collections.singletonMap("key", null))))
-                    .isEqualTo(ValidationErrors.at(FieldKey.of("tags", "key"), "io.github.raniagus.javalidation.constraints.NotNull.message"));
+                    .hasErrorCount(1)
+                    .hasFieldErrorAt(FieldKey.of("tags", "key"), "io.github.raniagus.javalidation.constraints.NotNull.message");
         }
 
         @Test
         void nullKeyStopsValueValidation() {
             assertThat(validator.validate(new PrimitiveMapRecord(Collections.singletonMap(null, null))))
-                    .isEqualTo(ValidationErrors.at("tags", "io.github.raniagus.javalidation.constraints.NotNull.message"));
+                    .hasErrorCount(1)
+                    .hasFieldError("tags", "io.github.raniagus.javalidation.constraints.NotNull.message");
         }
 
         @Test
@@ -305,14 +295,9 @@ public class CollectionValidationsTest {
             tags.put("c", null);
 
             assertThat(validator.validate(new PrimitiveMapRecord(tags)))
-                    .isEqualTo(
-                            createValidationErrors(v ->
-                                    v.withField("tags", () -> {
-                                        v.withField("a", () -> v.addError("io.github.raniagus.javalidation.constraints.NotNull.message"));
-                                        v.withField("c", () -> v.addError("io.github.raniagus.javalidation.constraints.NotNull.message"));
-                                    })
-                            )
-                    );
+                    .hasErrorCount(2)
+                    .hasFieldErrorAt(FieldKey.of("tags", "a"), "io.github.raniagus.javalidation.constraints.NotNull.message")
+                    .hasFieldErrorAt(FieldKey.of("tags", "c"), "io.github.raniagus.javalidation.constraints.NotNull.message");
         }
     }
 
@@ -323,55 +308,61 @@ public class CollectionValidationsTest {
         @Test
         void nullScores_noErrors() {
             assertThat(validator.validate(new NestedMapRecord(null)))
-                    .isEqualTo(ValidationErrors.empty());
+                    .isEmpty();
         }
 
         @Test
         void emptyScores_noErrors() {
             assertThat(validator.validate(new NestedMapRecord(Map.of())))
-                    .isEqualTo(ValidationErrors.empty());
+                    .isEmpty();
         }
 
         @Test
         void nullOuterKey_hasFieldError() {
             assertThat(validator.validate(new NestedMapRecord(Collections.singletonMap(null, Map.of()))))
-                    .isEqualTo(ValidationErrors.at("scores", "io.github.raniagus.javalidation.constraints.NotNull.message"));
+                    .hasErrorCount(1)
+                    .hasFieldError("scores", "io.github.raniagus.javalidation.constraints.NotNull.message");
         }
 
         @Test
         void nullOuterValue_hasFieldError() {
             assertThat(validator.validate(new NestedMapRecord(Collections.singletonMap("a", null))))
-                    .isEqualTo(ValidationErrors.at(FieldKey.of("scores", "a"), "io.github.raniagus.javalidation.constraints.NotEmpty.message"));
+                    .hasErrorCount(1)
+                    .hasFieldErrorAt(FieldKey.of("scores", "a"), "io.github.raniagus.javalidation.constraints.NotEmpty.message");
         }
 
         @Test
         void emptyInnerMap_hasFieldError() {
             assertThat(validator.validate(new NestedMapRecord(Map.of("a", Map.of()))))
-                    .isEqualTo(ValidationErrors.at(FieldKey.of("scores", "a"), "io.github.raniagus.javalidation.constraints.NotEmpty.message"));
+                    .hasErrorCount(1)
+                    .hasFieldErrorAt(FieldKey.of("scores", "a"), "io.github.raniagus.javalidation.constraints.NotEmpty.message");
         }
 
         @Test
         void nullInnerKey_hasFieldError() {
             assertThat(validator.validate(new NestedMapRecord(Map.of("a", Collections.singletonMap(null, 1)))))
-                    .isEqualTo(ValidationErrors.at(FieldKey.of("scores", "a"), "io.github.raniagus.javalidation.constraints.NotNull.message"));
+                    .hasErrorCount(1)
+                    .hasFieldErrorAt(FieldKey.of("scores", "a"), "io.github.raniagus.javalidation.constraints.NotNull.message");
         }
 
         @Test
         void nullInnerValue_hasFieldError() {
             assertThat(validator.validate(new NestedMapRecord(Map.of("a", Collections.singletonMap("b", null)))))
-                    .isEqualTo(ValidationErrors.at(FieldKey.of("scores", "a", "b"), "io.github.raniagus.javalidation.constraints.NotNull.message"));
+                    .hasErrorCount(1)
+                    .hasFieldErrorAt(FieldKey.of("scores", "a", "b"), "io.github.raniagus.javalidation.constraints.NotNull.message");
         }
 
         @Test
         void validScores_noErrors() {
             assertThat(validator.validate(new NestedMapRecord(Map.of("a", Map.of("b", 1, "c", 2)))))
-                    .isEqualTo(ValidationErrors.empty());
+                    .isEmpty();
         }
 
         @Test
         void nullOuterKeyStopsInnerValidation() {
             assertThat(validator.validate(new NestedMapRecord(Collections.singletonMap(null, null))))
-                    .isEqualTo(ValidationErrors.at("scores", "io.github.raniagus.javalidation.constraints.NotNull.message"));
+                    .hasErrorCount(1)
+                    .hasFieldError("scores", "io.github.raniagus.javalidation.constraints.NotNull.message");
         }
 
         @Test
@@ -382,21 +373,11 @@ public class CollectionValidationsTest {
             scores.put("c", null);
 
             assertThat(validator.validate(new NestedMapRecord(scores)))
-                    .isEqualTo(
-                            createValidationErrors(v ->
-                                    v.withField("scores", () -> {
-                                        v.withField("a", () -> v.addError("io.github.raniagus.javalidation.constraints.NotNull.message"));
-                                        v.withField("b", () -> v.withField("x", () -> v.addError("io.github.raniagus.javalidation.constraints.NotNull.message")));
-                                        v.withField("c", () -> v.addError("io.github.raniagus.javalidation.constraints.NotEmpty.message"));
-                                    })
-                            )
-                    );
+                    .hasErrorCount(3)
+                    .hasFieldErrorAt(FieldKey.of("scores", "a"), "io.github.raniagus.javalidation.constraints.NotNull.message")
+                    .hasFieldErrorAt(FieldKey.of("scores", "b", "x"), "io.github.raniagus.javalidation.constraints.NotNull.message")
+                    .hasFieldErrorAt(FieldKey.of("scores", "c"), "io.github.raniagus.javalidation.constraints.NotEmpty.message");
         }
     }
 
-    private ValidationErrors createValidationErrors(Consumer<Validation> consumer) {
-        Validation validation = Validation.create();
-        consumer.accept(validation);
-        return validation.finish();
-    }
 }

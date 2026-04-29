@@ -1,7 +1,7 @@
 package io.github.raniagus.javalidation.spring;
 
+import static io.github.raniagus.javalidation.assertj.JavalidationAssertions.assertThat;
 import static io.github.raniagus.javalidation.spring.JavalidationSpringValidator.toValidationErrors;
-import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.raniagus.javalidation.Validation;
 import org.junit.jupiter.api.Test;
@@ -22,6 +22,9 @@ class JavalidationSpringValidatorTest {
         Errors errors = new SimpleErrors(new Value("test"));
         validator.toErrors(validation.finish(), errors);
 
-        assertThat(toValidationErrors(errors)).isEqualTo(validation.finish());
+        assertThat(toValidationErrors(errors))
+                .hasErrorCount(2)
+                .hasRootError("root error")
+                .hasFieldError("field", "error");
     }
 }

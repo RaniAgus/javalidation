@@ -1,10 +1,10 @@
 package io.github.raniagus.javalidation.jackson;
 
+import static io.github.raniagus.javalidation.assertj.JavalidationAssertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.raniagus.javalidation.FieldKey;
 import io.github.raniagus.javalidation.Result;
-import io.github.raniagus.javalidation.TemplateString;
 import io.github.raniagus.javalidation.ValidationErrors;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,8 +32,7 @@ class StructuredResultDeserializerTest {
 
         Result<String> result = mapper.readValue(json, new TypeReference<>() {});
 
-        assertThat(result).isInstanceOf(Result.Ok.class);
-        assertThat(((Result.Ok<String>) result).value()).isEqualTo("hello");
+        assertThat(result).isOk().hasValue("hello");
     }
 
     @Test
@@ -44,8 +43,7 @@ class StructuredResultDeserializerTest {
 
         Result<Integer> result = mapper.readValue(json, new TypeReference<Result<Integer>>() {});
 
-        assertThat(result).isInstanceOf(Result.Ok.class);
-        assertThat(((Result.Ok<Integer>) result).value()).isEqualTo(42);
+        assertThat(result).isOk().hasValue(42);
     }
 
     @Test
@@ -56,8 +54,7 @@ class StructuredResultDeserializerTest {
 
         Result<String> result = mapper.readValue(json, new TypeReference<>() {});
 
-        assertThat(result).isInstanceOf(Result.Ok.class);
-        assertThat(((Result.Ok<String>) result).value()).isNull();
+        assertThat(result).isOk().hasValue(null);
     }
 
     @Test
@@ -69,10 +66,7 @@ class StructuredResultDeserializerTest {
 
         Result<Person> result = mapper.readValue(json, new TypeReference<Result<Person>>() {});
 
-        assertThat(result).isInstanceOf(Result.Ok.class);
-        Person person = ((Result.Ok<Person>) result).value();
-        assertThat(person.name()).isEqualTo("Alice");
-        assertThat(person.age()).isEqualTo(30);
+        assertThat(result).isOk().hasValue(new Person("Alice", 30));
     }
 
     @Test
@@ -81,11 +75,9 @@ class StructuredResultDeserializerTest {
                 {"ok":true,"value":["a","b","c"]}\
                 """;
 
-        Result<List<String>> result = mapper.readValue(json, new TypeReference<Result<List<String>>>() {});
+        Result<List<String>> result = mapper.readValue(json, new TypeReference<>() {});
 
-        assertThat(result).isInstanceOf(Result.Ok.class);
-        List<String> list = ((Result.Ok<List<String>>) result).value();
-        assertThat(list).containsExactly("a", "b", "c");
+        assertThat(result).isOk().hasValue(List.of("a", "b", "c"));
     }
 
     // -- deserialize Err with structured format --
@@ -98,12 +90,10 @@ class StructuredResultDeserializerTest {
 
         Result<String> result = mapper.readValue(json, new TypeReference<>() {});
 
-        assertThat(result).isInstanceOf(Result.Err.class);
-        ValidationErrors errors = result.errors();
-        assertThat(errors.rootErrors()).hasSize(1);
-        assertThat(errors.rootErrors().getFirst().message()).isEqualTo("Invalid input");
-        assertThat(errors.rootErrors().getFirst().args()).isEmpty();
-        assertThat(errors.fieldErrors()).isEmpty();
+        assertThat(result).isErr()
+                .hasErrorCount(1)
+                .hasRootError("Invalid input")
+                .hasNoFieldErrors();
     }
 
     @Test
@@ -114,16 +104,10 @@ class StructuredResultDeserializerTest {
 
         Result<String> result = mapper.readValue(json, new TypeReference<>() {});
 
-        assertThat(result).isInstanceOf(Result.Err.class);
-        ValidationErrors errors = result.errors();
-        assertThat(errors.rootErrors()).isEmpty();
-        assertThat(errors.fieldErrors()).hasSize(1);
-        
-        FieldKey emailKey = FieldKey.of("email");
-        assertThat(errors.fieldErrors()).containsKey(emailKey);
-        List<TemplateString> fieldErrors = errors.fieldErrors().get(emailKey);
-        assertThat(fieldErrors).hasSize(1);
-        assertThat(fieldErrors.getFirst().message()).isEqualTo("Invalid format");
+        assertThat(result).isErr()
+                .hasErrorCount(1)
+                .hasFieldError("email", "Invalid format")
+                .hasNoRootErrors();
     }
 
     @Test
@@ -134,16 +118,9 @@ class StructuredResultDeserializerTest {
 
         Result<String> result = mapper.readValue(json, new TypeReference<>() {});
 
-        assertThat(result).isInstanceOf(Result.Err.class);
-        ValidationErrors errors = result.errors();
-        
-        FieldKey ageKey = FieldKey.of("age");
-        List<TemplateString> fieldErrors = errors.fieldErrors().get(ageKey);
-        assertThat(fieldErrors).hasSize(1);
-        
-        TemplateString error = fieldErrors.getFirst();
-        assertThat(error.message()).isEqualTo("Must be at least {0}");
-        assertThat(error.args()).containsExactly(18);
+        assertThat(result).isErr()
+                .hasErrorCount(1)
+                .hasFieldError("age", "Must be at least {0}", 18);
     }
 
     @Test
@@ -154,15 +131,12 @@ class StructuredResultDeserializerTest {
 
         Result<String> result = mapper.readValue(json, new TypeReference<>() {});
 
-        assertThat(result).isInstanceOf(Result.Err.class);
-        ValidationErrors errors = result.errors();
-        
-        assertThat(errors.rootErrors()).hasSize(1);
-        assertThat(errors.rootErrors().getFirst().message()).isEqualTo("Global error");
-        
-        assertThat(errors.fieldErrors()).hasSize(2);
-        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("name"));
-        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("age"));
+        assertThat(result).isErr()
+                .hasErrorCount(3)
+                .hasRootError("Global error")
+                .hasRootErrorCount(1)
+                .hasFieldKey("name")
+                .hasFieldKey("age");
     }
 
     @Test
@@ -173,12 +147,9 @@ class StructuredResultDeserializerTest {
 
         Result<String> result = mapper.readValue(json, new TypeReference<>() {});
 
-        assertThat(result).isInstanceOf(Result.Err.class);
-        ValidationErrors errors = result.errors();
-        
-        FieldKey expectedKey = FieldKey.of("address", 0, "street", "city");
-        assertThat(errors.fieldErrors()).containsKey(expectedKey);
-        assertThat(errors.fieldErrors().get(expectedKey).getFirst().message()).isEqualTo("Invalid");
+        assertThat(result).isErr()
+                .hasErrorCount(1)
+                .hasFieldErrorAt(FieldKey.of("address", 0, "street", "city"), "Invalid");
     }
 
     @Test
@@ -189,16 +160,11 @@ class StructuredResultDeserializerTest {
 
         Result<String> result = mapper.readValue(json, new TypeReference<>() {});
 
-        assertThat(result).isInstanceOf(Result.Err.class);
-        ValidationErrors errors = result.errors();
-        
-        FieldKey passwordKey = FieldKey.of("password");
-        List<TemplateString> fieldErrors = errors.fieldErrors().get(passwordKey);
-        assertThat(fieldErrors).hasSize(3);
-        assertThat(fieldErrors.get(0).message()).isEqualTo("Required");
-        assertThat(fieldErrors.get(1).message()).isEqualTo("Must be at least {0} characters");
-        assertThat(fieldErrors.get(1).args()).containsExactly(8);
-        assertThat(fieldErrors.get(2).message()).isEqualTo("Must contain a number");
+        assertThat(result).isErr()
+                .hasErrorCount(3)
+                .hasFieldError("password", "Required")
+                .hasFieldError("password", "Must be at least {0} characters", 8)
+                .hasFieldError("password", "Must contain a number");
     }
 
     // -- round-trip (serialize then deserialize) --
@@ -206,7 +172,7 @@ class StructuredResultDeserializerTest {
     @Test
     void givenSerializedOkResult_whenDeserialize_thenMatchesOriginal() {
         Result<String> original = Result.ok("test valid");
-        
+
         String json = mapper.writeValueAsString(original);
         Result<String> deserialized = mapper.readValue(json, new TypeReference<>() {});
 
@@ -216,7 +182,7 @@ class StructuredResultDeserializerTest {
     @Test
     void givenSerializedErrResult_whenDeserialize_thenMatchesOriginal() {
         Result<String> original = Result.errorAt("field", "Error with {0} args", 2);
-        
+
         String json = mapper.writeValueAsString(original);
         Result<String> deserialized = mapper.readValue(json, new TypeReference<>() {});
 
@@ -230,7 +196,7 @@ class StructuredResultDeserializerTest {
                 .mergeWith(ValidationErrors.at("user", "Invalid").withPrefix("data", 0))
                 .mergeWith(ValidationErrors.at("email", "Required"));
         Result<String> original = Result.error(errors);
-        
+
         String json = mapper.writeValueAsString(original);
         Result<String> deserialized = mapper.readValue(json, new TypeReference<>() {});
 
@@ -249,8 +215,7 @@ class StructuredResultDeserializerTest {
         Response response = mapper.readValue(json, Response.class);
 
         assertThat(response.id()).isEqualTo("123");
-        assertThat(response.result()).isInstanceOf(Result.Ok.class);
-        assertThat(((Result.Ok<String>) response.result()).value()).isEqualTo("success");
+        assertThat(response.result()).isOk().hasValue("success");
     }
 
     @Test
@@ -263,8 +228,8 @@ class StructuredResultDeserializerTest {
         Response response = mapper.readValue(json, Response.class);
 
         assertThat(response.id()).isEqualTo("456");
-        assertThat(response.result()).isInstanceOf(Result.Err.class);
-        ValidationErrors errors = response.result().errors();
-        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("field"));
+        assertThat(response.result()).isErr()
+                .hasErrorCount(1)
+                .hasFieldKey("field");
     }
 }
