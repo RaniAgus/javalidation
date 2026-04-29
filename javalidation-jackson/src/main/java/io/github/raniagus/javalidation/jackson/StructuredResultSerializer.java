@@ -1,22 +1,11 @@
 package io.github.raniagus.javalidation.jackson;
 
 import io.github.raniagus.javalidation.Result;
-import io.github.raniagus.javalidation.format.TemplateStringFormatter;
-import org.jspecify.annotations.Nullable;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.ValueSerializer;
 
 public class StructuredResultSerializer extends ValueSerializer<Result<?>> {
-    private final TemplateStringFormatter templateStringFormatter;
-
-    public StructuredResultSerializer(TemplateStringFormatter templateStringFormatter) {
-        this.templateStringFormatter = templateStringFormatter;
-    }
-
-    public StructuredResultSerializer() {
-        this(TemplateStringFormatter.getDefault());
-    }
 
     @Override
     @SuppressWarnings("unchecked")
@@ -35,7 +24,7 @@ public class StructuredResultSerializer extends ValueSerializer<Result<?>> {
             }
             case Result.Err<?> err -> {
                 gen.writeBooleanProperty("ok", false);
-                var errorsDto = StructuredValidationErrorsDto.from(err.errors(), templateStringFormatter);
+                var errorsDto = StructuredValidationErrorsDto.from(err.errors());
                 context.defaultSerializeProperty("errors", errorsDto, gen);
             }
         }

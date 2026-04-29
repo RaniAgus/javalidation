@@ -17,16 +17,16 @@ record StructuredValidationErrorsDto(
         fieldErrors = List.copyOf(fieldErrors);
     }
 
-    static StructuredValidationErrorsDto from(ValidationErrors errors, TemplateStringFormatter formatter) {
+    static StructuredValidationErrorsDto from(ValidationErrors errors) {
         var rootDtos = errors.rootErrors().stream()
-                .map(ts -> StructuredErrorDto.from(ts, formatter))
+                .map(StructuredErrorDto::from)
                 .toList();
 
         var fieldDtos = errors.fieldErrors().entrySet().stream()
                 .map(entry -> new StructuredFieldErrorDto(
                         Arrays.stream(entry.getKey().parts()).map(FieldKeyPart::objValue).toArray(),
                         entry.getValue().stream()
-                                .map(ts -> StructuredErrorDto.from(ts, formatter))
+                                .map(StructuredErrorDto::from)
                                 .toList()
                 ))
                 .toList();

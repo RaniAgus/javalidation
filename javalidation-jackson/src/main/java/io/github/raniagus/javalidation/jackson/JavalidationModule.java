@@ -172,7 +172,7 @@ public class JavalidationModule extends SimpleModule {
          */
         public Builder withTemplateStringFormatter(TemplateStringFormatter formatter) {
             withTemplateStringSerializer(new TemplateStringSerializer(formatter));
-            withResultSerializer(new StructuredResultSerializer(formatter));
+            withResultSerializer(new StructuredResultSerializer());
             return this;
         }
 

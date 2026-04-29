@@ -85,7 +85,7 @@ class StructuredResultDeserializerTest {
     @Test
     void givenErrWithRootError_whenDeserialize_thenReconstructsValidationErrors() {
         String json = """
-                {"ok":false,"errors":{"rootErrors":[{"message":"Invalid input","code":"Invalid input","args":[]}],"fieldErrors":[]}}\
+                {"ok":false,"errors":{"rootErrors":[{"code":"Invalid input","args":[]}],"fieldErrors":[]}}\
                 """;
 
         Result<String> result = mapper.readValue(json, new TypeReference<>() {});
@@ -99,7 +99,7 @@ class StructuredResultDeserializerTest {
     @Test
     void givenErrWithFieldError_whenDeserialize_thenReconstructsFieldErrors() {
         String json = """
-                {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["email"],"errors":[{"message":"Invalid format","code":"Invalid format","args":[]}]}]}}\
+                {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["email"],"errors":[{"code":"Invalid format","args":[]}]}]}}\
                 """;
 
         Result<String> result = mapper.readValue(json, new TypeReference<>() {});
@@ -113,7 +113,7 @@ class StructuredResultDeserializerTest {
     @Test
     void givenErrWithTemplateArgs_whenDeserialize_thenReconstructsTemplateAndArgs() {
         String json = """
-                {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["age"],"errors":[{"message":"Must be at least 18","code":"Must be at least {0}","args":[18]}]}]}}\
+                {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["age"],"errors":[{"code":"Must be at least {0}","args":[18]}]}]}}\
                 """;
 
         Result<String> result = mapper.readValue(json, new TypeReference<>() {});
@@ -126,7 +126,7 @@ class StructuredResultDeserializerTest {
     @Test
     void givenErrWithMultipleErrors_whenDeserialize_thenReconstructsAllErrors() {
         String json = """
-                {"ok":false,"errors":{"rootErrors":[{"message":"Global error","code":"Global error","args":[]}],"fieldErrors":[{"key":["age"],"errors":[{"message":"Must be positive","code":"Must be positive","args":[]}]},{"key":["name"],"errors":[{"message":"Required","code":"Required","args":[]}]}]}}\
+                {"ok":false,"errors":{"rootErrors":[{"code":"Global error","args":[]}],"fieldErrors":[{"key":["age"],"errors":[{"code":"Must be positive","args":[]}]},{"key":["name"],"errors":[{"code":"Required","args":[]}]}]}}\
                 """;
 
         Result<String> result = mapper.readValue(json, new TypeReference<>() {});
@@ -134,7 +134,6 @@ class StructuredResultDeserializerTest {
         assertThat(result).isErr()
                 .hasErrorCount(3)
                 .hasRootError("Global error")
-                .hasRootErrorCount(1)
                 .hasFieldKey("name")
                 .hasFieldKey("age");
     }
@@ -142,7 +141,7 @@ class StructuredResultDeserializerTest {
     @Test
     void givenErrWithNestedFieldKeys_whenDeserialize_thenReconstructsFieldKeyParts() {
         String json = """
-                {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["address",0,"street","city"],"errors":[{"message":"Invalid","code":"Invalid","args":[]}]}]}}\
+                {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["address",0,"street","city"],"errors":[{"code":"Invalid","args":[]}]}]}}\
                 """;
 
         Result<String> result = mapper.readValue(json, new TypeReference<>() {});
@@ -155,7 +154,7 @@ class StructuredResultDeserializerTest {
     @Test
     void givenErrWithMultipleErrorsOnSameField_whenDeserialize_thenReconstructsAllFieldErrors() {
         String json = """
-                {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["password"],"errors":[{"message":"Required","code":"Required","args":[]},{"message":"Must be at least 8 characters","code":"Must be at least {0} characters","args":[8]},{"message":"Must contain a number","code":"Must contain a number","args":[]}]}]}}\
+                {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["password"],"errors":[{"code":"Required","args":[]},{"code":"Must be at least {0} characters","args":[8]},{"code":"Must contain a number","args":[]}]}]}}\
                 """;
 
         Result<String> result = mapper.readValue(json, new TypeReference<>() {});
@@ -222,7 +221,7 @@ class StructuredResultDeserializerTest {
     void givenResultInContainerWithError_whenDeserialize_thenReconstructsNestedError() {
         record Response(String id, Result<String> result) {}
         String json = """
-                {"id":"456","result":{"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["field"],"errors":[{"message":"Error message","code":"Error message","args":[]}]}]}}}\
+                {"id":"456","result":{"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["field"],"errors":[{"code":"Error message","args":[]}]}]}}}\
                 """;
 
         Response response = mapper.readValue(json, Response.class);

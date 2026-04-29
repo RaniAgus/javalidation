@@ -89,7 +89,7 @@ class StructuredResultSerializerTest {
         String json = mapper.writeValueAsString(result);
 
         assertThat(json).isEqualTo("""
-                {"ok":false,"errors":{"rootErrors":[{"message":"Invalid input","code":"Invalid input","args":[]}],"fieldErrors":[]}}\
+                {"ok":false,"errors":{"rootErrors":[{"code":"Invalid input","args":[]}],"fieldErrors":[]}}\
                 """);
     }
 
@@ -100,7 +100,7 @@ class StructuredResultSerializerTest {
         String json = mapper.writeValueAsString(result);
 
         assertThat(json).isEqualTo("""
-                {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["email"],"errors":[{"message":"Invalid format","code":"Invalid format","args":[]}]}]}}\
+                {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["email"],"errors":[{"code":"Invalid format","args":[]}]}]}}\
                 """);
     }
 
@@ -111,7 +111,7 @@ class StructuredResultSerializerTest {
         String json = mapper.writeValueAsString(result);
 
         assertThat(json).isEqualTo("""
-                {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["age"],"errors":[{"message":"Must be at least 18","code":"Must be at least {0}","args":[18]}]}]}}\
+                {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["age"],"errors":[{"code":"Must be at least {0}","args":[18]}]}]}}\
                 """);
     }
 
@@ -128,9 +128,9 @@ class StructuredResultSerializerTest {
 
         // Field order may vary, so check structure instead of exact string
         assertThat(json).contains("\"ok\":false");
-        assertThat(json).contains("\"rootErrors\":[{\"message\":\"Global error\",\"code\":\"Global error\",\"args\":[]}]");
-        assertThat(json).contains("{\"key\":[\"age\"],\"errors\":[{\"message\":\"Must be positive\",\"code\":\"Must be positive\",\"args\":[]}]}");
-        assertThat(json).contains("{\"key\":[\"name\"],\"errors\":[{\"message\":\"Required\",\"code\":\"Required\",\"args\":[]}]}");
+        assertThat(json).contains("\"rootErrors\":[{\"code\":\"Global error\",\"args\":[]}]");
+        assertThat(json).contains("{\"key\":[\"age\"],\"errors\":[{\"code\":\"Must be positive\",\"args\":[]}]}");
+        assertThat(json).contains("{\"key\":[\"name\"],\"errors\":[{\"code\":\"Required\",\"args\":[]}]}");
     }
 
     @Test
@@ -142,7 +142,7 @@ class StructuredResultSerializerTest {
         String json = mapper.writeValueAsString(result);
 
         assertThat(json).isEqualTo("""
-                {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["address",0,"street","user"],"errors":[{"message":"Invalid","code":"Invalid","args":[]}]}]}}\
+                {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["address",0,"street","user"],"errors":[{"code":"Invalid","args":[]}]}]}}\
                 """);
     }
 
@@ -158,7 +158,7 @@ class StructuredResultSerializerTest {
         String json = mapper.writeValueAsString(result);
 
         assertThat(json).isEqualTo("""
-                {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["password"],"errors":[{"message":"Required","code":"Required","args":[]},{"message":"Must be at least 8 characters","code":"Must be at least {0} characters","args":[8]},{"message":"Must contain a number","code":"Must contain a number","args":[]}]}]}}\
+                {"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["password"],"errors":[{"code":"Required","args":[]},{"code":"Must be at least {0} characters","args":[8]},{"code":"Must contain a number","args":[]}]}]}}\
                 """);
     }
 
@@ -184,7 +184,7 @@ class StructuredResultSerializerTest {
         String json = mapper.writeValueAsString(response);
 
         assertThat(json).isEqualTo("""
-                {"id":"456","result":{"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["field"],"errors":[{"message":"Error message","code":"Error message","args":[]}]}]}}}\
+                {"id":"456","result":{"ok":false,"errors":{"rootErrors":[],"fieldErrors":[{"key":["field"],"errors":[{"code":"Error message","args":[]}]}]}}}\
                 """);
     }
 
