@@ -12,23 +12,18 @@ import io.github.raniagus.javalidation.FieldKeyPart;
  *   <li>{@code "0"} — single index segment</li>
  *   <li>{@code "items.0.price"} — mixed path</li>
  * </ul>
- *
- * @see DotNotationParser
- * @see FieldKeyNotation#DOTS
  */
 public class DotNotationFormatter implements FieldKeyFormatter {
     @Override
     public String format(FieldKey fieldKey) {
-        StringBuilder builder = new StringBuilder();
-        boolean first = true;
-        for (FieldKeyPart part : fieldKey.parts()) {
-            if (first) {
-                builder.append(part);
-            } else {
-                builder.append('.').append(part);
-            }
-            first = false;
+        FieldKeyPart[] parts = fieldKey.parts();
+        if (parts.length == 0) return "";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(parts[0]);
+        for (int i = 1; i < parts.length; i++) {
+            sb.append('.').append(parts[i]);
         }
-        return builder.toString();
+        return sb.toString();
     }
 }
