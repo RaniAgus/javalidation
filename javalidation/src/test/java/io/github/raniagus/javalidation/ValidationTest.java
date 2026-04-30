@@ -150,9 +150,19 @@ class ValidationTest {
     }
 
     // -- addAll(ValidationErrors) --
+    @Test
+    void givenRootErrors_whenAddAll_thenAddsAllErrors() {
+        var validationErrors = ValidationErrors.of("error");
+        var validation = Validation.create()
+                .addAll(validationErrors);
+
+        var errors = validation.finish();
+        assertThat(errors.rootErrors()).containsExactly(TemplateString.of("error"));
+    }
+
 
     @Test
-    void givenValidationErrors_whenAddAll_thenAddsAllErrors() {
+    void givenFieldErrors_whenAddAll_thenAddsAllErrors() {
         var validationErrors = ValidationErrors.at("field", "error");
         var validation = Validation.create()
                 .addAll(validationErrors);

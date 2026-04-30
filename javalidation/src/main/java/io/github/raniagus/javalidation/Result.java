@@ -105,6 +105,10 @@ public sealed interface Result<T extends @Nullable Object> {
      * @param <T> the type of the success value
      */
     record Ok<T extends @Nullable Object>(T value) implements Result<T> {
+        @Override
+        public ValidationErrors errors() {
+            return ValidationErrors.empty();
+        }
     }
 
     /**
@@ -164,12 +168,7 @@ public sealed interface Result<T extends @Nullable Object> {
      *
      * @return the accumulated validation errors, or empty if this is {@link Ok}
      */
-    default ValidationErrors errors() {
-        return switch (this) {
-            case Ok<T>(T ignored) -> ValidationErrors.empty();
-            case Err<T>(ValidationErrors errors) -> errors;
-        };
-    }
+    ValidationErrors errors();
 
     /**
      * Adds a prefix to all error field paths by concatenating the given objects into a string.

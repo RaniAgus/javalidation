@@ -56,6 +56,7 @@ class ResultTest {
         );
 
         assertThat(result.getOrThrow()).isEqualTo(42);
+        assertThat(result.errors()).matches(ValidationErrors::isEmpty);
     }
 
     @Test
@@ -181,7 +182,7 @@ class ResultTest {
 
     @Test
     void givenOk_whenWithPrefixVarargs_thenReturnsOkWithSameValue() {
-        var result = Result.ok("value").withPrefix("prefix", ".", "sub");
+        var result = Result.ok("value").withPrefix("prefix", "sub");
 
         assertThat(result.getOrThrow()).isEqualTo("value");
     }
@@ -192,6 +193,22 @@ class ResultTest {
 
         var errors = result.errors();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("root", "sub", "field"));
+    }
+
+    @Test
+    void givenErr_whenWithMixedPrefix_thenBuildsPrefix() {
+        var result = Result.<String>errorAt("field", "error").withPrefix("root", 0);
+
+        var errors = result.errors();
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("root", 0, "field"));
+    }
+
+    @Test
+    void givenErr_whenWithNumberPrefix_thenBuildsPrefix() {
+        var result = Result.<String>errorAt("field", "error").withPrefix(0);
+
+        var errors = result.errors();
+        assertThat(errors.fieldErrors()).containsKey(FieldKey.of( 0, "field"));
     }
 
     // -- and --
@@ -496,6 +513,29 @@ class ResultTest {
         var resultErrors = result.errors();
         assertThat(resultErrors.fieldErrors()).containsKey(FieldKey.of("second"));
         assertThat(resultErrors.fieldErrors()).doesNotContainKey(FieldKey.of("first"));
+    }
+
+    @Test
+    void givenErr_whenFlatMapErrThrowsJavalidationException_thenCatchesAndReturnsErr() {
+        var result = Result.<Integer>error("initial error")
+                .flatMapErr(errors -> {
+                    throw JavalidationException.of("error in flatMapErr");
+                });
+
+        assertThat(result).isInstanceOf(Result.Err.class);
+        var errors = result.errors();
+        assertThat(errors.rootErrors()).hasSize(1);
+        assertThat(errors.rootErrors().getFirst().message()).isEqualTo("error in flatMapErr");
+    }
+
+    @Test
+    void givenErr_whenFlatMapErrThrowsOtherException_thenPropagatesException() {
+        assertThatThrownBy(() -> Result.<Integer>error("initial error")
+                .flatMapErr(errors -> {
+                    throw new IllegalStateException("unexpected error");
+                }))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("unexpected error");
     }
 
     @Test
