@@ -44,7 +44,7 @@ Deep-dive guides for each cross-cutting feature live in `.agents/features/`:
 - **`.agents/features/stream-collectors.md`** — `ResultCollector` stream API: `toListOrThrow`, `toResultList`, `toPartialResult`, `toValidation`, `addErrorsTo`, `withIndex`, `withPrefix`
 - **`.agents/features/result-merging.md`** — `ValidationErrors.mergeWith`, `Validation.addAll`, `addAllAt`, applicative combining
 - **`.agents/features/field-key.md`** — `FieldKey` array internals, `withPrefix` mechanics, prefix stack in `Validation`, `withIndex`/`withPrefix` in collectors, rendering
-- **`.agents/features/jackson-integration.md`** — `JavalidationModule` builder, `StructuredResult*`, `FlattenedErrors*`, `TemplateStringSerializer`, key notation options
+- **`.agents/features/jackson-integration.md`** — Two use cases: `Result<T>` (internal traffic, round-trip, opaque `{code,args}`) vs `ValidationErrors` (frontend/BFF, formatted, two layouts × three notations with client-library compat)
 - **`.agents/features/assertj-integration.md`** — `JavalidationAssertions.assertThat(...)`, `ResultAssert`, `ValidationErrorsAssert`, `PartialResultAssert`
 - **`.agents/features/jakarta-validator.md`** — `@Valid` annotation processing, `Validator` interface, `Validators.validate(...)`, `ValidatorsHolder`
 - **`.agents/features/spring-boot-starter.md`** — auto-config beans, `JavalidationProperties`, `@EnableJavalidation`, `MessageSource` integration, `JavalidationSpringValidator`

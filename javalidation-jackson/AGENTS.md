@@ -30,20 +30,20 @@ Provides a `JavalidationModule` for registering serializers/deserializers that h
 ### `JavalidationModule`
 
 ```java
-// Default (structured format, property-path notation, MessageFormat formatter)
+// Default (structured Result format + property-path notation + MessageFormat formatter)
 JavalidationModule module = JavalidationModule.getDefault();
 
 // Custom builder
 JavalidationModule module = JavalidationModule.builder()
-    .withTemplateStringFormatter(myFormatter)  // custom i18n formatter
-    .withFlattenedErrors()                      // flat {"": [], "field": []}
-    .withDotNotation()                          // dots only: items.0.price
+    .withTemplateStringFormatter(myFormatter)  // custom i18n formatter (for ValidationErrors)
+    .withFlattenedErrors()                      // flat {"": [], "field": []} for ValidationErrors
+    .withDotNotation()                          // dots: items.0.price (react-hook-form compat)
     .withBracketNotation()                      // brackets: [items][0][price]
     .withFieldKeyFormatter(formatter)           // custom FieldKeyFormatter
     .withFieldKeySerializer(serializer)         // custom ValueSerializer<FieldKey>
     .withTemplateStringSerializer(serializer)   // custom ValueSerializer<TemplateString>
     .withValidationErrorsSerializer(serializer) // custom ValidationErrors serializer
-    .withResultSerializer(serializer)           // custom Result serializer
+    .withResultSerializer(serializer)           // custom Result serializer (⚠️ also update deserializer)
     .withResultDeserializerFactory(factory)     // custom Result deserializer factory
     .build();
 
@@ -53,39 +53,52 @@ JsonMapper mapper = JsonMapper.builder()
     .build();
 ```
 
-### JSON Wire Formats
+### Two Wire Formats
 
-**Structured (default):**
+**`Result<T>` (internal backend traffic, round-trip):**
 ```json
 // Ok
-{"value": {"name": "Alice"}}
+{"ok": true, "value": {"name": "Alice"}}
 
-// Err
+// Err — opaque code/args, fieldErrors as typed array
 {
+  "ok": false,
   "errors": {
-    "rootErrors": [{"message": "some.key", "args": []}],
-    "fieldErrors": {
-      "email": [{"message": "some.key", "args": []}]
-    }
+    "rootErrors": [{"code": "io.github...NotNull.message", "args": []}],
+    "fieldErrors": [
+      {"key": ["email"], "errors": [{"code": "io.github...Email.message", "args": []}]},
+      {"key": ["items", 0, "price"], "errors": [{"code": "io.github...Min.message", "args": [1]}]}
+    ]
   }
 }
 ```
 
-**Flattened (`withFlattenedErrors()`):**
+**`ValidationErrors` (frontend/BFF, formatted messages):**
 ```json
+// Structured layout (default)
 {
-  "": ["Root error message"],
-  "email": ["Invalid email format"]
+  "rootErrors": ["Invalid request"],
+  "fieldErrors": {
+    "email": ["Must be a valid email address"],
+    "items[0].price": ["Must be at least 1"]
+  }
+}
+
+// Flattened layout (withFlattenedErrors())
+{
+  "": ["Invalid request"],
+  "email": ["Must be a valid email address"],
+  "items[0].price": ["Must be at least 1"]
 }
 ```
 
-### Key Notation Options
+### Key Notation Options for `ValidationErrors`
 
-| Method | Example output for `items[0].price` |
-|--------|--------------------------------------|
-| `.withPropertyPathNotation()` (default) | `items[0].price` |
-| `.withDotNotation()` | `items.0.price` |
-| `.withBracketNotation()` | `[items][0][price]` |
+| Method | Example `items[0].price` | Compatible with |
+|--------|--------------------------|-----------------|
+| `.withPropertyPathNotation()` (default) | `items[0].price` | [conform](https://conform.guide/) |
+| `.withDotNotation()` | `items.0.price` | [react-hook-form](https://react-hook-form.com/) |
+| `.withBracketNotation()` | `[items][0][price]` | — |
 
 ## Feature Deep-Dive
 
