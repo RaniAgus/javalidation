@@ -1,7 +1,6 @@
 package io.github.raniagus.javalidation;
 
 import io.github.raniagus.javalidation.combiner.ResultCombiner2;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -386,7 +385,10 @@ public sealed interface Result<T extends @Nullable Object> {
             Function<T, U> onSuccess,
             Function<ValidationErrors, ValidationErrors> onError
     ) {
-        return map(onSuccess).mapErr(onError);
+        return switch (this) {
+            case Ok<T>(T value) -> new Ok<>(onSuccess.apply(value));
+            case Err<T>(ValidationErrors e) -> new Err<>(onError.apply(e));
+        };
     }
 
     /**
