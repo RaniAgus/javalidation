@@ -153,4 +153,5 @@ FieldKeyPart.ofPath(Object[])  → FieldKeyPart[]
 - **Functional (monadic) style:** `.agents/features/functional-style.md`
 - **Imperative style:** `.agents/features/imperative-style.md`
 - **Stream collectors:** `.agents/features/stream-collectors.md`
-- **Result / error merging and prefixing:** `.agents/features/result-merging.md`
+- **Result / error merging:** `.agents/features/result-merging.md`
+- **FieldKey internals and prefix mechanics:** `.agents/features/field-key.md`
