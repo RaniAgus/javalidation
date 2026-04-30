@@ -1,5 +1,6 @@
 package io.github.raniagus.javalidation;
 
+import io.github.raniagus.javalidation.format.FieldKeyParser;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -75,6 +76,18 @@ public record FieldKey(FieldKeyPart[] parts) implements Comparable<FieldKey> {
      */
     public static FieldKey of(FieldKeyPart... parts) {
         return new FieldKey(parts);
+    }
+
+    /**
+     * Parses a field-path string into a {@code FieldKey} using the default
+     * {@link FieldKeyParser} (property-path notation, e.g. {@code "items[0].price"}).
+     *
+     * @param path the string to parse
+     * @return the parsed {@code FieldKey}
+     * @throws IllegalArgumentException if the string is not valid property-path notation
+     */
+    public static FieldKey parse(String path) {
+        return FieldKeyParser.getDefault().parse(path);
     }
 
     /**

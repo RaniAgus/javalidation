@@ -10,6 +10,30 @@ import org.junit.jupiter.api.Test;
 class FieldKeyTest {
 
     @Nested
+    class ParseTests {
+
+        @Test
+        void givenPropertyPathString_whenParseWithDefaultParser_thenReturnCorrectKey() {
+            FieldKey key = FieldKey.parse("path[0].example");
+
+            assertThat(key).isEqualTo(FieldKey.of("path", 0, "example"));
+        }
+
+        @Test
+        void givenSimpleString_whenParseWithDefaultParser_thenReturnSingleSegmentKey() {
+            FieldKey key = FieldKey.parse("name");
+
+            assertThat(key).isEqualTo(FieldKey.of("name"));
+        }
+
+        @Test
+        void givenMalformedPropertyPath_whenParseWithDefaultParser_thenThrowsIllegalArgumentException() {
+            assertThatThrownBy(() -> FieldKey.parse("path[0.example"))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
+    @Nested
     class FactoryMethodTests {
 
         @Test

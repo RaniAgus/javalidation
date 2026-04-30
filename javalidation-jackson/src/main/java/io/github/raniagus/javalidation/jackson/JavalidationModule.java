@@ -4,13 +4,11 @@ import io.github.raniagus.javalidation.FieldKey;
 import io.github.raniagus.javalidation.Result;
 import io.github.raniagus.javalidation.ValidationErrors;
 import io.github.raniagus.javalidation.TemplateString;
-import io.github.raniagus.javalidation.format.BracketNotationFormatter;
-import io.github.raniagus.javalidation.format.DotNotationFormatter;
-import io.github.raniagus.javalidation.format.FieldKeyFormatter;
-import io.github.raniagus.javalidation.format.TemplateStringFormatter;
+import io.github.raniagus.javalidation.format.*;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 import tools.jackson.databind.JavaType;
+import tools.jackson.databind.KeyDeserializer;
 import tools.jackson.databind.ValueDeserializer;
 import tools.jackson.databind.ValueSerializer;
 import tools.jackson.databind.deser.Deserializers;
@@ -52,6 +50,7 @@ public class JavalidationModule extends SimpleModule {
 
     private JavalidationModule(
             ValueSerializer<FieldKey> fieldKeySerializer,
+            KeyDeserializer fieldKeyDeserializer,
             ValueSerializer<TemplateString> templateStringSerializer,
             @Nullable ValueSerializer<ValidationErrors> validationErrorsSerializer,
             ValueSerializer<Result<?>> resultSerializer,
@@ -60,6 +59,7 @@ public class JavalidationModule extends SimpleModule {
         super(JavalidationModule.class.getSimpleName());
 
         addKeySerializer(FieldKey.class, fieldKeySerializer);
+        addKeyDeserializer(FieldKey.class, fieldKeyDeserializer);
         addSerializer(TemplateString.class, templateStringSerializer);
 
         if (validationErrorsSerializer != null) {
@@ -110,6 +110,7 @@ public class JavalidationModule extends SimpleModule {
      */
     public static class Builder {
         private ValueSerializer<FieldKey> fieldKeySerializer = new FieldKeySerializer();
+        private KeyDeserializer fieldKeyDeserializer = new FieldKeyDeserializer();
         private ValueSerializer<TemplateString> templateStringSerializer = new TemplateStringSerializer();
         private @Nullable ValueSerializer<ValidationErrors> validationErrorsSerializer;
         private ValueSerializer<Result<?>> resultSerializer = new StructuredResultSerializer();
@@ -122,7 +123,7 @@ public class JavalidationModule extends SimpleModule {
         }
 
         /**
-         * Configures dot notation for {@link FieldKey}.
+         * Configures dot notation for {@link FieldKey} serialization and deserialization.
          * <p>
          * Changes {@code users[0].name} to {@code users.0.name}.
          *
@@ -133,7 +134,7 @@ public class JavalidationModule extends SimpleModule {
         }
 
         /**
-         * Configures bracket notation for {@link FieldKey}.
+         * Configures bracket notation for {@link FieldKey} serialization and deserialization.
          * <p>
          * Changes {@code users[0].name} to {@code users[0][name]}.
          *
@@ -155,13 +156,23 @@ public class JavalidationModule extends SimpleModule {
         }
 
         /**
-         * Configures custom {@link FieldKey} formatter.
+         * Configures a custom {@link FieldKey} formatter (serialization only).
          *
          * @param formatter the formatter
          * @return this builder
          */
         public Builder withFieldKeyFormatter(FieldKeyFormatter formatter) {
             return withFieldKeySerializer(new FieldKeySerializer(formatter));
+        }
+
+        /**
+         * Configures a custom {@link FieldKey} parser (deserialization only).
+         *
+         * @param parser the parser
+         * @return this builder
+         */
+        public Builder withFieldKeyParser(FieldKeyParser parser) {
+            return withFieldKeyDeserializer(new FieldKeyDeserializer(parser));
         }
 
         /**
@@ -172,7 +183,6 @@ public class JavalidationModule extends SimpleModule {
          */
         public Builder withTemplateStringFormatter(TemplateStringFormatter formatter) {
             withTemplateStringSerializer(new TemplateStringSerializer(formatter));
-            withResultSerializer(new StructuredResultSerializer());
             return this;
         }
 
@@ -184,6 +194,17 @@ public class JavalidationModule extends SimpleModule {
          */
         public Builder withFieldKeySerializer(ValueSerializer<FieldKey> fieldKeySerializer) {
             this.fieldKeySerializer = fieldKeySerializer;
+            return this;
+        }
+
+        /**
+         * Configures a custom {@link FieldKey} key deserializer.
+         *
+         * @param fieldKeyDeserializer the key deserializer
+         * @return this builder
+         */
+        public Builder withFieldKeyDeserializer(KeyDeserializer fieldKeyDeserializer) {
+            this.fieldKeyDeserializer = fieldKeyDeserializer;
             return this;
         }
 
@@ -211,9 +232,6 @@ public class JavalidationModule extends SimpleModule {
 
         /**
          * Configures custom {@link Result} serializer.
-         * <p>
-         * <b>WARNING:</b> Must also configure matching deserializer factory via
-         * {@link #withResultDeserializerFactory(Function)} for round-trip serialization.
          *
          * @param resultSerializer the serializer
          * @return this builder
@@ -230,9 +248,6 @@ public class JavalidationModule extends SimpleModule {
          * <p>
          * Factory receives {@link JavaType} (e.g., {@code Person} from {@code Result<Person>})
          * and returns a deserializer.
-         * <p>
-         * <b>WARNING:</b> Must also configure matching serializer via
-         * {@link #withResultSerializer(ValueSerializer)} for round-trip serialization.
          *
          * @param resultDeserializerFactory the factory function
          * @return this builder
@@ -252,6 +267,7 @@ public class JavalidationModule extends SimpleModule {
         public JavalidationModule build() {
             return new JavalidationModule(
                     fieldKeySerializer,
+                    fieldKeyDeserializer,
                     templateStringSerializer,
                     validationErrorsSerializer,
                     resultSerializer,

@@ -7,15 +7,13 @@ import io.github.raniagus.javalidation.ValidationErrors;
 import io.github.raniagus.javalidation.TemplateString;
 import io.github.raniagus.javalidation.format.FieldKeyFormatter;
 import io.github.raniagus.javalidation.format.TemplateStringFormatter;
-import io.github.raniagus.javalidation.jackson.FieldKeySerializer;
-import io.github.raniagus.javalidation.jackson.FlattenedErrorsSerializer;
-import io.github.raniagus.javalidation.jackson.JavalidationModule;
-import io.github.raniagus.javalidation.jackson.TemplateStringSerializer;
+import io.github.raniagus.javalidation.jackson.*;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
+import tools.jackson.databind.KeyDeserializer;
 import tools.jackson.databind.ValueSerializer;
 
 @AutoConfiguration
@@ -30,11 +28,13 @@ public class JavalidationJacksonAutoConfiguration {
     @Bean
     public JavalidationModule javalidationModule(
             ValueSerializer<FieldKey> fieldKeySerializer,
+            KeyDeserializer fieldKeyDeserializer,
             ValueSerializer<TemplateString> templateStringValueSerializer,
             Optional<ValueSerializer<ValidationErrors>> validationErrorsValueSerializer
     ) {
-        var builder = JavalidationModule.builder()
+        JavalidationModule.Builder builder = JavalidationModule.builder()
                 .withFieldKeySerializer(fieldKeySerializer)
+                .withFieldKeyDeserializer(fieldKeyDeserializer)
                 .withTemplateStringSerializer(templateStringValueSerializer);
         validationErrorsValueSerializer.ifPresent(builder::withValidationErrorsSerializer);
         return builder.build();
@@ -45,6 +45,11 @@ public class JavalidationJacksonAutoConfiguration {
     @Bean
     public ValueSerializer<FieldKey> fieldKeySerializer(FieldKeyFormatter formatter) {
         return new FieldKeySerializer(formatter);
+    }
+
+    @Bean
+    public KeyDeserializer fieldKeyDeserializer() {
+        return new FieldKeyDeserializer();
     }
 
     // -- TemplateString serialization --
