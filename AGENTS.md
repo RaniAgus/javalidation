@@ -42,7 +42,8 @@ Deep-dive guides for each cross-cutting feature live in `.agents/features/`:
 - **`.agents/features/functional-style.md`** — `Result` monadic API: `map`, `flatMap`, `fold`, `ensure`, `and/combine`, `or`, `bimap`, `peek`
 - **`.agents/features/imperative-style.md`** — `Validation` builder API: `addError`, `addErrorAt`, `withField`, `withEach`, `addAll`, `check`, `asResult`
 - **`.agents/features/stream-collectors.md`** — `ResultCollector` stream API: `toListOrThrow`, `toResultList`, `toPartialResult`, `toValidation`, `addErrorsTo`, `withIndex`, `withPrefix`
-- **`.agents/features/result-merging.md`** — `ValidationErrors.mergeWith`, `withPrefix`, `Validation.addAll`, `addAllAt`, applicative combining
+- **`.agents/features/result-merging.md`** — `ValidationErrors.mergeWith`, `Validation.addAll`, `addAllAt`, applicative combining
+- **`.agents/features/field-key.md`** — `FieldKey` array internals, `withPrefix` mechanics, prefix stack in `Validation`, `withIndex`/`withPrefix` in collectors, rendering
 - **`.agents/features/jackson-integration.md`** — `JavalidationModule` builder, `StructuredResult*`, `FlattenedErrors*`, `TemplateStringSerializer`, key notation options
 - **`.agents/features/assertj-integration.md`** — `JavalidationAssertions.assertThat(...)`, `ResultAssert`, `ValidationErrorsAssert`, `PartialResultAssert`
 - **`.agents/features/jakarta-validator.md`** — `@Valid` annotation processing, `Validator` interface, `Validators.validate(...)`, `ValidatorsHolder`
@@ -81,7 +82,7 @@ which API style you're modifying.
 **Working on stream/collection validation?** Read `.agents/features/stream-collectors.md` and
 `javalidation/AGENTS.md`.
 
-**Working on error merging or prefixing?** Read `.agents/features/result-merging.md`.
+**Working on error merging or prefixing?** Read `.agents/features/result-merging.md` for combining strategies, and `.agents/features/field-key.md` for how paths are built and prefixed.
 
 **Working on Jackson serialization?** Start with `javalidation-jackson/AGENTS.md`, then
 `.agents/features/jackson-integration.md`.
@@ -97,18 +98,6 @@ and `.agents/validator-processor-tests.md`.
 
 **Need to understand a specific feature end-to-end?** Go directly to the relevant file in
 `.agents/features/`.
-
-## Non-Obvious Behaviours
-
-**Processor compiles with `<proc>none</proc>`** — the processor module does not process its own annotations. Do not remove this flag.
-
-**Fixture files are classpath resources, not compiled sources.** The `src/test/java/test/` trees under the processor module are copied as resources via `maven-resources-plugin`. They are loaded in tests via `JavaFileObjects.forResource(...)` and compared with `hasSourceEquivalentTo()` (whitespace-flexible source diff). Do not expect IDEs to compile them as part of the test source set.
-
-**Surefire `--add-opens`** for `jdk.compiler` internals (required by `compile-testing`) are configured in the parent POM. `mvn test` picks them up automatically; running tests directly in an IDE requires copying those flags to the run configuration.
-
-**`Validators.java` stub replacement.** The `javalidation-jakarta-validator` artifact ships a stub `Validators` that throws `IllegalStateException`. The processor generates a class with the same FQN (`io.github.raniagus.javalidation.validator.Validators`) into `target/generated-sources/annotations`; `javac` treats it as the authoritative definition, replacing the stub at compile time.
-
-**Validation error messages are opaque keys**, not resolved strings. The key `io.github.raniagus.javalidation.constraints.NotNull.message` is baked into generated validators. Resolution happens at runtime via `TemplateStringFormatter` (Spring `MessageSource`-backed by default). A user who does not configure this will receive raw keys.
 
 ## Cross-Cutting Concerns
 

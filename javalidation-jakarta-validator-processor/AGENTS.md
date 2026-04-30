@@ -112,6 +112,20 @@ Each fixture pair is:
   -Dtest="JakartaValidationsTest\$EmailRecordValidatorTest"
 ```
 
+## Non-Obvious Behaviours
+
+**Surefire `--add-opens` for `jdk.compiler`.** The parent POM configures `--add-opens` flags
+required by the `compile-testing` library (which accesses `jdk.compiler` internals). Running
+`./mvnw test` picks them up automatically. If you run tests directly in an IDE, copy those
+`-J--add-opens` JVM flags from the Surefire plugin configuration into the IDE's run configuration,
+or the tests will fail with `InaccessibleObjectException`.
+
+**Generated validators bake in opaque message keys**, not human-readable strings. The key
+`io.github.raniagus.javalidation.constraints.NotNull.message` is written literally into the
+generated source. Resolution to a human-readable string happens at runtime via
+`TemplateStringFormatter` (backed by `MessageSource` in Spring Boot). Without a configured
+formatter, users will see raw keys in serialized errors.
+
 ## Feature Deep-Dive
 
 - `.agents/features/jakarta-validator.md`

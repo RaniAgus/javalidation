@@ -89,6 +89,16 @@ Annotate your records with `jakarta.validation.constraints.*` and add `@Valid` f
 ValidationErrors errors = Validators.validate(myRecord);
 ```
 
+## Non-Obvious Behaviours
+
+**`Validators.java` is a stub that is silently replaced at compile-time.** When the annotation
+processor runs, it generates a new class with the exact same FQN
+(`io.github.raniagus.javalidation.validator.Validators`) into `target/generated-sources/annotations`.
+`javac` treats the generated class as the authoritative definition and the stub is never linked.
+If you call `Validators.validate(...)` and the processor was not enabled (e.g., missing
+`-processor` flag or wrong Maven configuration), you will get `IllegalStateException` at runtime
+from the stub, not a compile error.
+
 ## Feature Deep-Dive
 
 - `.agents/features/jakarta-validator.md`

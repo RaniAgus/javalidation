@@ -1,11 +1,14 @@
-# Feature: Result Merging and Error Prefixing
+# Feature: Result Merging
 
-This feature covers how validation errors from multiple sources are combined and how field paths
-are namespaced via prefixes. There are three entry points: `ValidationErrors`, `Result`, and `Validation`.
+This feature covers how validation errors from multiple sources are combined into one.
+There are two styles: **imperative merging** (via `Validation.addAll`) and
+**applicative combining** (via `Result.and(…).combine(…)`).
+
+> For how field paths are prefixed and how `FieldKey` is built internally, see
+> `.agents/features/field-key.md`.
 
 **Sources:**
 - `javalidation/src/main/java/io/github/raniagus/javalidation/ValidationErrors.java`
-- `javalidation/src/main/java/io/github/raniagus/javalidation/Result.java` (`withPrefix`)
 - `javalidation/src/main/java/io/github/raniagus/javalidation/Validation.java` (`addAll`, `addAllAt`)
 - `javalidation/src/main/java/io/github/raniagus/javalidation/combiner/` (applicative combining)
 
@@ -21,52 +24,6 @@ ValidationErrors a = ValidationErrors.at("email", "not.null");
 ValidationErrors b = ValidationErrors.at("email", "invalid.format");
 ValidationErrors merged = a.mergeWith(b);
 // merged.fieldErrors() = {"email": ["not.null", "invalid.format"]}
-```
-
----
-
-## Prefixing — Adding Context to Error Paths
-
-### `ValidationErrors.withPrefix`
-
-Returns a new `ValidationErrors` with all field paths prepended by the given segments.
-Root errors become field errors under the given prefix.
-
-```java
-ValidationErrors addressErrors = validateAddress(address);
-// addressErrors: root=["Invalid address"], fields={"street": ["Required"]}
-
-ValidationErrors prefixed = addressErrors.withPrefix("address");
-// prefixed: root=[], fields={"address": ["Invalid address"], "address.street": ["Required"]}
-```
-
-#### Mixed prefix (strings + integers)
-
-```java
-for (int i = 0; i < items.size(); i++) {
-    ValidationErrors itemErrors = validateItem(items.get(i));
-    ValidationErrors prefixed = itemErrors.withPrefix("items", i);
-    // fields: "items[0].price", "items[1].name", etc.
-}
-```
-
-#### Overloads
-
-```java
-errors.withPrefix(String... prefix)   // string segments
-errors.withPrefix(Number... prefix)   // numeric segments
-errors.withPrefix(Object... prefix)   // mixed (Number → IntKey, else → StringKey)
-```
-
-### `Result.withPrefix`
-
-Same semantics as `ValidationErrors.withPrefix`, but on the `Result` level.
-If `Ok`, the result is returned unchanged.
-
-```java
-Result<Address> result = validateAddress(address)
-    .withPrefix("user", "address");
-// Err errors are prefixed with "user.address.*"
 ```
 
 ---
@@ -150,16 +107,3 @@ Combiners are available from 2 (`ResultCombiner2`) up to 10 (`ResultCombiner10`)
 | `Result.ensure` chain | ✗ | ✓ (stops at first failed predicate) |
 | `ResultCollector.toResultList()` | ✓ | ✗ |
 | `Result.or(…)` | merges errors | tries fallback |
-
----
-
-## `FieldKey` Path Segments
-
-Paths are represented as ordered arrays of `FieldKeyPart`:
-- `FieldKeyPart.StringKey("name")` → rendered as `.name` or `[name]`
-- `FieldKeyPart.IntKey(0)` → rendered as `[0]` or `.0`
-
-The default formatter (`PropertyPathNotationFormatter`) renders:
-- String keys with a dot separator: `address.street`
-- Integer keys with bracket notation: `items[0]`
-- Combined: `items[0].price`, `users[2].address.street`
