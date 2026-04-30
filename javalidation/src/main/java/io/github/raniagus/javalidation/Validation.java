@@ -249,8 +249,11 @@ public class Validation {
 
     private Validation withField(FieldKeyPart field, Runnable runnable) {
         prefix.add(field);
-        runnable.run();
-        prefix.removeLast();
+        try {
+            runnable.run();
+        } finally {
+            prefix.removeLast();
+        }
         return this;
     }
 
@@ -326,8 +329,11 @@ public class Validation {
         int index = 0;
         for (T item : items) {
             prefix.add(new FieldKeyPart.IntKey(index));
-            consumer.accept(item, index++);
-            prefix.removeLast();
+            try {
+                consumer.accept(item, index++);
+            } finally {
+                prefix.removeLast();
+            }
         }
         return this;
     }
@@ -391,7 +397,7 @@ public class Validation {
      * <pre>{@code
      * // Validate nested address
      * ValidationErrors addressErrors = validateAddress(user.address());
-     * validation.addAll(FieldKey.of("address"), addressErrors);
+     * validation.addAllAt(FieldKey.of("address"), addressErrors);
      *
      * // If addressErrors had:
      * //   - rootErrors: ["Invalid address"]
@@ -410,7 +416,7 @@ public class Validation {
      * @return this validation for method chaining
      * @throws NullPointerException if prefix or errors is null
      */
-    public Validation addAll(FieldKey prefix, ValidationErrors errors) {
+    public Validation addAllAt(FieldKey prefix, ValidationErrors errors) {
         Objects.requireNonNull(prefix);
         Objects.requireNonNull(errors);
         if (!errors.rootErrors().isEmpty()) {

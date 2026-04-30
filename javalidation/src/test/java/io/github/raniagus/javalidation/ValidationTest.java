@@ -179,13 +179,13 @@ class ValidationTest {
                 .isInstanceOf(NullPointerException.class);
     }
 
-    // -- addAll(String, ValidationErrors) --
+    // -- addAllAt --
 
     @Test
     void givenFieldErrors_whenAddAllWithPrefix_thenPrefixesFieldNames() {
         var validationErrors = ValidationErrors.at("field", "error");
         var validation = Validation.create()
-                .addAll(FieldKey.of("root"), validationErrors);
+                .addAllAt(FieldKey.of("root"), validationErrors);
 
         var errors = validation.finish();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("root", "field"));
@@ -195,7 +195,7 @@ class ValidationTest {
     void givenRootErrors_whenAddAllWithPrefix_thenConvertsToFieldErrors() {
         var validationErrors = ValidationErrors.of("root error");
         var validation = Validation.create()
-                .addAll(FieldKey.of("prefix"), validationErrors);
+                .addAllAt(FieldKey.of("prefix"), validationErrors);
 
         var errors = validation.finish();
         assertThat(errors.fieldErrors()).containsKey(FieldKey.of("prefix"));
