@@ -177,6 +177,17 @@ public class ValidationErrorsAssert
     }
 
     /**
+     * Asserts that a field error keyed by the given property-path string is present and that at
+     * least one error in that list matches the given message template and arguments.
+     *
+     * <p>The path uses dot-notation for strings and bracket-notation for integers (e.g.
+     * {@code "user.address"} or {@code "items[0].price"}).
+     */
+    public ValidationErrorsAssert hasFieldErrorAt(String path, String message, Object... args) {
+        return hasFieldErrorAt(PropertyPathNotationParser.parse(path), message, args);
+    }
+
+    /**
      * Asserts that a field error keyed by the given {@link FieldKey} is present and that at least
      * one error in that list matches the given message template and arguments.
      *

@@ -232,6 +232,43 @@ class JavalidationAssertionsTest {
         }
 
         @Test
+        void givenNestedFieldError_whenHasFieldErrorAtStringPath_thenSucceeds() {
+            var errors = ValidationErrors.at("age", "too young")
+                    .withPrefix("user");
+
+            assertThat(errors).hasFieldErrorAt("user.age", "too young");
+        }
+
+        @Test
+        void givenIndexedNestedFieldError_whenHasFieldErrorAtStringPath_thenSucceeds() {
+            var errors = ValidationErrors.at("price", "must be positive")
+                    .withPrefix(0)
+                    .withPrefix("items");
+
+            assertThat(errors).hasFieldErrorAt("items[0].price", "must be positive");
+        }
+
+        @Test
+        void givenWrongMessage_whenHasFieldErrorAtStringPath_thenFails() {
+            var errors = ValidationErrors.at("age", "too young")
+                    .withPrefix("user");
+
+            assertThatThrownBy(() -> assertThat(errors).hasFieldErrorAt("user.age", "too old"))
+                    .isInstanceOf(AssertionError.class)
+                    .hasMessageContaining("too old");
+        }
+
+        @Test
+        void givenMissingKey_whenHasFieldErrorAtStringPath_thenFails() {
+            var errors = ValidationErrors.at("age", "too young")
+                    .withPrefix("user");
+
+            assertThatThrownBy(() -> assertThat(errors).hasFieldErrorAt("user.name", "too young"))
+                    .isInstanceOf(AssertionError.class)
+                    .hasMessageContaining(FieldKey.of("user", "name").toString());
+        }
+
+        @Test
         void givenMissingFieldKey_whenHasFieldError_thenFails() {
             var errors = ValidationErrors.at("name", "required");
 
