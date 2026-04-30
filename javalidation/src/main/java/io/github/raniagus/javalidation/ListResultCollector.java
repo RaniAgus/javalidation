@@ -26,11 +26,11 @@ public abstract class ListResultCollector<T extends @Nullable Object, R, SELF ex
     }
 
     @Override
-    public void add(Result<T> result, FieldKeyPart[] prefix) {
+    public void add(Result<T> result, FieldKeyPart[] outerPrefix) {
         switch (result) {
             case Result.Ok<T>(T value) -> values.add(value);
             case Result.Err<T>(ValidationErrors validationErrors) ->
-                    validation.addAll(FieldKey.of(prefix), validationErrors);
+                    validation.addAllAt(FieldKey.of(outerPrefix), validationErrors);
         }
     }
 

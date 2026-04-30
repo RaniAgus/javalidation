@@ -21,8 +21,8 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
     }
 
     @Override
-    public void add(Result<T> result, FieldKeyPart... prefix) {
-        resultCollector.add(result, prefix);
+    public void add(Result<T> result, FieldKeyPart... outerPrefix) {
+        resultCollector.add(result, outerPrefix);
     }
 
     @Override
@@ -43,9 +43,9 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
         }
 
         @Override
-        public void add(Result<T> result, FieldKeyPart... parts) {
-            FieldKeyPart[] newPrefix = Arrays.copyOf(parts, parts.length + 1);
-            newPrefix[parts.length] = new FieldKeyPart.IntKey(index++);
+        public void add(Result<T> result, FieldKeyPart... outerPrefix) {
+            FieldKeyPart[] newPrefix = Arrays.copyOf(outerPrefix, outerPrefix.length + 1);
+            newPrefix[outerPrefix.length] = new FieldKeyPart.IntKey(index++);
             super.add(result, newPrefix);
         }
 
@@ -74,9 +74,9 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
         }
 
         @Override
-        public void add(Result<T> result, FieldKeyPart... parts) {
-            FieldKeyPart[] newPrefix = Arrays.copyOf(parts, parts.length + 1);
-            newPrefix[parts.length] = prefix;
+        public void add(Result<T> result, FieldKeyPart... outerPrefix) {
+            FieldKeyPart[] newPrefix = Arrays.copyOf(outerPrefix, outerPrefix.length + 1);
+            newPrefix[outerPrefix.length] = prefix;
             super.add(result, newPrefix);
         }
 
