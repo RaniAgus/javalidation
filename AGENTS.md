@@ -55,12 +55,16 @@ Deep-dive guides for each cross-cutting feature live in `.agents/features/`:
 - **`.agents/spring-boot-starter-tests.md`** — how to add tests in `javalidation-spring-boot-starter`
 - **`.agents/testing-style.md`** — test conventions: JUnit 5 + AssertJ patterns, naming, structure, module-specific rules for processor and Spring Boot tests
 - **`.agents/known-limitations.md`** — known limitations and future work
+- **`.agents/release-process.md`** — GPG signing, Maven Central publishing, GitHub Actions workflow, required secrets, tag-based release flow
 
 ## Common Commands
 
 ```bash
 # Build and test all modules
 mvn verify
+
+# Build, test, sign, and publish to Maven Central
+mvn verify -P release
 
 # Test one module only
 mvn test -pl javalidation-jakarta-validator-processor
