@@ -91,50 +91,64 @@ validation.check();
 ## Wrapper Collectors
 
 Wrappers modify how errors are indexed or prefixed within the inner collector.
+They work at the `FieldKey` level: each wrapper prepends one or more `FieldKeyPart` segments
+to every `FieldKey` in the element's errors before the inner collector stores them. The string
+representations shown below are just the default property-path notation rendering of those keys.
 
-### `withIndex(collector)` — automatic `[0]`, `[1]`… error prefixes
+### `withIndex(collector)` — automatic `IntKey(i)` error prefix
 
-Each stream element is assigned a 0-based index. Errors from element `i` are prefixed with `[i]`.
+Each stream element is assigned a 0-based index. Errors from element `i` are prefixed with an
+`IntKey(i)` segment — rendered as `[i]` in property-path notation.
 
 ```java
 // Without indexing:
-// Errors: {"field": ["error"]}
+// fieldErrors key for "field" error: FieldKey([StringKey("field")])
+// rendered: "field"
 
 // With indexing:
 Result<List<User>> result = users.stream()
     .map(this::validateUser)
     .collect(ResultCollector.withIndex(ResultCollector.toResultList()));
-// Errors: {"[0].field": ["error"], "[2].field": ["another error"]}
+// fieldErrors keys: FieldKey([IntKey(0), StringKey("field")])
+// rendered (property-path): "[0].field", "[2].field"
 ```
 
-### `withPrefix(String, collector)` — string prefix
+### `withPrefix(String, collector)` — `StringKey` prefix
 
-Namespaces all errors under a field name.
+Prepends a single `StringKey` segment to every error's `FieldKey`. All errors produced by the
+inner collector are namespaced under the given field name.
 
 ```java
 Result<List<Item>> items = order.getItems().stream()
     .map(this::validateItem)
     .collect(ResultCollector.withPrefix("items", ResultCollector.toResultList()));
-// Errors: {"items.price": ["Must be positive"]}
+// Before: FieldKey([StringKey("price")])  → rendered: "price"
+// After:  FieldKey([StringKey("items"), StringKey("price")])  → rendered: "items.price"
 ```
 
-### `withPrefix(int, collector)` — numeric index prefix
+### `withPrefix(int, collector)` — `IntKey` prefix
 
-Fixed integer index prefix.
+Prepends a single `IntKey` segment to every error's `FieldKey`. Useful for a fixed position
+in a parent collection.
 
 ```java
 .collect(ResultCollector.withPrefix(0, ResultCollector.toResultList()));
-// Errors: {"[0].price": ["Must be positive"]}
+// Before: FieldKey([StringKey("price")])  → rendered: "price"
+// After:  FieldKey([IntKey(0), StringKey("price")])  → rendered: "[0].price"
 ```
 
 ---
 
 ## Combining Wrappers
 
-Wrappers compose left-to-right: the outermost wrapper adds its prefix last.
+Wrappers compose by prepending their segment outermost-last. Each wrapper adds its own
+`FieldKeyPart` at the front of the key after the inner wrappers have already applied.
 
 ```java
-// "order.items[0].price"
+// Effective FieldKey for element i's "price" error:
+// FieldKey([StringKey("order"), StringKey("items"), IntKey(i), StringKey("price")])
+// Rendered (property-path): "order.items[0].price"
+
 Result<List<Item>> items = order.getItems().stream()
     .map(this::validateItem)
     .collect(

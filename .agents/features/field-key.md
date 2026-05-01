@@ -213,7 +213,3 @@ is non-empty, `addError` adds to `fieldErrors` under the current stack key, not 
 **Segment type matters for rendering, not for identity.** `FieldKey.of("0")` (StringKey) and
 `FieldKey.of(0)` (IntKey) are **different keys** even though they look similar. The string `"0"`
 as a field name and the integer index `0` are distinct.
-
-**`Arrays.copyOf` on prefix**: `withPrefix` uses `Arrays.copyOf(prefix, prefix.length + parts.length)`
-then `System.arraycopy` — it allocates a new array every time. Avoid calling `withPrefix` in tight
-loops on large error sets; collect and prefix once.
