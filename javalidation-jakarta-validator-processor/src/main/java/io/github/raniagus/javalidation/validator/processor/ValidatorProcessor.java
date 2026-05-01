@@ -370,17 +370,10 @@ public class ValidatorProcessor extends AbstractProcessor {
     }
 
     private @Nullable NullSafeWriter parseNullSafeWriter(TypeAdapter typeAdapter) {
-        if (shouldSkip(typeAdapter.type())) {
-            return null;
-        }
         return JakartaAnnotationParser.parseNullSafeWriter(typeAdapter);
     }
 
     private List<NullUnsafeWriter> parseNullUnsafeWriters(TypeAdapter typeAdapter) {
-        if (shouldSkip(typeAdapter.type())) {
-            return List.of();
-        }
-
         return Stream.concat(
                 JakartaAnnotationParser.parseNullUnsafeWriters(typeAdapter),
                 Stream.of(parseNested(typeAdapter.type()), parseIterable(typeAdapter), parseMap(typeAdapter)).filter(Objects::nonNull)
@@ -552,11 +545,6 @@ public class ValidatorProcessor extends AbstractProcessor {
                || enclosingElement.getKind() == ElementKind.RECORD
                || enclosingElement.getKind() == ElementKind.INTERFACE
                || enclosingElement.getKind() == ElementKind.ENUM;
-    }
-
-    private boolean shouldSkip(TypeMirror type) {
-        return type.getAnnotationMirrors().stream()
-                .anyMatch(a -> a.getAnnotationType().asElement().getSimpleName().contentEquals("SkipValidate"));
     }
 
     private @Nullable TypeElement getReferredType(TypeMirror mirror) {
