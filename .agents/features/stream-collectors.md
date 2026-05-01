@@ -186,3 +186,86 @@ Result<List<User>> result = users.stream()
 | Accumulate errors, discard successes | `toValidation()` or `addErrorsTo(validation)` |
 | Add position info to errors | wrap with `withIndex(…)` |
 | Namespace errors under a path | wrap with `withPrefix(…)` |
+
+---
+
+## Internal: Prefix Propagation Mechanism
+
+This section documents the internals for anyone modifying `ResultCollector`, `ResultCollectorWrapper`,
+`ListResultCollector`, or `ValidationCollector`.
+
+### `ResultCollector` is internal infrastructure
+
+`ResultCollector` is a `public interface` but it exists only to type the accumulator objects used
+inside `Collector.of(...)`. **Do not implement it directly** — the only public API surface is its
+static factory methods (`toResultList()`, `withIndex(…)`, etc.). The `add(Result<T>)`,
+`add(Result<T>, PrefixStack)`, `combine(SELF)`, and `finish()` methods are plumbing; callers never
+invoke them directly.
+
+### Two `add` overloads — no-prefix vs. prefix path
+
+Every `ResultCollector` implementation has two `add` overloads:
+
+| Overload | Called by | Purpose |
+|----------|-----------|---------|
+| `add(Result<T>)` | The Java `Collector` machinery (stream spliterator) | Entry point from the stream; no prefix yet |
+| `add(Result<T>, PrefixStack)` | Outer wrappers calling inner wrappers/leaf | Carries the accumulated prefix down the chain |
+
+The base `ResultCollectorWrapper.add(Result<T>)` delegates straight to the inner collector's
+`add(Result<T>)`. Subclasses (`WithIndex`, `WithPrefix`) **override both overloads** to inject
+their own segment into the `PrefixStack`.
+
+### `PrefixStack` — O(1) per level, reversed cons-list
+
+Prefix segments are accumulated in a `PrefixStack` (a sealed cons-list of `FieldKeyPart` nodes):
+
+```
+PrefixStack
+  ├─ Empty  (singleton PrefixStack.EMPTY — never re-allocated)
+  └─ Cons(FieldKeyPart head, PrefixStack tail, int size)
+```
+
+Each wrapper prepends its segment with `incoming.prepend(mySegment)` — a single node allocation,
+no array copying. The typed overloads (`prepend(String)`, `prepend(int)`, `of(String)`, `of(int)`)
+avoid constructing `FieldKeyPart` instances at call sites. `WithPrefix` uses `prepend(FieldKeyPart)`
+directly since it already holds a `FieldKeyPart` field internally.
+
+`size` is stored in every `Cons` node (O(1) lookup), eliminating a counting traversal in
+`toFieldKey()`. Since `toFieldKey()` is called once per stream element across N elements, this
+halves total traversal work from N×2D to N×D (D = wrapper depth).
+
+**Why not `ArrayDeque`?** `Validation` uses a mutable `Deque` because it manages a scoped push/pop
+stack within a single thread. Collector wrappers are different: each `WithIndex` or `WithPrefix`
+instance is a separate object in the wrapper chain; there is no shared mutable context. An
+immutable cons-list is the correct fit and allows `WithPrefix` to support parallel streams
+(its `combine()` method creates a new `WithPrefix` around the merged inner collector — no shared
+mutable state).
+
+### Call-chain ordering and the reversal in `toArray()`
+
+The stream invokes the outermost wrapper first, so the outermost segment is prepended **first**,
+ending up deepest in the tail chain (furthest from the head):
+
+```
+withPrefix("order", withPrefix("items", withIndex(toResultList())))
+
+Stream calls WithPrefix("order").add(result):
+  → creates PrefixStack.of(StringKey("order"))        = Cons("order", EMPTY)
+  → calls WithPrefix("items").add(result, Cons("order", EMPTY)):
+      → incoming.prepend(StringKey("items"))           = Cons("items", Cons("order", EMPTY))
+      → calls WithIndex.add(result, Cons("items", Cons("order", EMPTY))):
+          → incoming.prepend(IntKey(i))                = Cons(i, Cons("items", Cons("order", EMPTY)))
+          → calls leaf.add(result, Cons(i, Cons("items", Cons("order", EMPTY))))
+```
+
+The leaf collector calls `prefix.toFieldKey()`, which allocates an array of `prefix.size()` (O(1))
+and **fills it from the last index toward 0** — reversing the cons-list order so the outermost segment
+(`"order"`) lands at index 0 — then wraps it in a `FieldKey`:
+
+```
+toFieldKey() → FieldKey([StringKey("order"), StringKey("items"), IntKey(i)])
+→ rendered: "order.items[0]"   ✓
+```
+
+This single array allocation at the leaf replaces the O(depth) intermediate array copies that the
+old `FieldKeyPart[]` approach required at each wrapper level.

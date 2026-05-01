@@ -5,7 +5,7 @@ This is the entrypoint for agentic coding agents working in this repository. It 
 ## Environment
 
 - Java 21 via sdkman. Run `sdk use java 21.0.9-tem` or rely on `.sdkmanrc` auto-env.
-- Maven wrapper: `./mvnw`
+- Maven: `mvn` (no wrapper — run `mvn` directly)
 
 ## Repository Structure
 
@@ -53,23 +53,24 @@ Deep-dive guides for each cross-cutting feature live in `.agents/features/`:
 
 - **`.agents/validator-processor-tests.md`** — how to add tests in `javalidation-jakarta-validator-processor`
 - **`.agents/spring-boot-starter-tests.md`** — how to add tests in `javalidation-spring-boot-starter`
+- **`.agents/testing-style.md`** — test conventions: JUnit 5 + AssertJ patterns, naming, structure, module-specific rules for processor and Spring Boot tests
 - **`.agents/known-limitations.md`** — known limitations and future work
 
 ## Common Commands
 
 ```bash
 # Build and test all modules
-./mvnw verify
+mvn verify
 
 # Test one module only
-./mvnw test -pl javalidation-jakarta-validator-processor
+mvn test -pl javalidation-jakarta-validator-processor
 
 # Test one specific test class
-./mvnw test -pl javalidation-jakarta-validator-processor \
+mvn test -pl javalidation-jakarta-validator-processor \
   -Dtest=JakartaValidationsTest
 
 # Test one nested class (JUnit 5 syntax)
-./mvnw test -pl javalidation-jakarta-validator-processor \
+mvn test -pl javalidation-jakarta-validator-processor \
   -Dtest="JakartaValidationsTest\$EmailRecordValidatorTest"
 ```
 
@@ -115,7 +116,12 @@ and `.agents/validator-processor-tests.md`.
 3. Read the relevant feature doc in `.agents/features/` for deep-dive patterns and examples.
 4. Read the actual source files to verify your understanding before making changes.
 5. Implement the change following the patterns in the feature doc and module `AGENTS.md`.
-6. Run `./mvnw test -pl <module>` to verify your changes.
+6. Run `mvn test -pl <module>` to verify your changes.
 7. If you change the public API surface, update the corresponding `AGENTS.md` and feature doc.
+8. Before writing any new test, read `.agents/testing-style.md` for naming and structural conventions.
+9. After completing any task, update the relevant docs with non-obvious behaviours that required
+   codebase exploration — so future agents don't have to re-discover them. If no existing doc covers
+   the behaviour, add it to the most specific applicable file (module `AGENTS.md`, a feature doc in
+   `.agents/features/`, or a new sub-guide in `.agents/`).
 
 **Docs-in-sync rule:** When you add a new public type or method, update the module `AGENTS.md` source file index. When you add a new cross-cutting feature, create a feature doc in `.agents/features/` and link it from this file and the relevant module `AGENTS.md`.

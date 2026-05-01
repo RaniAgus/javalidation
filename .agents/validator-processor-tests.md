@@ -151,12 +151,12 @@ assertThat(validator.validate(new FooRecord(null, -1))).hasErrorCount(2)
 
 ```bash
 # All processor tests
-./mvnw test -pl javalidation-jakarta-validator-processor
+mvn test -pl javalidation-jakarta-validator-processor
 
 # One test class
-./mvnw test -pl javalidation-jakarta-validator-processor -Dtest=JakartaValidationsTest
+mvn test -pl javalidation-jakarta-validator-processor -Dtest=JakartaValidationsTest
 
 # One nested class
-./mvnw test -pl javalidation-jakarta-validator-processor \
+mvn test -pl javalidation-jakarta-validator-processor \
   -Dtest="JakartaValidationsTest\$FooRecordValidatorTest"
 ```

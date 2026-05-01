@@ -61,9 +61,9 @@ If two configuration variants share the same assertions, use class inheritance. 
 
 ```bash
 # All starter tests
-./mvnw test -pl javalidation-spring-boot-starter
+mvn test -pl javalidation-spring-boot-starter
 
 # One test class
-./mvnw test -pl javalidation-spring-boot-starter \
+mvn test -pl javalidation-spring-boot-starter \
   -Dtest=TemplateStringFormatterAutoConfigurationTest
 ```

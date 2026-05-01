@@ -102,13 +102,13 @@ Each fixture pair is:
 
 ```bash
 # All processor tests
-./mvnw test -pl javalidation-jakarta-validator-processor
+mvn test -pl javalidation-jakarta-validator-processor
 
 # One test class
-./mvnw test -pl javalidation-jakarta-validator-processor -Dtest=JakartaValidationsTest
+mvn test -pl javalidation-jakarta-validator-processor -Dtest=JakartaValidationsTest
 
 # One nested class
-./mvnw test -pl javalidation-jakarta-validator-processor \
+mvn test -pl javalidation-jakarta-validator-processor \
   -Dtest="JakartaValidationsTest\$EmailRecordValidatorTest"
 ```
 
@@ -116,7 +116,7 @@ Each fixture pair is:
 
 **Surefire `--add-opens` for `jdk.compiler`.** The parent POM configures `--add-opens` flags
 required by the `compile-testing` library (which accesses `jdk.compiler` internals). Running
-`./mvnw test` picks them up automatically. If you run tests directly in an IDE, copy those
+`mvn test` picks them up automatically. If you run tests directly in an IDE, copy those
 `-J--add-opens` JVM flags from the Surefire plugin configuration into the IDE's run configuration,
 or the tests will fail with `InaccessibleObjectException`.
 

@@ -143,22 +143,31 @@ validation.withField("order", () ->               // push StringKey("order")
 
 ### Stream Collectors — `withIndex` and `withPrefix`
 
-`ResultCollectorWrapper` passes an `outerPrefix: FieldKeyPart[]` to the inner collector when
-adding each result:
+`ResultCollectorWrapper` passes prefix segments to the inner collector as a `PrefixStack`
+(an immutable cons-list of `FieldKeyPart` nodes). Each wrapper prepends its own segment in O(1);
+the leaf collector converts to a `FieldKeyPart[]` exactly once via `PrefixStack.toArray()`.
 
-- **`withIndex(collector)`**: for element `i`, calls `inner.add(result, new FieldKeyPart[]{ IntKey(i) })`
-- **`withPrefix(String, collector)`**: always calls `inner.add(result, new FieldKeyPart[]{ StringKey(prefix) })`
-- **`withPrefix(int, collector)`**: always calls `inner.add(result, new FieldKeyPart[]{ IntKey(prefix) })`
+The cons-list is built **innermost-first**: the outermost wrapper acts first and its segment lands
+deepest in the tail chain. `toArray()` reverses the traversal (fills the output array from the last
+index toward 0) so the final `FieldKey` has segments in outermost-first order:
 
-The inner collector calls `errors.withPrefix(outerPrefix)` before storing, so keys become
-`[outerPrefix…][originalKey…]`.
-
-Wrappers compose by prepending their own segment before passing down:
-```java
-withPrefix("order", withPrefix("items", withIndex(toResultList())))
-// outer-most wraps last → errors have "order" prepended last
-// effective prefix order on final keys: [StringKey("order"), StringKey("items"), IntKey(i), ...original...]
 ```
+withPrefix("order", withPrefix("items", withIndex(toResultList())))
+
+Wrapper chain for element i's "price" error:
+  WithPrefix("order")  → PrefixStack.of(StringKey("order"))          = Cons("order", EMPTY)
+  WithPrefix("items")  → incoming.prepend(StringKey("items"))         = Cons("items", Cons("order", EMPTY))
+  WithIndex            → incoming.prepend(IntKey(i))                  = Cons(i, Cons("items", Cons("order", EMPTY)))
+  Leaf.toFieldKey()    → FieldKey([StringKey("order"), StringKey("items"), IntKey(i), StringKey("price")])
+  rendered             → "order.items[0].price"
+```
+
+`PrefixStack.EMPTY` is a singleton — never re-allocated. The typed factory/builder methods
+(`of(String)`, `of(int)`, `prepend(String)`, `prepend(int)`) avoid constructing `FieldKeyPart`
+at call sites; `of(FieldKeyPart)` / `prepend(FieldKeyPart)` are available for cases like
+`WithPrefix` that already hold a `FieldKeyPart` internally. The array allocation happens only
+once per `add()` call at the leaf via `toFieldKey()`, replacing the O(depth) intermediate array
+copies of the previous `FieldKeyPart[]`-based approach.
 
 ### `ValidationErrors` Map Key
 

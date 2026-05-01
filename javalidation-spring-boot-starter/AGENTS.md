@@ -96,10 +96,10 @@ All test classes extend `AutoConfigurationTest` and use `@SpringBootTest(classes
 
 ```bash
 # All starter tests
-./mvnw test -pl javalidation-spring-boot-starter
+mvn test -pl javalidation-spring-boot-starter
 
 # One test class
-./mvnw test -pl javalidation-spring-boot-starter \
+mvn test -pl javalidation-spring-boot-starter \
   -Dtest=TemplateStringFormatterAutoConfigurationTest
 ```
 
