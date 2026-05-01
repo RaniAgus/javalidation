@@ -149,6 +149,13 @@ FieldKeyPart.ofPath(Number[])  → FieldKeyPart[]
 FieldKeyPart.ofPath(Object[])  → FieldKeyPart[]
 ```
 
+## Test Conventions
+
+Tests use plain AssertJ (`org.assertj.core.api.Assertions`) — **not** `JavalidationAssertions`.
+`ValidationErrors` is compared by value as a record, constructed inline in expected values.
+
+For general naming, class structure, and AssertJ patterns, see `.agents/testing-style.md`.
+
 ## Feature Deep-Dives
 
 - **Functional (monadic) style:** `.agents/features/functional-style.md`

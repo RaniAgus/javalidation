@@ -86,19 +86,46 @@ The processor recognises all 22 built-in `jakarta.validation.constraints.*` anno
 - `initialize(ValidatorsHolder holder)` is empty unless record has `@Valid` fields
 - Nested record validators are named `OuterRecord$InnerRecordValidator` (dollar-separated)
 
-## Test Fixture Conventions
+## Test Conventions
 
-Test fixtures live in `src/test/java/test/` (copied as classpath resources, not compiled):
-- `test/jakarta/` — fixtures for individual constraint annotations
-- `test/collection/` — fixtures for `@Valid` on `Iterable`/`Map` fields
+Two test types are required for every new constraint/type combination:
 
-Each fixture pair is:
-- `FooRecord.java` — input record with annotations
-- `FooRecordValidator.java` — expected generated output
+1. **Code-generation test** — verifies the processor emits correct Java source.
+   - Input fixture: `src/test/java/test/jakarta/FooRecord.java`
+   - Expected output: `src/test/java/test/jakarta/FooRecordValidator.java`
+   - Register base name in `@ValueSource(strings = {...})` in `JakartaValidationsTest`
+   - `hasSourceEquivalentTo()` does a whitespace-flexible AST diff — not a string compare
+   - For collection/`@Valid` fixtures, register in `CollectionValidationsTest` instead
 
-**See `.agents/validator-processor-tests.md` for the full guide.**
+2. **Validator logic test** — verifies runtime behavior of the generated validator.
+   - Add a `@Nested` class inside `JakartaValidationsTest` (or `CollectionValidationsTest`)
+   - Use `JavalidationAssertions.assertThat(...)` (not plain AssertJ) for `ValidationErrors`
+   - `.hasErrorCount(N)` must come **immediately after `assertThat(...)`**, before any
+     `.hasFieldError()` / `.hasRootError()` calls
+   - `.isEmpty()` for the no-error case — no `hasErrorCount` needed
 
-## Test Commands
+`JakartaValidationsTest` imports **two** `assertThat` static methods that must coexist — do not
+collapse them:
+- `io.github.raniagus.javalidation.assertj.JavalidationAssertions.assertThat` (for `ValidationErrors`)
+- `com.google.testing.compile.CompilationSubject.assertThat` (for `Compilation` objects)
+
+For `@Valid`-nested validators, wire them manually with `@BeforeEach`:
+```java
+ValidatorsHolder holder = new ValidatorsHolder(Map.of(
+        OuterRecord.class, outerValidator,
+        OuterRecord.Inner.class, innerValidator
+));
+
+@BeforeEach
+void setup() { holder.initialize(); }
+```
+
+Fixtures live in `src/test/java/test/` (classpath resources, not compiled):
+- `test/jakarta/` — individual constraint annotations
+- `test/collection/` — `@Valid` on `Iterable`/`Map` fields
+
+For general naming, class structure, and AssertJ patterns, see `.agents/testing-style.md`.
+For a full step-by-step walkthrough, see `.agents/validator-processor-tests.md`.
 
 ```bash
 # All processor tests

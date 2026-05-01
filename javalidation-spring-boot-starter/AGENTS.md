@@ -90,9 +90,17 @@ When `use-message-source=true` (default), the starter:
 
 ## Test Conventions
 
-**See `.agents/spring-boot-starter-tests.md` for the full guide.**
+- All test classes **extend `AutoConfigurationTest`**
+- `@SpringBootTest(classes = TestApplication.class)` goes on each **nested static class**,
+  not the outer class
+- Property overrides: `@TestPropertySource(properties = "key=value")` on the nested static class
+- `@Autowired(required = false)` to assert bean absence without failing startup
+- The `JsonMapper` bean is always autowired — **never build it manually** in tests
+- Shared assertions across property variants: use class inheritance; `@TestPropertySource` on
+  the subclass overrides the parent (see `TemplateStringFormatterAutoConfigurationTest`)
 
-All test classes extend `AutoConfigurationTest` and use `@SpringBootTest(classes = TestApplication.class)` on nested static classes.
+For general naming, class structure, and AssertJ patterns, see `.agents/testing-style.md`.
+For a full step-by-step walkthrough, see `.agents/spring-boot-starter-tests.md`.
 
 ```bash
 # All starter tests
