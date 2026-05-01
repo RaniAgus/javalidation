@@ -19,10 +19,11 @@ This module is the foundation of the library. Every other module depends on it.
 | `FieldKey.java` | Ordered array of `FieldKeyPart` segments representing a field path (e.g. `items[0].price`). |
 | `FieldKeyPart.java` | Sealed interface: `StringKey(String)` for named fields, `IntKey(int)` for numeric indices. |
 | `PartialResult.java` | Record `(T success, ValidationErrors errors)` — holds both partial successes and errors side-by-side. |
-| `ResultCollector.java` | Interface + static factory methods for `Collector<Result<T>, ?, R>` stream collectors. |
-| `ResultCollectorWrapper.java` | Internal `WithIndex` and `WithPrefix` wrappers used by `ResultCollector`. |
-| `ListResultCollector.java` | Internal implementation for `toListOrThrow` and `toResultList` collectors. |
-| `ValidationCollector.java` | Internal implementation for `toValidation` and `addErrorsTo` collectors. |
+| `ResultCollector.java` | Public interface + static factory methods for `Collector<Result<T>, ?, R>` stream collectors. The interface itself is internal infrastructure; only the static factories are public API. |
+| `PrefixStack.java` | Public sealed cons-list (`Empty` / `Cons`) used to pass accumulated `FieldKeyPart` prefixes down the `ResultCollectorWrapper` chain in O(1) per level. Only allocated once per stream element; converted to a `FieldKeyPart[]` by the leaf collector via `toArray()`. |
+| `ResultCollectorWrapper.java` | Internal `WithIndex` and `WithPrefix` wrappers. Each overrides `add(Result, PrefixStack)` to prepend its own segment and forward to the inner collector. |
+| `ListResultCollector.java` | Internal implementation for `toListOrThrow`, `toResultList`, and `toPartialResult` collectors. Leaf: converts `PrefixStack` to `FieldKeyPart[]` once via `toArray()`. |
+| `ValidationCollector.java` | Internal implementation for `toValidation` and `addErrorsTo` collectors. Leaf: same `PrefixStack.toArray()` conversion. |
 
 ### `combiner` sub-package — `io.github.raniagus.javalidation.combiner`
 

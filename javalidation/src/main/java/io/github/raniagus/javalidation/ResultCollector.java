@@ -50,7 +50,7 @@ public interface ResultCollector<T extends @Nullable Object, R, SELF extends Res
 
     void add(Result<T> result);
 
-    void add(Result<T> result, FieldKeyPart[] outerPrefix);
+    void add(Result<T> result, PrefixStack prefix);
 
     SELF combine(SELF other);
 

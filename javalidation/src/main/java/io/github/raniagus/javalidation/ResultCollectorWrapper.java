@@ -1,6 +1,5 @@
 package io.github.raniagus.javalidation;
 
-import java.util.Arrays;
 import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
@@ -21,8 +20,8 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
     }
 
     @Override
-    public void add(Result<T> result, FieldKeyPart... outerPrefix) {
-        resultCollector.add(result, outerPrefix);
+    public void add(Result<T> result, PrefixStack prefix) {
+        resultCollector.add(result, prefix);
     }
 
     @Override
@@ -39,14 +38,12 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
 
         @Override
         public void add(Result<T> result) {
-            super.add(result, new FieldKeyPart.IntKey(index++));
+            resultCollector.add(result, PrefixStack.of(index++));
         }
 
         @Override
-        public void add(Result<T> result, FieldKeyPart... outerPrefix) {
-            FieldKeyPart[] newPrefix = Arrays.copyOf(outerPrefix, outerPrefix.length + 1);
-            newPrefix[outerPrefix.length] = new FieldKeyPart.IntKey(index++);
-            super.add(result, newPrefix);
+        public void add(Result<T> result, PrefixStack incoming) {
+            resultCollector.add(result, incoming.prepend(index++));
         }
 
         @Override
@@ -70,14 +67,12 @@ public abstract class ResultCollectorWrapper<T extends @Nullable Object, R, C ex
 
         @Override
         public void add(Result<T> result) {
-            super.add(result, prefix);
+            resultCollector.add(result, PrefixStack.of(prefix));
         }
 
         @Override
-        public void add(Result<T> result, FieldKeyPart... outerPrefix) {
-            FieldKeyPart[] newPrefix = Arrays.copyOf(outerPrefix, outerPrefix.length + 1);
-            newPrefix[outerPrefix.length] = prefix;
-            super.add(result, newPrefix);
+        public void add(Result<T> result, PrefixStack incoming) {
+            resultCollector.add(result, incoming.prepend(prefix));
         }
 
         @Override
