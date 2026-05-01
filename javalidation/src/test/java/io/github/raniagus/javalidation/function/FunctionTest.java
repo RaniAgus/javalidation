@@ -1,129 +1,155 @@
 package io.github.raniagus.javalidation.function;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class FunctionTest {
-    @Test
-    void triFunctionAndThen() {
-        TriFunction<String, String, String, String> triFunction = (a, b, c) -> a + b + c;
-        TriFunction<String, String, String, String> triFunctionAndThen = triFunction.andThen((d) -> d + "d");
 
-        assertThat(triFunctionAndThen.apply("a", "b", "c")).isEqualTo("abcd");
+    @Nested
+    class TriFunctionTests {
+        @Test
+        void givenTriFunction_whenAndThen_thenAppliesTransformation() {
+            TriFunction<String, String, String, String> triFunction = (a, b, c) -> a + b + c;
+            TriFunction<String, String, String, String> triFunctionAndThen = triFunction.andThen((d) -> d + "d");
+
+            assertThat(triFunctionAndThen.apply("a", "b", "c")).isEqualTo("abcd");
+        }
+
+        @Test
+        void givenTriFunction_whenAndThenWithNull_thenThrowsNullPointerException() {
+            TriFunction<String, String, String, String> triFunction = (a, b, c) -> a + b + c;
+
+            assertThatThrownBy(() -> triFunction.andThen(null)).isInstanceOf(NullPointerException.class);
+        }
     }
 
-    @Test
-    void triFunctionAndThenWithNull() {
-        TriFunction<String, String, String, String> triFunction = (a, b, c) -> a + b + c;
+    @Nested
+    class QuadFunctionTests {
+        @Test
+        void givenQuadFunction_whenAndThen_thenAppliesTransformation() {
+            QuadFunction<String, String, String, String, String> quadFunction = (a, b, c, d) -> a + b + c + d;
+            QuadFunction<String, String, String, String, String> quadFunctionAndThen = quadFunction.andThen((e) -> e + "e");
 
-        assertThatThrownBy(() -> triFunction.andThen(null)).isInstanceOf(NullPointerException.class);
+            assertThat(quadFunctionAndThen.apply("a", "b", "c", "d")).isEqualTo("abcde");
+        }
+
+        @Test
+        void givenQuadFunction_whenAndThenWithNull_thenThrowsNullPointerException() {
+            QuadFunction<String, String, String, String, String> quadFunction = (a, b, c, d) -> a + b + c + d;
+
+            assertThatThrownBy(() -> quadFunction.andThen(null)).isInstanceOf(NullPointerException.class);
+        }
     }
 
-    @Test
-    void quadFunctionAndThen() {
-        QuadFunction<String, String, String, String, String> quadFunction = (a, b, c, d) -> a + b + c + d;
-        QuadFunction<String, String, String, String, String> quadFunctionAndThen = quadFunction.andThen((e) -> e + "e");
+    @Nested
+    class PentaFunctionTests {
+        @Test
+        void givenPentaFunction_whenAndThen_thenAppliesTransformation() {
+            PentaFunction<String, String, String, String, String, String> pentaFunction = (a, b, c, d, e) -> a + b + c + d + e;
+            PentaFunction<String, String, String, String, String, String> pentaFunctionAndThen = pentaFunction.andThen((f) -> f + "f");
 
-        assertThat(quadFunctionAndThen.apply("a", "b", "c", "d")).isEqualTo("abcde");
+            assertThat(pentaFunctionAndThen.apply("a", "b", "c", "d", "e")).isEqualTo("abcdef");
+        }
+
+        @Test
+        void givenPentaFunction_whenAndThenWithNull_thenThrowsNullPointerException() {
+            PentaFunction<String, String, String, String, String, String> pentaFunction = (a, b, c, d, e) -> a + b + c + d + e;
+
+            assertThatThrownBy(() -> pentaFunction.andThen(null)).isInstanceOf(NullPointerException.class);
+        }
     }
 
-    @Test
-    void quadFunctionAndThenWithNull() {
-        QuadFunction<String, String, String, String, String> quadFunction = (a, b, c, d) -> a + b + c + d;
+    @Nested
+    class HexFunctionTests {
+        @Test
+        void givenHexFunction_whenAndThen_thenAppliesTransformation() {
+            HexFunction<String, String, String, String, String, String, String> hexFunction = (a, b, c, d, e, f) -> a + b + c + d + e + f;
+            HexFunction<String, String, String, String, String, String, String> hexFunctionAndThen = hexFunction.andThen((g) -> g + "g");
 
-        assertThatThrownBy(() -> quadFunction.andThen(null)).isInstanceOf(NullPointerException.class);
+            assertThat(hexFunctionAndThen.apply("a", "b", "c", "d", "e", "f")).isEqualTo("abcdefg");
+        }
+
+        @Test
+        void givenHexFunction_whenAndThenWithNull_thenThrowsNullPointerException() {
+            HexFunction<String, String, String, String, String, String, String> hexFunction = (a, b, c, d, e, f) -> a + b + c + d + e + f;
+
+            assertThatThrownBy(() -> hexFunction.andThen(null)).isInstanceOf(NullPointerException.class);
+        }
     }
 
-    @Test
-    void pentaFunctionAndThen() {
-        PentaFunction<String, String, String, String, String, String> pentaFunction = (a, b, c, d, e) -> a + b + c + d + e;
-        PentaFunction<String, String, String, String, String, String> pentaFunctionAndThen = pentaFunction.andThen((f) -> f + "f");
+    @Nested
+    class SeptaFunctionTests {
+        @Test
+        void givenSeptaFunction_whenAndThen_thenAppliesTransformation() {
+            SeptaFunction<String, String, String, String, String, String, String, String> septaFunction = (a, b, c, d, e, f, g) -> a + b + c + d + e + f + g;
+            SeptaFunction<String, String, String, String, String, String, String, String> septaFunctionAndThen = septaFunction.andThen((h) -> h + "h");
 
-        assertThat(pentaFunctionAndThen.apply("a", "b", "c", "d", "e")).isEqualTo("abcdef");
+            assertThat(septaFunctionAndThen.apply("a", "b", "c", "d", "e", "f", "g")).isEqualTo("abcdefgh");
+        }
+
+        @Test
+        void givenSeptaFunction_whenAndThenWithNull_thenThrowsNullPointerException() {
+            SeptaFunction<String, String, String, String, String, String, String, String> septaFunction = (a, b, c, d, e, f, g) -> a + b + c + d + e + f + g;
+
+            assertThatThrownBy(() -> septaFunction.andThen(null)).isInstanceOf(NullPointerException.class);
+        }
     }
 
-    @Test
-    void pentaFunctionAndThenWithNull() {
-        PentaFunction<String, String, String, String, String, String> pentaFunction = (a, b, c, d, e) -> a + b + c + d + e;
+    @Nested
+    class OctaFunctionTests {
+        @Test
+        void givenOctaFunction_whenAndThen_thenAppliesTransformation() {
+            OctaFunction<String, String, String, String, String, String, String, String, String> octaFunction = (a, b, c, d, e, f, g, h) -> a + b + c + d + e + f + g + h;
+            OctaFunction<String, String, String, String, String, String, String, String, String> octaFunctionAndThen = octaFunction.andThen((i) -> i + "i");
 
-        assertThatThrownBy(() -> pentaFunction.andThen(null)).isInstanceOf(NullPointerException.class);
+            assertThat(octaFunctionAndThen.apply("a", "b", "c", "d", "e", "f", "g", "h")).isEqualTo("abcdefghi");
+        }
+
+        @Test
+        void givenOctaFunction_whenAndThenWithNull_thenThrowsNullPointerException() {
+            OctaFunction<String, String, String, String, String, String, String, String, String> octaFunction = (a, b, c, d, e, f, g, h) -> a + b + c + d + e + f + g + h;
+
+            assertThatThrownBy(() -> octaFunction.andThen(null)).isInstanceOf(NullPointerException.class);
+        }
     }
 
-    @Test
-    void hexFunctionAndThen() {
-        HexFunction<String, String, String, String, String, String, String> hexFunction = (a, b, c, d, e, f) -> a + b + c + d + e + f;
-        HexFunction<String, String, String, String, String, String, String> hexFunctionAndThen = hexFunction.andThen((g) -> g + "g");
+    @Nested
+    class NonaFunctionTests {
+        @Test
+        void givenNonaFunction_whenAndThen_thenAppliesTransformation() {
+            NonaFunction<String, String, String, String, String, String, String, String, String, String> nonaFunction = (a, b, c, d, e, f, g, h, i) -> a + b + c + d + e + f + g + h + i;
+            NonaFunction<String, String, String, String, String, String, String, String, String, String> nonaFunctionAndThen = nonaFunction.andThen((j) -> j + "j");
 
-        assertThat(hexFunctionAndThen.apply("a", "b", "c", "d", "e", "f")).isEqualTo("abcdefg");
+            assertThat(nonaFunctionAndThen.apply("a", "b", "c", "d", "e", "f", "g", "h", "i")).isEqualTo("abcdefghij");
+        }
+
+        @Test
+        void givenNonaFunction_whenAndThenWithNull_thenThrowsNullPointerException() {
+            NonaFunction<String, String, String, String, String, String, String, String, String, String> nonaFunction = (a, b, c, d, e, f, g, h, i) -> a + b + c + d + e + f + g + h + i;
+
+            assertThatThrownBy(() -> nonaFunction.andThen(null)).isInstanceOf(NullPointerException.class);
+        }
     }
 
-    @Test
-    void hexFunctionAndThenWithNull() {
-        HexFunction<String, String, String, String, String, String, String> hexFunction = (a, b, c, d, e, f) -> a + b + c + d + e + f;
+    @Nested
+    class DecaFunctionTests {
+        @Test
+        void givenDecaFunction_whenAndThen_thenAppliesTransformation() {
+            DecaFunction<String, String, String, String, String, String, String, String, String, String, String> decaFunction = (a, b, c, d, e, f, g, h, i, j) -> a + b + c + d + e + f + g + h + i + j;
+            DecaFunction<String, String, String, String, String, String, String, String, String, String, String> decaFunctionAndThen = decaFunction.andThen((k) -> k + "k");
 
-        assertThatThrownBy(() -> hexFunction.andThen(null)).isInstanceOf(NullPointerException.class);
-    }
+            assertThat(decaFunctionAndThen.apply("a", "b", "c", "d", "e", "f", "g", "h", "i", "j")).isEqualTo("abcdefghijk");
+        }
 
-    @Test
-    void septaFunctionAndThen() {
-        SeptaFunction<String, String, String, String, String, String, String, String> septaFunction = (a, b, c, d, e, f, g) -> a + b + c + d + e + f + g;
-        SeptaFunction<String, String, String, String, String, String, String, String> septaFunctionAndThen = septaFunction.andThen((h) -> h + "h");
+        @Test
+        void givenDecaFunction_whenAndThenWithNull_thenThrowsNullPointerException() {
+            DecaFunction<String, String, String, String, String, String, String, String, String, String, String> decaFunction = (a, b, c, d, e, f, g, h, i, j) -> a + b + c + d + e + f + g + h + i + j;
 
-        assertThat(septaFunctionAndThen.apply("a", "b", "c", "d", "e", "f", "g")).isEqualTo("abcdefgh");
-    }
-
-    @Test
-    void septaFunctionAndThenWithNull() {
-        SeptaFunction<String, String, String, String, String, String, String, String> septaFunction = (a, b, c, d, e, f, g) -> a + b + c + d + e + f + g;
-
-        assertThatThrownBy(() -> septaFunction.andThen(null)).isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    void octaFunctionAndThen() {
-        OctaFunction<String, String, String, String, String, String, String, String, String> octaFunction = (a, b, c, d, e, f, g, h) -> a + b + c + d + e + f + g + h;
-        OctaFunction<String, String, String, String, String, String, String, String, String> octaFunctionAndThen = octaFunction.andThen((i) -> i + "i");
-
-        assertThat(octaFunctionAndThen.apply("a", "b", "c", "d", "e", "f", "g", "h")).isEqualTo("abcdefghi");
-    }
-
-    @Test
-    void octaFunctionAndThenWithNull() {
-        OctaFunction<String, String, String, String, String, String, String, String, String> octaFunction = (a, b, c, d, e, f, g, h) -> a + b + c + d + e + f + g + h;
-
-        assertThatThrownBy(() -> octaFunction.andThen(null)).isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    void nonaFunctionAndThen() {
-        NonaFunction<String, String, String, String, String, String, String, String, String, String> nonaFunction = (a, b, c, d, e, f, g, h, i) -> a + b + c + d + e + f + g + h + i;
-        NonaFunction<String, String, String, String, String, String, String, String, String, String> nonaFunctionAndThen = nonaFunction.andThen((j) -> j + "j");
-
-        assertThat(nonaFunctionAndThen.apply("a", "b", "c", "d", "e", "f", "g", "h", "i")).isEqualTo("abcdefghij");
-    }
-
-    @Test
-    void nonaFunctionAndThenWithNull() {
-        NonaFunction<String, String, String, String, String, String, String, String, String, String> nonaFunction = (a, b, c, d, e, f, g, h, i) -> a + b + c + d + e + f + g + h + i;
-
-        assertThatThrownBy(() -> nonaFunction.andThen(null)).isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    void decaFunctionAndThen() {
-        DecaFunction<String, String, String, String, String, String, String, String, String, String, String> decaFunction = (a, b, c, d, e, f, g, h, i, j) -> a + b + c + d + e + f + g + h + i + j;
-        DecaFunction<String, String, String, String, String, String, String, String, String, String, String> decaFunctionAndThen = decaFunction.andThen((k) -> k + "k");
-
-        assertThat(decaFunctionAndThen.apply("a", "b", "c", "d", "e", "f", "g", "h", "i", "j")).isEqualTo("abcdefghijk");
-    }
-
-    @Test
-    void decaFunctionAndThenWithNull() {
-        DecaFunction<String, String, String, String, String, String, String, String, String, String, String> decaFunction = (a, b, c, d, e, f, g, h, i, j) -> a + b + c + d + e + f + g + h + i + j;
-
-        assertThatThrownBy(() -> decaFunction.andThen(null)).isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> decaFunction.andThen(null)).isInstanceOf(NullPointerException.class);
+        }
     }
 
 }

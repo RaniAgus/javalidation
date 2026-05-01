@@ -2,52 +2,59 @@ package io.github.raniagus.javalidation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class ValidationErrorsTest {
 
-    // -- withPrefix(String...) --
+    @Nested
+    class WithStringPrefixTests {
 
-    @Test
-    void givenRootErrors_whenWithPrefix_thenConvertsToFieldErrors() {
-        var errors = ValidationErrors.of("root error");
+        @Test
+        void givenRootErrors_whenWithPrefix_thenConvertsToFieldErrors() {
+            var errors = ValidationErrors.of("root error");
 
-        var prefixed = errors.withPrefix("field");
+            var prefixed = errors.withPrefix("field");
 
-        assertThat(prefixed.rootErrors()).isEmpty();
-        assertThat(prefixed.fieldErrors()).containsOnlyKeys(FieldKey.of("field"));
-        assertThat(prefixed.fieldErrors().get(FieldKey.of("field"))).containsExactly(TemplateString.of("root error"));
+            assertThat(prefixed.rootErrors()).isEmpty();
+            assertThat(prefixed.fieldErrors()).containsOnlyKeys(FieldKey.of("field"));
+            assertThat(prefixed.fieldErrors().get(FieldKey.of("field"))).containsExactly(TemplateString.of("root error"));
+        }
+
+        @Test
+        void givenFieldErrors_whenWithPrefix_thenPrefixesFieldNames() {
+            var errors = ValidationErrors.at("email", "invalid");
+
+            var prefixed = errors.withPrefix("form");
+
+            assertThat(prefixed.fieldErrors()).containsOnlyKeys(FieldKey.of("form", "email"));
+            assertThat(prefixed.fieldErrors().get(FieldKey.of("form", "email"))).containsExactly(TemplateString.of("invalid"));
+        }
     }
 
-    @Test
-    void givenFieldErrors_whenWithPrefix_thenPrefixesFieldNames() {
-        var errors = ValidationErrors.at("email", "invalid");
+    @Nested
+    class WithIntPrefixTests {
 
-        var prefixed = errors.withPrefix("form");
+        @Test
+        void givenFieldErrors_whenWithPrefixInt_thenBuildsPrefix() {
+            var errors = ValidationErrors.at("field", "error");
 
-        assertThat(prefixed.fieldErrors()).containsOnlyKeys(FieldKey.of("form", "email"));
-        assertThat(prefixed.fieldErrors().get(FieldKey.of("form","email"))).containsExactly(TemplateString.of("invalid"));
+            var prefixed = errors.withPrefix(0, 1);
+
+            assertThat(prefixed.fieldErrors()).containsOnlyKeys(FieldKey.of(0, 1, "field"));
+        }
     }
 
-    // -- withPrefix(int...) --
+    @Nested
+    class WithVarargsPrefixTests {
 
-    @Test
-    void givenFieldErrors_whenWithPrefixInt_thenBuildsPrefix() {
-        var errors = ValidationErrors.at("field", "error");
+        @Test
+        void givenFieldErrors_whenWithPrefixVarargs_thenBuildsPrefix() {
+            var errors = ValidationErrors.at("field", "error");
 
-        var prefixed = errors.withPrefix(0, 1);
+            var prefixed = errors.withPrefix("parent", "child");
 
-        assertThat(prefixed.fieldErrors()).containsOnlyKeys(FieldKey.of(0, 1, "field"));
-    }
-
-    // -- withPrefix(Object...) --
-
-    @Test
-    void givenFieldErrors_whenWithPrefixVarargs_thenBuildsPrefix() {
-        var errors = ValidationErrors.at("field", "error");
-
-        var prefixed = errors.withPrefix("parent", "child");
-
-        assertThat(prefixed.fieldErrors()).containsOnlyKeys(FieldKey.of("parent", "child", "field"));
+            assertThat(prefixed.fieldErrors()).containsOnlyKeys(FieldKey.of("parent", "child", "field"));
+        }
     }
 }

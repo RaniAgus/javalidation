@@ -8,7 +8,7 @@ import io.github.raniagus.javalidation.format.FieldKeyFormatter;
 import io.github.raniagus.javalidation.format.PropertyPathNotationFormatter;
 import org.junit.jupiter.api.Test;
 
-public class PropertyPathNotationParserTest {
+class PropertyPathNotationParserTest {
     @Test
     void givenSimpleString_whenParse_thenReturnSingleStringKey() {
         assertThat(PropertyPathNotationParser.parse("test")).isEqualTo(FieldKey.of("test"));

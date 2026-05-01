@@ -5,8 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.github.raniagus.javalidation.FieldKey;
 import org.junit.jupiter.api.Test;
 
-public class DotNotationFormatterTest {
-    FieldKeyFormatter formatter = new DotNotationFormatter();
+class DotNotationFormatterTest {
+    private final FieldKeyFormatter formatter = new DotNotationFormatter();
 
     @Test
     void givenSimpleString_whenFormat_thenReturnSameString() {

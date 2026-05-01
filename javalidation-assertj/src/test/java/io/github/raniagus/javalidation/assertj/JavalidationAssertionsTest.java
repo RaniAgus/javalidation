@@ -16,9 +16,6 @@ import org.junit.jupiter.api.Test;
 
 class JavalidationAssertionsTest {
 
-    // -------------------------------------------------------------------------
-    // ResultAssert
-    // -------------------------------------------------------------------------
 
     @Nested
     class ResultAssertTest {
@@ -126,9 +123,6 @@ class JavalidationAssertionsTest {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // ValidationErrorsAssert
-    // -------------------------------------------------------------------------
 
     @Nested
     class ValidationErrorsAssertTest {
@@ -573,9 +567,6 @@ class JavalidationAssertionsTest {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // assertThat(Validation)
-    // -------------------------------------------------------------------------
 
     @Nested
     class ValidationAssertTest {
@@ -623,9 +614,6 @@ class JavalidationAssertionsTest {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // PartialResultAssert
-    // -------------------------------------------------------------------------
 
     @Nested
     class PartialResultAssertTest {

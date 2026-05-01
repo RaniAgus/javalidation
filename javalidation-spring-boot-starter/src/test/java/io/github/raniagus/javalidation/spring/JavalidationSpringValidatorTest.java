@@ -9,7 +9,7 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.SimpleErrors;
 
 class JavalidationSpringValidatorTest {
-    JavalidationSpringValidator validator = new JavalidationSpringValidator();
+    private final JavalidationSpringValidator validator = new JavalidationSpringValidator();
 
     @Test
     void givenErrors_whenToValidationErrors_thenShouldConvertToValidationErrors() {

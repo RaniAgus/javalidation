@@ -1,7 +1,6 @@
 package io.github.raniagus.javalidation.jackson;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.raniagus.javalidation.FieldKey;
 import io.github.raniagus.javalidation.ValidationErrors;
@@ -91,7 +90,7 @@ class FlattenedErrorsSerializerTest {
     void givenNull_whenSerialize_thenReturnsJsonNull() {
         String json = mapper.writeValueAsString(null);
 
-        assertEquals("null", json);
+        assertThat(json).isEqualTo("null");
     }
 
     @Test

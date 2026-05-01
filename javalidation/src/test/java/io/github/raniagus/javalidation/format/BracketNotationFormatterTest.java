@@ -5,8 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.github.raniagus.javalidation.FieldKey;
 import org.junit.jupiter.api.Test;
 
-public class BracketNotationFormatterTest {
-    FieldKeyFormatter formatter = new BracketNotationFormatter();
+class BracketNotationFormatterTest {
+    private final FieldKeyFormatter formatter = new BracketNotationFormatter();
 
     @Test
     void givenSimpleString_whenFormat_thenReturnSameString() {

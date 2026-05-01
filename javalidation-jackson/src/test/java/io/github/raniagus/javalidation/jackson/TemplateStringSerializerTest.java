@@ -1,7 +1,6 @@
 package io.github.raniagus.javalidation.jackson;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.raniagus.javalidation.TemplateString;
 import io.github.raniagus.javalidation.format.TemplateStringFormatter;
@@ -27,7 +26,7 @@ class TemplateStringSerializerTest {
 
         String json = mapper.writeValueAsString(ts);
 
-        assertEquals("\"test\"", json);
+        assertThat(json).isEqualTo("\"test\"");
     }
 
     @Test
@@ -36,14 +35,14 @@ class TemplateStringSerializerTest {
 
         String json = mapper.writeValueAsString(ts);
 
-        assertEquals("\"Hello Alice, you have 5 messages\"", json);
+        assertThat(json).isEqualTo("\"Hello Alice, you have 5 messages\"");
     }
 
     @Test
     void givenNull_whenSerialize_thenReturnsJsonNull() {
         String json = mapper.writeValueAsString(null);
 
-        assertEquals("null", json);
+        assertThat(json).isEqualTo("null");
     }
 
     @Test
@@ -58,7 +57,7 @@ class TemplateStringSerializerTest {
         TemplateString ts = TemplateString.of("test", "arg");
         String json = mapper.writeValueAsString(ts);
 
-        assertEquals("\"CUSTOM: test\"", json);
+        assertThat(json).isEqualTo("\"CUSTOM: test\"");
     }
 
     @Test

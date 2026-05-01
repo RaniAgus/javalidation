@@ -3,43 +3,52 @@ package io.github.raniagus.javalidation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class PartitionedResultTest {
 
-    @Test
-    void givenEmptyErrors_whenHasErrors_thenReturnsFalse() {
-        var partitioned = new PartialResult<>("value", ValidationErrors.empty());
+    @Nested
+    class HasErrorsTests {
 
-        assertThat(partitioned.hasErrors()).isFalse();
+        @Test
+        void givenEmptyErrors_whenHasErrors_thenReturnsFalse() {
+            var partitioned = new PartialResult<>("value", ValidationErrors.empty());
+
+            assertThat(partitioned.hasErrors()).isFalse();
+        }
+
+        @Test
+        void givenNonEmptyErrors_whenHasErrors_thenReturnsTrue() {
+            var errors = ValidationErrors.of("error");
+            var partitioned = new PartialResult<>("value", errors);
+
+            assertThat(partitioned.hasErrors()).isTrue();
+        }
     }
 
-    @Test
-    void givenNonEmptyErrors_whenHasErrors_thenReturnsTrue() {
-        var errors = ValidationErrors.of("error");
-        var partitioned = new PartialResult<>("value", errors);
+    @Nested
+    class ToResultTests {
 
-        assertThat(partitioned.hasErrors()).isTrue();
-    }
+        @Test
+        void givenEmptyErrors_whenToResult_thenReturnsOk() {
+            var partitioned = new PartialResult<>("success", ValidationErrors.empty());
 
-    @Test
-    void givenEmptyErrors_whenToResult_thenReturnsOk() {
-        var partitioned = new PartialResult<>("success", ValidationErrors.empty());
+            var result = partitioned.toResult();
 
-        var result = partitioned.toResult();
+            assertThat(result.getOrThrow()).isEqualTo("success");
+        }
 
-        assertThat(result.getOrThrow()).isEqualTo("success");
-    }
+        @Test
+        void givenNonEmptyErrors_whenToResult_thenReturnsErr() {
+            var errors = ValidationErrors.of("validation failed");
+            var partitioned = new PartialResult<>("value", errors);
 
-    @Test
-    void givenNonEmptyErrors_whenToResult_thenReturnsErr() {
-        var errors = ValidationErrors.of("validation failed");
-        var partitioned = new PartialResult<>("value", errors);
+            var result = partitioned.toResult();
 
-        var result = partitioned.toResult();
-
-        assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(JavalidationException.class);
-        assertThat(result.errors()).isEqualTo(errors);
+            assertThatThrownBy(result::getOrThrow)
+                    .isInstanceOf(JavalidationException.class);
+            assertThat(result.errors()).isEqualTo(errors);
+        }
     }
 }

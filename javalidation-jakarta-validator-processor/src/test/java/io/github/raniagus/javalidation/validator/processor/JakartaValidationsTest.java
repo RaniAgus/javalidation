@@ -91,7 +91,7 @@ class JakartaValidationsTest {
             "NotNullAndSizeRecord",
             "NotNullAndMinRecord",
     })
-    void givenAnnotatedRecords_WhenAnnotationProcessing_ThenGenerateExpectedFiles(String recordName) {
+    void givenAnnotatedRecords_whenAnnotationProcessing_thenGeneratesExpectedFiles(String recordName) {
         JavaFileObject recordFile = JavaFileObjects.forResource("test/jakarta/" + recordName + ".java");
         JavaFileObject triggerFile = JavaFileObjects.forSourceString("test.SimpleService", """
                 package test;
@@ -119,14 +119,14 @@ class JakartaValidationsTest {
         NotNullRecordValidator validator = new NotNullRecordValidator();
 
         @Test
-        void nullValue_hasFieldError() {
+        void givenNullValue_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new NotNullRecord(null)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.NotNull.message");
         }
 
         @Test
-        void nonNullValue_noErrors() {
+        void givenNonNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new NotNullRecord("hello")))
                     .isEmpty();
         }
@@ -138,27 +138,27 @@ class JakartaValidationsTest {
         NotEmptyRecordValidator validator = new NotEmptyRecordValidator();
 
         @Test
-        void nullValue_hasFieldError() {
+        void givenNullValue_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new NotEmptyRecord(null)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.NotEmpty.message");
         }
 
         @Test
-        void emptyString_hasFieldError() {
+        void givenEmptyString_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new NotEmptyRecord("")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.NotEmpty.message");
         }
 
         @Test
-        void blankString_noErrors() {
+        void givenBlankString_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new NotEmptyRecord(" ")))
                     .isEmpty();
         }
 
         @Test
-        void nonEmptyString_noErrors() {
+        void givenNonEmptyString_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new NotEmptyRecord("hello")))
                     .isEmpty();
         }
@@ -170,28 +170,28 @@ class JakartaValidationsTest {
         NotBlankRecordValidator validator = new NotBlankRecordValidator();
 
         @Test
-        void nullValue_hasFieldError() {
+        void givenNullValue_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new NotBlankRecord(null)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.NotBlank.message");
         }
 
         @Test
-        void emptyString_hasFieldError() {
+        void givenEmptyString_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new NotBlankRecord("")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.NotBlank.message");
         }
 
         @Test
-        void blankString_hasFieldError() {
+        void givenBlankString_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new NotBlankRecord("   ")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.NotBlank.message");
         }
 
         @Test
-        void nonBlankString_noErrors() {
+        void givenNonBlankString_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new NotBlankRecord("hello")))
                     .isEmpty();
         }
@@ -203,32 +203,32 @@ class JakartaValidationsTest {
         SizeMinMaxRecordValidator validator = new SizeMinMaxRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new SizeMinMaxRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void belowMin_hasFieldError() {
+        void givenBelowMin_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new SizeMinMaxRecord("")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Size.message", 1, 10);
         }
 
         @Test
-        void atMin_noErrors() {
+        void givenAtMin_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new SizeMinMaxRecord("a")))
                     .isEmpty();
         }
 
         @Test
-        void atMax_noErrors() {
+        void givenAtMax_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new SizeMinMaxRecord("0123456789")))
                     .isEmpty();
         }
 
         @Test
-        void aboveMax_hasFieldError() {
+        void givenAboveMax_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new SizeMinMaxRecord("01234567890")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Size.message", 1, 10);
@@ -241,72 +241,72 @@ class JakartaValidationsTest {
         EmailRecordValidator validator = new EmailRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new EmailRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void validEmail_noErrors() {
+        void givenValidEmail_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new EmailRecord("user@example.com")))
                     .isEmpty();
         }
 
         @Test
-        void validEmailWithSubdomain_noErrors() {
+        void givenValidEmailWithSubdomain_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new EmailRecord("user@mail.example.com")))
                     .isEmpty();
         }
 
         @Test
-        void validEmailWithPlusTag_noErrors() {
+        void givenValidEmailWithPlusTag_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new EmailRecord("user+tag@example.com")))
                     .isEmpty();
         }
 
         @Test
-        void validEmailWithDots_noErrors() {
+        void givenValidEmailWithDots_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new EmailRecord("first.last@example.com")))
                     .isEmpty();
         }
 
         @Test
-        void emptyString_hasFieldError() {
+        void givenEmptyString_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new EmailRecord("")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Email.message");
         }
 
         @Test
-        void missingAt_hasFieldError() {
+        void givenMissingAt_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new EmailRecord("userexample.com")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Email.message");
         }
 
         @Test
-        void missingLocal_hasFieldError() {
+        void givenMissingLocal_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new EmailRecord("@example.com")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Email.message");
         }
 
         @Test
-        void missingDomain_hasFieldError() {
+        void givenMissingDomain_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new EmailRecord("user@")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Email.message");
         }
 
         @Test
-        void multipleAt_hasFieldError() {
+        void givenMultipleAt_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new EmailRecord("user@@example.com")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Email.message");
         }
 
         @Test
-        void spacesInEmail_hasFieldError() {
+        void givenSpacesInEmail_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new EmailRecord("user name@example.com")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Email.message");
@@ -319,20 +319,20 @@ class JakartaValidationsTest {
         MinRecordValidator validator = new MinRecordValidator();
 
         @Test
-        void belowMin_hasFieldError() {
+        void givenBelowMin_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new MinRecord(9L)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Min.message", 10);
         }
 
         @Test
-        void atMin_noErrors() {
+        void givenAtMin_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new MinRecord(10L)))
                     .isEmpty();
         }
 
         @Test
-        void aboveMin_noErrors() {
+        void givenAboveMin_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new MinRecord(11L)))
                     .isEmpty();
         }
@@ -344,20 +344,20 @@ class JakartaValidationsTest {
         MinIntegerRecordValidator validator = new MinIntegerRecordValidator();
 
         @Test
-        void belowMin_hasFieldError() {
+        void givenBelowMin_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new MinIntegerRecord(9)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Min.message", 10);
         }
 
         @Test
-        void atMin_noErrors() {
+        void givenAtMin_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new MinIntegerRecord(10)))
                     .isEmpty();
         }
 
         @Test
-        void aboveMin_noErrors() {
+        void givenAboveMin_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new MinIntegerRecord(11)))
                     .isEmpty();
         }
@@ -369,20 +369,20 @@ class JakartaValidationsTest {
         MinShortRecordValidator validator = new MinShortRecordValidator();
 
         @Test
-        void belowMin_hasFieldError() {
+        void givenBelowMin_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new MinShortRecord((short) 9)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Min.message", 10);
         }
 
         @Test
-        void atMin_noErrors() {
+        void givenAtMin_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new MinShortRecord((short) 10)))
                     .isEmpty();
         }
 
         @Test
-        void aboveMin_noErrors() {
+        void givenAboveMin_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new MinShortRecord((short) 11)))
                     .isEmpty();
         }
@@ -394,20 +394,20 @@ class JakartaValidationsTest {
         MinByteRecordValidator validator = new MinByteRecordValidator();
 
         @Test
-        void belowMin_hasFieldError() {
+        void givenBelowMin_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new MinByteRecord((byte) 9)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Min.message", 10);
         }
 
         @Test
-        void atMin_noErrors() {
+        void givenAtMin_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new MinByteRecord((byte) 10)))
                     .isEmpty();
         }
 
         @Test
-        void aboveMin_noErrors() {
+        void givenAboveMin_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new MinByteRecord((byte) 11)))
                     .isEmpty();
         }
@@ -419,26 +419,26 @@ class JakartaValidationsTest {
         MinNumberRecordValidator validator = new MinNumberRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new MinNumberRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void belowMin_hasFieldError() {
+        void givenBelowMin_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new MinNumberRecord(9L)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Min.message", 10);
         }
 
         @Test
-        void atMin_noErrors() {
+        void givenAtMin_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new MinNumberRecord(10L)))
                     .isEmpty();
         }
 
         @Test
-        void aboveMin_noErrors() {
+        void givenAboveMin_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new MinNumberRecord(11L)))
                     .isEmpty();
         }
@@ -450,26 +450,26 @@ class JakartaValidationsTest {
         MinCharSequenceRecordValidator validator = new MinCharSequenceRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new MinCharSequenceRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void belowMin_hasFieldError() {
+        void givenBelowMin_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new MinCharSequenceRecord("9")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Min.message", 10);
         }
 
         @Test
-        void atMin_noErrors() {
+        void givenAtMin_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new MinCharSequenceRecord("10")))
                     .isEmpty();
         }
 
         @Test
-        void aboveMin_noErrors() {
+        void givenAboveMin_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new MinCharSequenceRecord("11")))
                     .isEmpty();
         }
@@ -484,76 +484,76 @@ class JakartaValidationsTest {
         MaxBigDecimalRecordValidator bigDecimalValidator = new MaxBigDecimalRecordValidator();
 
         @Test
-        void belowPrimitiveMax_noErrors() {
+        void givenBelowPrimitiveMax_whenValidate_thenIsEmpty() {
             assertThat(primitiveValidator.validate(new MaxPrimitiveRecord(99L)))
                     .isEmpty();
         }
 
         @Test
-        void atPrimitiveMax_noErrors() {
+        void givenAtPrimitiveMax_whenValidate_thenIsEmpty() {
             assertThat(primitiveValidator.validate(new MaxPrimitiveRecord(100L)))
                     .isEmpty();
         }
 
         @Test
-        void abovePrimitiveMax_hasFieldError() {
+        void givenAbovePrimitiveMax_whenValidate_thenHasFieldError() {
             assertThat(primitiveValidator.validate(new MaxPrimitiveRecord(101L)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Max.message", 100);
         }
 
         @Test
-        void belowReferenceMax_noErrors() {
+        void givenBelowReferenceMax_whenValidate_thenIsEmpty() {
             assertThat(referenceValidator.validate(new MaxReferenceRecord(99L)))
                     .isEmpty();
         }
 
         @Test
-        void atReferenceMax_noErrors() {
+        void givenAtReferenceMax_whenValidate_thenIsEmpty() {
             assertThat(referenceValidator.validate(new MaxReferenceRecord(100L)))
                     .isEmpty();
         }
 
         @Test
-        void aboveReferenceMax_hasFieldError() {
+        void givenAboveReferenceMax_whenValidate_thenHasFieldError() {
             assertThat(referenceValidator.validate(new MaxReferenceRecord(101L)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Max.message", 100);
         }
 
         @Test
-        void belowBigIntegerMax_noErrors() {
+        void givenBelowBigIntegerMax_whenValidate_thenIsEmpty() {
             assertThat(bigIntegerValidator.validate(new MaxBigIntegerRecord(BigInteger.valueOf(99L))))
                     .isEmpty();
         }
 
         @Test
-        void atBigIntegerMax_noErrors() {
+        void givenAtBigIntegerMax_whenValidate_thenIsEmpty() {
             assertThat(bigIntegerValidator.validate(new MaxBigIntegerRecord(BigInteger.valueOf(100L))))
                     .isEmpty();
         }
 
         @Test
-        void aboveBigIntegerMax_hasFieldError() {
+        void givenAboveBigIntegerMax_whenValidate_thenHasFieldError() {
             assertThat(bigIntegerValidator.validate(new MaxBigIntegerRecord(BigInteger.valueOf(101L))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Max.message", 100);
         }
 
         @Test
-        void belowBigDecimalMax_noErrors() {
+        void givenBelowBigDecimalMax_whenValidate_thenIsEmpty() {
             assertThat(bigDecimalValidator.validate(new MaxBigDecimalRecord(BigDecimal.valueOf(99L))))
                     .isEmpty();
         }
 
         @Test
-        void atBigDecimalMax_noErrors() {
+        void givenAtBigDecimalMax_whenValidate_thenIsEmpty() {
             assertThat(bigDecimalValidator.validate(new MaxBigDecimalRecord(BigDecimal.valueOf(100L))))
                     .isEmpty();
         }
 
         @Test
-        void aboveBigDecimalMax_hasFieldError() {
+        void givenAboveBigDecimalMax_whenValidate_thenHasFieldError() {
             assertThat(bigDecimalValidator.validate(new MaxBigDecimalRecord(BigDecimal.valueOf(101L))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Max.message", 100);
@@ -566,21 +566,21 @@ class JakartaValidationsTest {
         PositivePrimitiveRecordValidator validator = new PositivePrimitiveRecordValidator();
 
         @Test
-        void negative_hasFieldError() {
+        void givenNegative_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new PositivePrimitiveRecord(-1L)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Positive.message");
         }
 
         @Test
-        void zero_hasFieldError() {
+        void givenZero_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new PositivePrimitiveRecord(0L)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Positive.message");
         }
 
         @Test
-        void positive_noErrors() {
+        void givenPositive_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PositivePrimitiveRecord(1L)))
                     .isEmpty();
         }
@@ -592,20 +592,20 @@ class JakartaValidationsTest {
         PositiveOrZeroPrimitiveRecordValidator validator = new PositiveOrZeroPrimitiveRecordValidator();
 
         @Test
-        void negative_hasFieldError() {
+        void givenNegative_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new PositiveOrZeroPrimitiveRecord(-1L)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.PositiveOrZero.message");
         }
 
         @Test
-        void zero_noErrors() {
+        void givenZero_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PositiveOrZeroPrimitiveRecord(0L)))
                     .isEmpty();
         }
 
         @Test
-        void positive_noErrors() {
+        void givenPositive_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PositiveOrZeroPrimitiveRecord(1L)))
                     .isEmpty();
         }
@@ -617,20 +617,20 @@ class JakartaValidationsTest {
         NegativePrimitiveRecordValidator validator = new NegativePrimitiveRecordValidator();
 
         @Test
-        void negative_noErrors() {
+        void givenNegative_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new NegativePrimitiveRecord(-1L)))
                     .isEmpty();
         }
 
         @Test
-        void zero_hasFieldError() {
+        void givenZero_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new NegativePrimitiveRecord(0L)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Negative.message");
         }
 
         @Test
-        void positive_hasFieldError() {
+        void givenPositive_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new NegativePrimitiveRecord(1L)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Negative.message");
@@ -643,19 +643,19 @@ class JakartaValidationsTest {
         NegativeOrZeroPrimitiveRecordValidator validator = new NegativeOrZeroPrimitiveRecordValidator();
 
         @Test
-        void negative_noErrors() {
+        void givenNegative_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new NegativeOrZeroPrimitiveRecord(-1L)))
                     .isEmpty();
         }
 
         @Test
-        void zero_noErrors() {
+        void givenZero_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new NegativeOrZeroPrimitiveRecord(0L)))
                     .isEmpty();
         }
 
         @Test
-        void positive_hasFieldError() {
+        void givenPositive_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new NegativeOrZeroPrimitiveRecord(1L)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.NegativeOrZero.message");
@@ -668,19 +668,19 @@ class JakartaValidationsTest {
         PastRecordValidator validator = new PastRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void pastInstant_noErrors() {
+        void givenPastInstant_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastRecord(Instant.now().minus(Duration.ofDays(1)))))
                     .isEmpty();
         }
 
         @Test
-        void futureInstant_hasFieldError() {
+        void givenFutureInstant_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new PastRecord(Instant.now().plus(Duration.ofDays(60)))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Past.message");
@@ -693,19 +693,19 @@ class JakartaValidationsTest {
         PastLocalDateRecordValidator validator = new PastLocalDateRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastLocalDateRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void pastDate_noErrors() {
+        void givenPastDate_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastLocalDateRecord(LocalDate.now().minusDays(1))))
                     .isEmpty();
         }
 
         @Test
-        void futureDate_hasFieldError() {
+        void givenFutureDate_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new PastLocalDateRecord(LocalDate.now().plusDays(1))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Past.message");
@@ -718,20 +718,20 @@ class JakartaValidationsTest {
         PastLocalTimeRecordValidator validator = new PastLocalTimeRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastLocalTimeRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void pastTime_noErrors() {
+        void givenPastTime_whenValidate_thenIsEmpty() {
             assumeTrue(LocalTime.now().isAfter(LocalTime.of(1, 0)), "Skipping: too close to midnight");
             assertThat(validator.validate(new PastLocalTimeRecord(LocalTime.MIDNIGHT)))
                     .isEmpty();
         }
 
         @Test
-        void futureTime_hasFieldError() {
+        void givenFutureTime_whenValidate_thenHasFieldError() {
             assumeTrue(LocalTime.now().isBefore(LocalTime.of(23, 0)), "Skipping: too close to end of day");
             assertThat(validator.validate(new PastLocalTimeRecord(LocalTime.MAX)))
                     .hasErrorCount(1)
@@ -745,19 +745,19 @@ class JakartaValidationsTest {
         PastLocalDateTimeRecordValidator validator = new PastLocalDateTimeRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastLocalDateTimeRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void pastDateTime_noErrors() {
+        void givenPastDateTime_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastLocalDateTimeRecord(LocalDateTime.now().minusDays(1))))
                     .isEmpty();
         }
 
         @Test
-        void futureDateTime_hasFieldError() {
+        void givenFutureDateTime_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new PastLocalDateTimeRecord(LocalDateTime.now().plusDays(1))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Past.message");
@@ -770,19 +770,19 @@ class JakartaValidationsTest {
         PastOffsetDateTimeRecordValidator validator = new PastOffsetDateTimeRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastOffsetDateTimeRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void pastDateTime_noErrors() {
+        void givenPastDateTime_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastOffsetDateTimeRecord(OffsetDateTime.now().minusDays(1))))
                     .isEmpty();
         }
 
         @Test
-        void futureDateTime_hasFieldError() {
+        void givenFutureDateTime_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new PastOffsetDateTimeRecord(OffsetDateTime.now().plusDays(1))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Past.message");
@@ -795,20 +795,20 @@ class JakartaValidationsTest {
         PastOffsetTimeRecordValidator validator = new PastOffsetTimeRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastOffsetTimeRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void pastTime_noErrors() {
+        void givenPastTime_whenValidate_thenIsEmpty() {
             assumeTrue(OffsetTime.now().isAfter(OffsetTime.of(LocalTime.of(1, 0), ZoneOffset.UTC)), "Skipping: too close to midnight UTC");
             assertThat(validator.validate(new PastOffsetTimeRecord(OffsetTime.of(LocalTime.MIDNIGHT, ZoneOffset.UTC))))
                     .isEmpty();
         }
 
         @Test
-        void futureTime_hasFieldError() {
+        void givenFutureTime_whenValidate_thenHasFieldError() {
             assumeTrue(OffsetTime.now().isBefore(OffsetTime.of(LocalTime.of(23, 0), ZoneOffset.UTC)), "Skipping: too close to end of day UTC");
             assertThat(validator.validate(new PastOffsetTimeRecord(OffsetTime.of(LocalTime.MAX, ZoneOffset.UTC))))
                     .hasErrorCount(1)
@@ -822,19 +822,19 @@ class JakartaValidationsTest {
         PastZonedDateTimeRecordValidator validator = new PastZonedDateTimeRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastZonedDateTimeRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void pastDateTime_noErrors() {
+        void givenPastDateTime_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastZonedDateTimeRecord(ZonedDateTime.now().minusDays(1))))
                     .isEmpty();
         }
 
         @Test
-        void futureDateTime_hasFieldError() {
+        void givenFutureDateTime_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new PastZonedDateTimeRecord(ZonedDateTime.now().plusDays(1))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Past.message");
@@ -847,19 +847,19 @@ class JakartaValidationsTest {
         PastYearRecordValidator validator = new PastYearRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastYearRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void pastYear_noErrors() {
+        void givenPastYear_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastYearRecord(Year.now().minusYears(1))))
                     .isEmpty();
         }
 
         @Test
-        void futureYear_hasFieldError() {
+        void givenFutureYear_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new PastYearRecord(Year.now().plusYears(1))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Past.message");
@@ -872,19 +872,19 @@ class JakartaValidationsTest {
         PastYearMonthRecordValidator validator = new PastYearMonthRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastYearMonthRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void pastMonth_noErrors() {
+        void givenPastMonth_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastYearMonthRecord(YearMonth.now().minusMonths(1))))
                     .isEmpty();
         }
 
         @Test
-        void futureMonth_hasFieldError() {
+        void givenFutureMonth_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new PastYearMonthRecord(YearMonth.now().plusMonths(1))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Past.message");
@@ -897,20 +897,20 @@ class JakartaValidationsTest {
         PastMonthDayRecordValidator validator = new PastMonthDayRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastMonthDayRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void pastMonthDay_noErrors() {
+        void givenPastMonthDay_whenValidate_thenIsEmpty() {
             assumeTrue(MonthDay.now().isAfter(MonthDay.of(1, 1)), "Skipping: it's Jan 1");
             assertThat(validator.validate(new PastMonthDayRecord(MonthDay.of(1, 1))))
                     .isEmpty();
         }
 
         @Test
-        void futureMonthDay_hasFieldError() {
+        void givenFutureMonthDay_whenValidate_thenHasFieldError() {
             assumeTrue(MonthDay.now().isBefore(MonthDay.of(12, 31)), "Skipping: it's Dec 31");
             assertThat(validator.validate(new PastMonthDayRecord(MonthDay.of(12, 31))))
                     .hasErrorCount(1)
@@ -924,19 +924,19 @@ class JakartaValidationsTest {
         PastDateRecordValidator validator = new PastDateRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastDateRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void pastDate_noErrors() {
+        void givenPastDate_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastDateRecord(new Date(System.currentTimeMillis() - 86400000))))
                     .isEmpty();
         }
 
         @Test
-        void futureDate_hasFieldError() {
+        void givenFutureDate_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new PastDateRecord(new Date(System.currentTimeMillis() + 5184000000L))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Past.message");
@@ -949,13 +949,13 @@ class JakartaValidationsTest {
         PastCalendarRecordValidator validator = new PastCalendarRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastCalendarRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void pastDate_noErrors() {
+        void givenPastDate_whenValidate_thenIsEmpty() {
             Calendar pastCal = Calendar.getInstance();
             pastCal.add(Calendar.DAY_OF_MONTH, -1);
             assertThat(validator.validate(new PastCalendarRecord(pastCal)))
@@ -963,7 +963,7 @@ class JakartaValidationsTest {
         }
 
         @Test
-        void futureDate_hasFieldError() {
+        void givenFutureDate_whenValidate_thenHasFieldError() {
             Calendar futureCal = Calendar.getInstance();
             futureCal.add(Calendar.DAY_OF_MONTH, 1);
             assertThat(validator.validate(new PastCalendarRecord(futureCal)))
@@ -978,19 +978,19 @@ class JakartaValidationsTest {
         PastLongRecordValidator validator = new PastLongRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastLongRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void pastTimestamp_noErrors() {
+        void givenPastTimestamp_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastLongRecord(System.currentTimeMillis() - 86400000)))
                     .isEmpty();
         }
 
         @Test
-        void futureTimestamp_hasFieldError() {
+        void givenFutureTimestamp_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new PastLongRecord(System.currentTimeMillis() + 5184000000L)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Past.message");
@@ -1003,19 +1003,19 @@ class JakartaValidationsTest {
         PastOrPresentRecordValidator validator = new PastOrPresentRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastOrPresentRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void pastInstant_noErrors() {
+        void givenPastInstant_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PastOrPresentRecord(Instant.now().minus(Duration.ofDays(1)))))
                     .isEmpty();
         }
 
         @Test
-        void futureInstant_hasFieldError() {
+        void givenFutureInstant_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new PastOrPresentRecord(Instant.now().plus(Duration.ofDays(60)))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.PastOrPresent.message");
@@ -1028,19 +1028,19 @@ class JakartaValidationsTest {
         FutureRecordValidator validator = new FutureRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new FutureRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void futureInstant_noErrors() {
+        void givenFutureInstant_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new FutureRecord(Instant.now().plus(Duration.ofDays(60)))))
                     .isEmpty();
         }
 
         @Test
-        void pastInstant_hasFieldError() {
+        void givenPastInstant_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new FutureRecord(Instant.now().minus(Duration.ofDays(1)))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Future.message");
@@ -1053,19 +1053,19 @@ class JakartaValidationsTest {
         FutureOrPresentRecordValidator validator = new FutureOrPresentRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new FutureOrPresentRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void futureInstant_noErrors() {
+        void givenFutureInstant_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new FutureOrPresentRecord(Instant.now().plus(Duration.ofDays(60)))))
                     .isEmpty();
         }
 
         @Test
-        void pastInstant_hasFieldError() {
+        void givenPastInstant_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new FutureOrPresentRecord(Instant.now().minus(Duration.ofDays(1)))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.FutureOrPresent.message");
@@ -1078,19 +1078,19 @@ class JakartaValidationsTest {
         PatternRecordValidator validator = new PatternRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PatternRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void matchingValue_noErrors() {
+        void givenMatchingValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new PatternRecord("hello")))
                     .isEmpty();
         }
 
         @Test
-        void nonMatchingValue_hasFieldError() {
+        void givenNonMatchingValue_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new PatternRecord("Hello123")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[a-z]+$");
@@ -1104,33 +1104,33 @@ class JakartaValidationsTest {
         DecimalMinExclusiveRecordValidator exclusiveValidator = new DecimalMinExclusiveRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(inclusiveValidator.validate(new DecimalMinInclusiveRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void inclusive_atMin_noErrors() {
+        void givenInclusive_whenValidate_thenAtMin_noErrors() {
             assertThat(inclusiveValidator.validate(new DecimalMinInclusiveRecord(new BigDecimal("10.5"))))
                     .isEmpty();
         }
 
         @Test
-        void inclusive_belowMin_hasFieldError() {
+        void givenInclusive_whenValidate_thenBelowMin_hasFieldError() {
             assertThat(inclusiveValidator.validate(new DecimalMinInclusiveRecord(new BigDecimal("10.4"))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.DecimalMin.message", "10.5");
         }
 
         @Test
-        void exclusive_atMin_hasFieldError() {
+        void givenExclusive_whenValidate_thenAtMin_hasFieldError() {
             assertThat(exclusiveValidator.validate(new DecimalMinExclusiveRecord(new BigDecimal("10.5"))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.DecimalMin.exclusive.message", "10.5");
         }
 
         @Test
-        void exclusive_aboveMin_noErrors() {
+        void givenExclusive_whenValidate_thenAboveMin_noErrors() {
             assertThat(exclusiveValidator.validate(new DecimalMinExclusiveRecord(new BigDecimal("10.6"))))
                     .isEmpty();
         }
@@ -1143,33 +1143,33 @@ class JakartaValidationsTest {
         DecimalMaxExclusiveRecordValidator exclusiveValidator = new DecimalMaxExclusiveRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(inclusiveValidator.validate(new DecimalMaxInclusiveRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void inclusive_atMax_noErrors() {
+        void givenInclusive_whenValidate_thenAtMax_noErrors() {
             assertThat(inclusiveValidator.validate(new DecimalMaxInclusiveRecord(new BigDecimal("10.5"))))
                     .isEmpty();
         }
 
         @Test
-        void inclusive_aboveMax_hasFieldError() {
+        void givenInclusive_whenValidate_thenAboveMax_hasFieldError() {
             assertThat(inclusiveValidator.validate(new DecimalMaxInclusiveRecord(new BigDecimal("10.6"))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.DecimalMax.message", "10.5");
         }
 
         @Test
-        void exclusive_atMax_hasFieldError() {
+        void givenExclusive_whenValidate_thenAtMax_hasFieldError() {
             assertThat(exclusiveValidator.validate(new DecimalMaxExclusiveRecord(new BigDecimal("10.5"))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.DecimalMax.exclusive.message", "10.5");
         }
 
         @Test
-        void exclusive_belowMax_noErrors() {
+        void givenExclusive_whenValidate_thenBelowMax_noErrors() {
             assertThat(exclusiveValidator.validate(new DecimalMaxExclusiveRecord(new BigDecimal("10.4"))))
                     .isEmpty();
         }
@@ -1181,26 +1181,26 @@ class JakartaValidationsTest {
         DigitsRecordValidator validator = new DigitsRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new DigitsRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void validDigits_noErrors() {
+        void givenValidDigits_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new DigitsRecord(new BigDecimal("12345.67"))))
                     .isEmpty();
         }
 
         @Test
-        void tooManyIntegerDigits_hasFieldError() {
+        void givenTooManyIntegerDigits_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new DigitsRecord(new BigDecimal("123456.7"))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Digits.message", 5, 2);
         }
 
         @Test
-        void tooManyFractionDigits_hasFieldError() {
+        void givenTooManyFractionDigits_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new DigitsRecord(new BigDecimal("12345.678"))))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Digits.message", 5, 2);
@@ -1212,45 +1212,45 @@ class JakartaValidationsTest {
         DigitsCharSequenceRecordValidator validator = new DigitsCharSequenceRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new DigitsCharSequenceRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void validIntegerOnly_noErrors() {
+        void givenValidIntegerOnly_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new DigitsCharSequenceRecord("12345")))
                     .isEmpty();
         }
 
         @Test
-        void validDecimal_noErrors() {
+        void givenValidDecimal_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new DigitsCharSequenceRecord("12345.67")))
                     .isEmpty();
         }
 
         @Test
-        void negativeValidDecimal_noErrors() {
+        void givenNegativeValidDecimal_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new DigitsCharSequenceRecord("-12345.67")))
                     .isEmpty();
         }
 
         @Test
-        void tooManyIntegerDigits_hasFieldError() {
+        void givenTooManyIntegerDigits_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new DigitsCharSequenceRecord("123456.7")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Digits.message", 5, 2);
         }
 
         @Test
-        void tooManyFractionDigits_hasFieldError() {
+        void givenTooManyFractionDigits_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new DigitsCharSequenceRecord("12345.678")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Digits.message", 5, 2);
         }
 
         @Test
-        void nonNumericValue_hasFieldError() {
+        void givenNonNumericValue_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new DigitsCharSequenceRecord("abc")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Digits.message", 5, 2);
@@ -1263,26 +1263,26 @@ class JakartaValidationsTest {
         DigitsPrimitiveRecordValidator validator = new DigitsPrimitiveRecordValidator();
 
         @Test
-        void validDigits_noErrors() {
+        void givenValidDigits_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new DigitsPrimitiveRecord(12345)))
                     .isEmpty();
         }
 
         @Test
-        void tooManyIntegerDigits_hasFieldError() {
+        void givenTooManyIntegerDigits_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new DigitsPrimitiveRecord(123456)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Digits.message", 5, 2);
         }
 
         @Test
-        void zeroValue_noErrors() {
+        void givenZeroValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new DigitsPrimitiveRecord(0)))
                     .isEmpty();
         }
 
         @Test
-        void negativeValue_noErrors() {
+        void givenNegativeValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new DigitsPrimitiveRecord(-12345)))
                     .isEmpty();
         }
@@ -1294,26 +1294,26 @@ class JakartaValidationsTest {
         DigitsNumberRecordValidator validator = new DigitsNumberRecordValidator();
 
         @Test
-        void validDigits_noErrors() {
+        void givenValidDigits_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new DigitsNumberRecord(12345L)))
                     .isEmpty();
         }
 
         @Test
-        void tooManyIntegerDigits_hasFieldError() {
+        void givenTooManyIntegerDigits_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new DigitsNumberRecord(123456L)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Digits.message", 5, 2);
         }
 
         @Test
-        void zeroValue_noErrors() {
+        void givenZeroValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new DigitsNumberRecord(0L)))
                     .isEmpty();
         }
 
         @Test
-        void negativeValue_noErrors() {
+        void givenNegativeValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new DigitsNumberRecord(-12345L)))
                     .isEmpty();
         }
@@ -1325,26 +1325,26 @@ class JakartaValidationsTest {
         SizeCollectionRecordValidator validator = new SizeCollectionRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new SizeCollectionRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void belowMin_hasFieldError() {
+        void givenBelowMin_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new SizeCollectionRecord(List.of())))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Size.message", 1, 10);
         }
 
         @Test
-        void atMin_noErrors() {
+        void givenAtMin_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new SizeCollectionRecord(List.of("a"))))
                     .isEmpty();
         }
 
         @Test
-        void atMax_noErrors() {
+        void givenAtMax_whenValidate_thenIsEmpty() {
             SizeCollectionRecord record = new SizeCollectionRecord(
                     List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"));
 
@@ -1353,7 +1353,7 @@ class JakartaValidationsTest {
         }
 
         @Test
-        void aboveMax_hasFieldError() {
+        void givenAboveMax_whenValidate_thenHasFieldError() {
             SizeCollectionRecord record = new SizeCollectionRecord(
                     List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"));
 
@@ -1369,25 +1369,25 @@ class JakartaValidationsTest {
         SizeMapRecordValidator validator = new SizeMapRecordValidator();
 
         @Test
-        void nullValue_noErrors() {
+        void givenNullValue_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new SizeMapRecord(null)))
                     .isEmpty();
         }
 
         @Test
-        void belowMin_hasFieldError() {
+        void givenBelowMin_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new SizeMapRecord(Map.of()))).hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Size.message", 1, 10);
         }
 
         @Test
-        void atMin_noErrors() {
+        void givenAtMin_whenValidate_thenIsEmpty() {
             assertThat(validator.validate(new SizeMapRecord(Map.of("a", "1"))))
                     .isEmpty();
         }
 
         @Test
-        void atMax_noErrors() {
+        void givenAtMax_whenValidate_thenIsEmpty() {
             SizeMapRecord record = new SizeMapRecord(Map.ofEntries(
                     Map.entry("1", "a"), Map.entry("2", "b"), Map.entry("3", "c"), Map.entry("4", "d"),
                     Map.entry("5", "e"), Map.entry("6", "f"), Map.entry("7", "g"), Map.entry("8", "h"),
@@ -1398,7 +1398,7 @@ class JakartaValidationsTest {
         }
 
         @Test
-        void aboveMax_hasFieldError() {
+        void givenAboveMax_whenValidate_thenHasFieldError() {
             SizeMapRecord record = new SizeMapRecord(Map.ofEntries(
                     Map.entry("1", "a"), Map.entry("2", "b"), Map.entry("3", "c"), Map.entry("4", "d"),
                     Map.entry("5", "e"), Map.entry("6", "f"), Map.entry("7", "g"), Map.entry("8", "h"),

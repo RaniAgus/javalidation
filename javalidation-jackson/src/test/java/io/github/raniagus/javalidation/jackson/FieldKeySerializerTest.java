@@ -1,12 +1,9 @@
 package io.github.raniagus.javalidation.jackson;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.raniagus.javalidation.FieldKey;
-import io.github.raniagus.javalidation.TemplateString;
 import io.github.raniagus.javalidation.format.FieldKeyFormatter;
-import io.github.raniagus.javalidation.format.TemplateStringFormatter;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,9 +27,9 @@ class FieldKeySerializerTest {
 
         String json = mapper.writeValueAsString(Map.of(fk, "Hello, world!"));
 
-        assertEquals("""
+        assertThat(json).isEqualTo("""
                 {"message":"Hello, world!"}\
-                """, json);
+                """);
     }
 
     @Test
@@ -41,16 +38,16 @@ class FieldKeySerializerTest {
 
         String json = mapper.writeValueAsString(Map.of(fk, "Hello, world!"));
 
-        assertEquals("""
+        assertThat(json).isEqualTo("""
                 {"messages[5].text":"Hello, world!"}\
-                """, json);
+                """);
     }
 
     @Test
     void givenNull_whenSerialize_thenReturnsJsonNull() {
         String json = mapper.writeValueAsString(null);
 
-        assertEquals("null", json);
+        assertThat(json).isEqualTo("null");
     }
 
     // -- dot notation --
@@ -67,9 +64,9 @@ class FieldKeySerializerTest {
 
         String json = mapper.writeValueAsString(Map.of(fk, "Hello, world!"));
 
-        assertEquals("""
+        assertThat(json).isEqualTo("""
                 {"messages.5.text":"Hello, world!"}\
-                """, json);
+                """);
     }
 
     // -- bracket notation --
@@ -86,9 +83,9 @@ class FieldKeySerializerTest {
 
         String json = mapper.writeValueAsString(Map.of(fk, "Hello, world!"));
 
-        assertEquals("""
+        assertThat(json).isEqualTo("""
                 {"messages[5][text]":"Hello, world!"}\
-                """, json);
+                """);
     }
 
     // -- custom formatter --
@@ -105,9 +102,9 @@ class FieldKeySerializerTest {
         FieldKey fk = FieldKey.of("test", "arg");
         String json = mapper.writeValueAsString(Map.of(fk, "value"));
 
-        assertEquals("""
+        assertThat(json).isEqualTo("""
                 {"FieldKey{parts=[test, arg]}":"value"}\
-                """, json);
+                """);
     }
 
     @Test

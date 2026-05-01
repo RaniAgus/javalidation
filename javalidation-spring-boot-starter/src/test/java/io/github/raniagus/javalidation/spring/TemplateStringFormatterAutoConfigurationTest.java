@@ -1,7 +1,6 @@
 package io.github.raniagus.javalidation.spring;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import io.github.raniagus.javalidation.TemplateString;
 import io.github.raniagus.javalidation.format.TemplateStringFormatter;
@@ -19,7 +18,7 @@ class TemplateStringFormatterAutoConfigurationTest extends AutoConfigurationTest
 
         @Test
         void givenAutoConfiguration_whenStartup_thenConfiguresFormatter() {
-            assertNotNull(formatter);
+            assertThat(formatter).isNotNull();
         }
     }
 

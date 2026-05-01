@@ -8,8 +8,6 @@ import org.junit.jupiter.api.Test;
 class MessageFormatTemplateStringFormatterTest {
     private final MessageFormatTemplateStringFormatter formatter = new MessageFormatTemplateStringFormatter();
 
-    // -- format --
-
     @Test
     void givenNoArguments_whenFormat_thenReturnsMessage() {
         TemplateString template = TemplateString.of("Simple message");

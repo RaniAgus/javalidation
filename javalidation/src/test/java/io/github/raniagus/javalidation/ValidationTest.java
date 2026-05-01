@@ -6,503 +6,526 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class ValidationTest {
 
-    // -- addError --
+    @Nested
+    class AddErrorTests {
 
-    @Test
-    void givenMessage_whenAddError_thenAddsError() {
-        var validation = Validation.create()
-                .addError("error message");
+        @Test
+        void givenMessage_whenAddError_thenAddsError() {
+            var validation = Validation.create()
+                    .addError("error message");
 
-        var errors = validation.finish();
-        assertThat(errors.rootErrors()).containsExactly(TemplateString.of("error message"));
+            var errors = validation.finish();
+            assertThat(errors.rootErrors()).containsExactly(TemplateString.of("error message"));
+        }
+
+        @Test
+        void givenMultipleCalls_whenAddError_thenAccumulatesErrors() {
+            var validation = Validation.create()
+                    .addError("error 1")
+                    .addError("error 2");
+
+            var errors = validation.finish();
+            assertThat(errors.rootErrors()).containsExactly(
+                    TemplateString.of("error 1"),
+                    TemplateString.of("error 2")
+            );
+        }
+
+        @Test
+        void givenNullMessage_whenAddError_thenThrowsNullPointerException() {
+            var validation = Validation.create();
+
+            assertThatThrownBy(() -> validation.addError(null))
+                    .isInstanceOf(NullPointerException.class);
+        }
     }
 
-    @Test
-    void givenMultipleCalls_whenAddError_thenAccumulatesErrors() {
-        var validation = Validation.create()
-                .addError("error 1")
-                .addError("error 2");
+    @Nested
+    class AddErrorAtTests {
 
-        var errors = validation.finish();
-        assertThat(errors.rootErrors()).containsExactly(
-                TemplateString.of("error 1"),
-                TemplateString.of("error 2")
-        );
+        @Test
+        void givenFieldAndMessage_whenAddErrorAt_thenAddsError() {
+            var validation = Validation.create()
+                    .addErrorAt("field", "error message");
+
+            var errors = validation.finish();
+            assertThat(errors.fieldErrors()).containsKey(FieldKey.of("field"));
+            assertThat(errors.fieldErrors().get(FieldKey.of("field"))).containsExactly(TemplateString.of("error message"));
+        }
+
+        @Test
+        void givenSameFieldMultipleTimes_whenAddErrorAt_thenAccumulatesErrors() {
+            var validation = Validation.create()
+                    .addErrorAt("field", "error 1")
+                    .addErrorAt("field", "error 2");
+
+            var errors = validation.finish();
+            assertThat(errors.fieldErrors().get(FieldKey.of("field"))).containsExactly(
+                    TemplateString.of("error 1"),
+                    TemplateString.of("error 2")
+            );
+        }
+
+        @Test
+        void givenSameIndexFieldMultipleTimes_whenAddErrorAt_thenAccumulatesErrors() {
+            var validation = Validation.create()
+                    .addErrorAt(0, "error 1")
+                    .addErrorAt(0, "error 2");
+
+            var errors = validation.finish();
+            assertThat(errors.fieldErrors().get(FieldKey.of(0))).containsExactly(
+                    TemplateString.of("error 1"),
+                    TemplateString.of("error 2")
+            );
+        }
+
+        @Test
+        void givenDifferentFields_whenAddErrorAt_thenAddsToEachField() {
+            var validation = Validation.create()
+                    .addErrorAt("field1", "error 1")
+                    .addErrorAt("field2", "error 2");
+
+            var errors = validation.finish();
+            assertThat(errors.fieldErrors()).containsOnlyKeys(FieldKey.of("field1"), FieldKey.of("field2"));
+        }
+
+        @Test
+        void givenDifferentIndexFields_whenAddErrorAt_thenAddsToEachField() {
+            var validation = Validation.create()
+                    .addErrorAt(1, "error 1")
+                    .addErrorAt(2, "error 2");
+
+            var errors = validation.finish();
+            assertThat(errors.fieldErrors()).containsOnlyKeys(FieldKey.of(1), FieldKey.of(2));
+        }
+
+        @Test
+        void givenNullMessage_whenAddErrorAt_thenThrowsNullPointerException() {
+            var validation = Validation.create();
+
+            assertThatThrownBy(() -> validation.addErrorAt("field", null))
+                    .isInstanceOf(NullPointerException.class);
+        }
     }
 
-    @Test
-    void givenNullMessage_whenAddError_thenThrowsNullPointerException() {
-        var validation = Validation.create();
+    @Nested
+    class AddAllValidationTests {
 
-        assertThatThrownBy(() -> validation.addError(null))
-                .isInstanceOf(NullPointerException.class);
-    }
+        @Test
+        void givenValidation_whenAddAll_thenAddsAllErrors() {
+            var validation = Validation.create()
+                    .addErrorAt("field", "error");
+            var validation2 = Validation.create()
+                    .addError("root error");
 
-    // -- addErrorAt --
-
-    @Test
-    void givenFieldAndMessage_whenAddFieldError_thenAddsError() {
-        var validation = Validation.create()
-                .addErrorAt("field", "error message");
-
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("field"));
-        assertThat(errors.fieldErrors().get(FieldKey.of("field"))).containsExactly(TemplateString.of("error message"));
-    }
-
-    @Test
-    void givenSameFieldMultipleTimes_whenAddFieldError_thenAccumulatesErrors() {
-        var validation = Validation.create()
-                .addErrorAt("field", "error 1")
-                .addErrorAt("field", "error 2");
-
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors().get(FieldKey.of("field"))).containsExactly(
-                TemplateString.of("error 1"),
-                TemplateString.of("error 2")
-        );
-    }
-
-    @Test
-    void givenSameIndexFieldMultipleTimes_whenAddFieldError_thenAccumulatesErrors() {
-        var validation = Validation.create()
-                .addErrorAt(0, "error 1")
-                .addErrorAt(0, "error 2");
-
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors().get(FieldKey.of(0))).containsExactly(
-                TemplateString.of("error 1"),
-                TemplateString.of("error 2")
-        );
-    }
-
-    @Test
-    void givenDifferentFields_whenAddFieldError_thenAddsToEachField() {
-        var validation = Validation.create()
-                .addErrorAt("field1", "error 1")
-                .addErrorAt("field2", "error 2");
-
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsOnlyKeys(FieldKey.of("field1"), FieldKey.of("field2"));
-    }
-
-    @Test
-    void givenDifferentIndexFields_whenAddFieldError_thenAddsToEachField() {
-        var validation = Validation.create()
-                .addErrorAt(1, "error 1")
-                .addErrorAt(2, "error 2");
-
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsOnlyKeys(FieldKey.of(1), FieldKey.of(2));
-    }
-
-    @Test
-    void givenNullMessage_whenAddFieldError_thenThrowsNullPointerException() {
-        var validation = Validation.create();
-
-        assertThatThrownBy(() -> validation.addErrorAt("field", null))
-                .isInstanceOf(NullPointerException.class);
-    }
-
-    // -- addAll(Validation) --
-
-    @Test
-    void givenValidation_whenAddAll_thenAddsAllErrors() {
-        var validation = Validation.create()
-                .addErrorAt("field", "error");
-        var validation2 = Validation.create()
-                .addError("root error");
-
-        var validation3 = Validation.create()
-                .addAll(validation)
-                .addAll(validation2);
-
-        var errors = validation3.finish();
-        assertThat(errors.fieldErrors()).containsEntry(FieldKey.of("field"), List.of(TemplateString.of("error")));
-        assertThat(errors.rootErrors()).containsExactly(TemplateString.of("root error"));
-    }
-
-    @Test
-    void givenValidation_whenAddAllScoped_thenAddsAllErrors() {
-        var validation = Validation.create()
-                .addErrorAt("field", "error");
-        var validation2 = Validation.create()
-                .addError("root error");
-
-        var validation3 = Validation.create();
-        validation3.withField("parent", () -> {
-            validation3
+            var validation3 = Validation.create()
                     .addAll(validation)
                     .addAll(validation2);
-        });
 
-        var errors = validation3.finish();
-        assertThat(errors.rootErrors()).isEmpty();
-        assertThat(errors.fieldErrors())
-                .containsExactlyInAnyOrderEntriesOf(Map.of(
-                        FieldKey.of("parent", "field"), List.of(TemplateString.of("error")),
-                        FieldKey.of("parent"), List.of(TemplateString.of("root error"))
-                ));
-    }
+            var errors = validation3.finish();
+            assertThat(errors.fieldErrors()).containsEntry(FieldKey.of("field"), List.of(TemplateString.of("error")));
+            assertThat(errors.rootErrors()).containsExactly(TemplateString.of("root error"));
+        }
 
-    // -- addAll(ValidationErrors) --
-    @Test
-    void givenRootErrors_whenAddAll_thenAddsAllErrors() {
-        var validationErrors = ValidationErrors.of("error");
-        var validation = Validation.create()
-                .addAll(validationErrors);
+        @Test
+        void givenValidation_whenAddAllScoped_thenAddsAllErrors() {
+            var validation = Validation.create()
+                    .addErrorAt("field", "error");
+            var validation2 = Validation.create()
+                    .addError("root error");
 
-        var errors = validation.finish();
-        assertThat(errors.rootErrors()).containsExactly(TemplateString.of("error"));
-    }
-
-
-    @Test
-    void givenFieldErrors_whenAddAll_thenAddsAllErrors() {
-        var validationErrors = ValidationErrors.at("field", "error");
-        var validation = Validation.create()
-                .addAll(validationErrors);
-
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("field"));
-    }
-
-    @Test
-    void givenNull_whenAddAll_thenThrowsNullPointerException() {
-        var validation = Validation.create();
-
-        assertThatThrownBy(() -> validation.addAll((ValidationErrors) null))
-                .isInstanceOf(NullPointerException.class);
-    }
-
-    // -- addAllAt --
-
-    @Test
-    void givenFieldErrors_whenAddAllWithPrefix_thenPrefixesFieldNames() {
-        var validationErrors = ValidationErrors.at("field", "error");
-        var validation = Validation.create()
-                .addAllAt(FieldKey.of("root"), validationErrors);
-
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("root", "field"));
-    }
-
-    @Test
-    void givenRootErrors_whenAddAllWithPrefix_thenConvertsToFieldErrors() {
-        var validationErrors = ValidationErrors.of("root error");
-        var validation = Validation.create()
-                .addAllAt(FieldKey.of("prefix"), validationErrors);
-
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("prefix"));
-    }
-
-    // -- finish --
-
-    @Test
-    void givenErrors_whenFinish_thenReturnsValidationErrors() {
-        var validation = Validation.create()
-                .addErrorAt("field", "error");
-
-        var errors = validation.finish();
-        assertThat(errors).isNotNull();
-        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("field"));
-    }
-
-    @Test
-    void givenNoErrors_whenFinish_thenReturnsEmpty() {
-        var validation = Validation.create();
-
-        var errors = validation.finish();
-        assertThat(errors.isEmpty()).isTrue();
-    }
-
-    // -- asResult --
-
-    @Test
-    void givenNoErrors_whenAsResult_thenReturnsOk() {
-        var validation = Validation.create();
-
-        var result = validation.asResult("value");
-        assertThat(result.getOrThrow()).isEqualTo("value");
-    }
-
-    @Test
-    void givenErrors_whenAsResult_thenReturnsErr() {
-        var validation = Validation.create()
-                .addErrorAt("field", "error");
-
-        var result = validation.asResult("value");
-        assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(JavalidationException.class);
-    }
-
-    @Test
-    void givenSupplierThrows_whenAsResult_thenReturnsErr() {
-        var validation = Validation.create();
-
-        var result = validation.asResult(() -> {
-            throw JavalidationException.of("error");
-        });
-        assertThatThrownBy(result::getOrThrow)
-                .isInstanceOf(JavalidationException.class);
-    }
-
-    // -- check --
-
-    @Test
-    void givenNoErrors_whenCheck_thenDoesNotThrow() {
-        var validation = Validation.create();
-
-        assertThatCode(validation::check).doesNotThrowAnyException();
-    }
-
-    @Test
-    void givenErrors_whenCheck_thenThrowsValidationException() {
-        var validation = Validation.create()
-                .addErrorAt("field", "error");
-
-        assertThatThrownBy(validation::check)
-                .isInstanceOf(JavalidationException.class);
-    }
-
-    // -- checkAndGet --
-
-    @Test
-    void givenNoErrors_whenCheckAndGet_thenReturnsValue() {
-        var validation = Validation.create();
-
-        var result = validation.checkAndGet(() -> "value");
-        assertThat(result).isEqualTo("value");
-    }
-
-    @Test
-    void givenErrors_whenCheckAndGet_thenThrowsValidationException() {
-        var validation = Validation.create()
-                .addErrorAt("field", "error");
-
-        assertThatThrownBy(() -> validation.checkAndGet(() -> "value"))
-                .isInstanceOf(JavalidationException.class);
-    }
-
-    // -- withField --
-
-    @Test
-    void givenRootErrorInConsumer_whenWithField_thenConvertsToFieldError() {
-        record Person(String name, int age) {}
-        record Request(Person person) {}
-
-        Request request = new Request(null);
-        var validation = Validation.create();
-
-        validation.withField("person", () -> {
-            if (request.person() == null) {
-                validation.addError("must not be null");
-            }
-        });
-
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("person"));
-        assertThat(errors.fieldErrors().get(FieldKey.of("person")))
-                .containsExactly(TemplateString.of("must not be null"));
-    }
-
-    @Test
-    void givenFieldErrorInConsumer_whenWithField_thenPrefixesFieldName() {
-        record Person(String name, int age) {}
-        record Request(Person person) {}
-
-        Request request = new Request(new Person(null, 15));
-        var validation = Validation.create();
-
-        validation.withField("person", () -> {
-            if (request.person().name() == null) {
-                validation.addErrorAt("name", "must not be null");
-            }
-            if (request.person().age() < 18) {
-                validation.addErrorAt("age", "must be at least 18");
-            }
-        });
-
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsKeys(
-                FieldKey.of("person", "name"),
-                FieldKey.of("person", "age")
-        );
-        assertThat(errors.fieldErrors().get(FieldKey.of("person", "name")))
-                .containsExactly(TemplateString.of("must not be null"));
-        assertThat(errors.fieldErrors().get(FieldKey.of("person", "age")))
-                .containsExactly(TemplateString.of("must be at least 18"));
-    }
-
-    @Test
-    void givenNestedWithField_whenWithField_thenCreatesNestedPrefix() {
-        var validation = Validation.create();
-
-        validation.withField("address", () -> {
-            validation.withField(0, () -> {
-                validation.addError("required");
+            var validation3 = Validation.create();
+            validation3.withField("parent", () -> {
+                validation3
+                        .addAll(validation)
+                        .addAll(validation2);
             });
-        });
 
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("address", 0));
-        assertThat(errors.fieldErrors().get(FieldKey.of("address", 0)))
-                .containsExactly(TemplateString.of("required"));
+            var errors = validation3.finish();
+            assertThat(errors.rootErrors()).isEmpty();
+            assertThat(errors.fieldErrors())
+                    .containsExactlyInAnyOrderEntriesOf(Map.of(
+                            FieldKey.of("parent", "field"), List.of(TemplateString.of("error")),
+                            FieldKey.of("parent"), List.of(TemplateString.of("root error"))
+                    ));
+        }
     }
 
-    @Test
-    void givenNullField_whenWithField_thenThrowsNullPointerException() {
-        var validation = Validation.create();
+    @Nested
+    class AddAllValidationErrorsTests {
 
-        assertThatThrownBy(() -> validation.withField((String) null, () -> {}))
-                .isInstanceOf(NullPointerException.class);
+        @Test
+        void givenRootErrors_whenAddAll_thenAddsAllErrors() {
+            var validationErrors = ValidationErrors.of("error");
+            var validation = Validation.create()
+                    .addAll(validationErrors);
+
+            var errors = validation.finish();
+            assertThat(errors.rootErrors()).containsExactly(TemplateString.of("error"));
+        }
+
+        @Test
+        void givenFieldErrors_whenAddAll_thenAddsAllErrors() {
+            var validationErrors = ValidationErrors.at("field", "error");
+            var validation = Validation.create()
+                    .addAll(validationErrors);
+
+            var errors = validation.finish();
+            assertThat(errors.fieldErrors()).containsKey(FieldKey.of("field"));
+        }
+
+        @Test
+        void givenNull_whenAddAll_thenThrowsNullPointerException() {
+            var validation = Validation.create();
+
+            assertThatThrownBy(() -> validation.addAll((ValidationErrors) null))
+                    .isInstanceOf(NullPointerException.class);
+        }
     }
 
-    @Test
-    void givenNullConsumer_whenWithField_thenThrowsNullPointerException() {
-        var validation = Validation.create();
+    @Nested
+    class AddAllAtTests {
 
-        assertThatThrownBy(() -> validation.withField("field", null))
-                .isInstanceOf(NullPointerException.class);
+        @Test
+        void givenFieldErrors_whenAddAllAt_thenPrefixesFieldNames() {
+            var validationErrors = ValidationErrors.at("field", "error");
+            var validation = Validation.create()
+                    .addAllAt(FieldKey.of("root"), validationErrors);
+
+            var errors = validation.finish();
+            assertThat(errors.fieldErrors()).containsKey(FieldKey.of("root", "field"));
+        }
+
+        @Test
+        void givenRootErrors_whenAddAllAt_thenConvertsToFieldErrors() {
+            var validationErrors = ValidationErrors.of("root error");
+            var validation = Validation.create()
+                    .addAllAt(FieldKey.of("prefix"), validationErrors);
+
+            var errors = validation.finish();
+            assertThat(errors.fieldErrors()).containsKey(FieldKey.of("prefix"));
+        }
     }
 
-    @Test
-    void givenNoErrorsInConsumer_whenWithField_thenNoErrorsAdded() {
-        var validation = Validation.create();
+    @Nested
+    class FinishTests {
 
-        validation.withField("person", () -> {
-            // No errors added
-        });
+        @Test
+        void givenErrors_whenFinish_thenReturnsValidationErrors() {
+            var validation = Validation.create()
+                    .addErrorAt("field", "error");
 
-        var errors = validation.finish();
-        assertThat(errors.isEmpty()).isTrue();
+            var errors = validation.finish();
+            assertThat(errors).isNotNull();
+            assertThat(errors.fieldErrors()).containsKey(FieldKey.of("field"));
+        }
+
+        @Test
+        void givenNoErrors_whenFinish_thenReturnsEmpty() {
+            var validation = Validation.create();
+
+            var errors = validation.finish();
+            assertThat(errors.isEmpty()).isTrue();
+        }
     }
 
-    // -- withEach --
+    @Nested
+    class AsResultTests {
 
-    @Test
-    void givenRootErrorInConsumer_whenWithEach_thenConvertsToIndexedFieldError() {
-        record Tag(String name) {}
+        @Test
+        void givenNoErrors_whenAsResult_thenReturnsOk() {
+            var validation = Validation.create();
 
-        var tags = List.of(new Tag(null), new Tag("valid"));
-        var validation = Validation.create();
+            var result = validation.asResult("value");
+            assertThat(result.getOrThrow()).isEqualTo("value");
+        }
 
-        validation.withEach(tags, tag -> {
-            if (tag.name() == null) {
-                validation.addError("must not be null");
-            }
-        });
+        @Test
+        void givenErrors_whenAsResult_thenReturnsErr() {
+            var validation = Validation.create()
+                    .addErrorAt("field", "error");
 
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsOnlyKeys(FieldKey.of(0));
-        assertThat(errors.fieldErrors().get(FieldKey.of(0)))
-                .containsExactly(TemplateString.of("must not be null"));
+            var result = validation.asResult("value");
+            assertThatThrownBy(result::getOrThrow)
+                    .isInstanceOf(JavalidationException.class);
+        }
+
+        @Test
+        void givenSupplierThrows_whenAsResult_thenReturnsErr() {
+            var validation = Validation.create();
+
+            var result = validation.asResult(() -> {
+                throw JavalidationException.of("error");
+            });
+            assertThatThrownBy(result::getOrThrow)
+                    .isInstanceOf(JavalidationException.class);
+        }
     }
 
-    @Test
-    void givenFieldErrorInConsumer_whenWithEach_thenPrefixesWithIndex() {
-        record Tag(String name) {}
+    @Nested
+    class CheckTests {
 
-        var tags = List.of(new Tag(null), new Tag(""));
-        var validation = Validation.create();
+        @Test
+        void givenNoErrors_whenCheck_thenDoesNotThrow() {
+            var validation = Validation.create();
 
-        validation.withEach(tags, tag -> {
-            if (tag.name() == null) {
-                validation.addErrorAt("name", "must not be null");
-            } else if (tag.name().isBlank()) {
-                validation.addErrorAt("name", "must not be blank");
-            }
-        });
+            assertThatCode(validation::check).doesNotThrowAnyException();
+        }
 
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsKeys(
-                FieldKey.of(0, "name"),
-                FieldKey.of(1, "name")
-        );
-        assertThat(errors.fieldErrors().get(FieldKey.of(0, "name")))
-                .containsExactly(TemplateString.of("must not be null"));
-        assertThat(errors.fieldErrors().get(FieldKey.of(1, "name")))
-                .containsExactly(TemplateString.of("must not be blank"));
+        @Test
+        void givenErrors_whenCheck_thenThrowsJavalidationException() {
+            var validation = Validation.create()
+                    .addErrorAt("field", "error");
+
+            assertThatThrownBy(validation::check)
+                    .isInstanceOf(JavalidationException.class);
+        }
     }
 
-    @Test
-    void givenEmptyIterable_whenWithEach_thenNoErrorsAdded() {
-        var validation = Validation.create();
+    @Nested
+    class CheckAndGetTests {
 
-        validation.withEach(List.of(), item -> {
-            validation.addError("should not be called");
-        });
+        @Test
+        void givenNoErrors_whenCheckAndGet_thenReturnsValue() {
+            var validation = Validation.create();
 
-        var errors = validation.finish();
-        assertThat(errors.isEmpty()).isTrue();
+            var result = validation.checkAndGet(() -> "value");
+            assertThat(result).isEqualTo("value");
+        }
+
+        @Test
+        void givenErrors_whenCheckAndGet_thenThrowsJavalidationException() {
+            var validation = Validation.create()
+                    .addErrorAt("field", "error");
+
+            assertThatThrownBy(() -> validation.checkAndGet(() -> "value"))
+                    .isInstanceOf(JavalidationException.class);
+        }
     }
 
-    @Test
-    void givenNoErrorsInConsumer_whenWithEach_thenNoErrorsAdded() {
-        var validation = Validation.create();
+    @Nested
+    class WithFieldTests {
 
-        validation.withEach(List.of("a", "b"), item -> {
-            // No errors added
-        });
+        @Test
+        void givenRootErrorInConsumer_whenWithField_thenConvertsToFieldError() {
+            record Person(String name, int age) {}
+            record Request(Person person) {}
 
-        var errors = validation.finish();
-        assertThat(errors.isEmpty()).isTrue();
+            Request request = new Request(null);
+            var validation = Validation.create();
+
+            validation.withField("person", () -> {
+                if (request.person() == null) {
+                    validation.addError("must not be null");
+                }
+            });
+
+            var errors = validation.finish();
+            assertThat(errors.fieldErrors()).containsKey(FieldKey.of("person"));
+            assertThat(errors.fieldErrors().get(FieldKey.of("person")))
+                    .containsExactly(TemplateString.of("must not be null"));
+        }
+
+        @Test
+        void givenFieldErrorInConsumer_whenWithField_thenPrefixesFieldName() {
+            record Person(String name, int age) {}
+            record Request(Person person) {}
+
+            Request request = new Request(new Person(null, 15));
+            var validation = Validation.create();
+
+            validation.withField("person", () -> {
+                if (request.person().name() == null) {
+                    validation.addErrorAt("name", "must not be null");
+                }
+                if (request.person().age() < 18) {
+                    validation.addErrorAt("age", "must be at least 18");
+                }
+            });
+
+            var errors = validation.finish();
+            assertThat(errors.fieldErrors()).containsKeys(
+                    FieldKey.of("person", "name"),
+                    FieldKey.of("person", "age")
+            );
+            assertThat(errors.fieldErrors().get(FieldKey.of("person", "name")))
+                    .containsExactly(TemplateString.of("must not be null"));
+            assertThat(errors.fieldErrors().get(FieldKey.of("person", "age")))
+                    .containsExactly(TemplateString.of("must be at least 18"));
+        }
+
+        @Test
+        void givenNestedWithField_whenWithField_thenCreatesNestedPrefix() {
+            var validation = Validation.create();
+
+            validation.withField("address", () -> {
+                validation.withField(0, () -> {
+                    validation.addError("required");
+                });
+            });
+
+            var errors = validation.finish();
+            assertThat(errors.fieldErrors()).containsKey(FieldKey.of("address", 0));
+            assertThat(errors.fieldErrors().get(FieldKey.of("address", 0)))
+                    .containsExactly(TemplateString.of("required"));
+        }
+
+        @Test
+        void givenNullField_whenWithField_thenThrowsNullPointerException() {
+            var validation = Validation.create();
+
+            assertThatThrownBy(() -> validation.withField((String) null, () -> {}))
+                    .isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        void givenNullConsumer_whenWithField_thenThrowsNullPointerException() {
+            var validation = Validation.create();
+
+            assertThatThrownBy(() -> validation.withField("field", null))
+                    .isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        void givenNoErrorsInConsumer_whenWithField_thenNoErrorsAdded() {
+            var validation = Validation.create();
+
+            validation.withField("person", () -> {
+                // No errors added
+            });
+
+            var errors = validation.finish();
+            assertThat(errors.isEmpty()).isTrue();
+        }
     }
 
-    @Test
-    void givenNestedWithField_whenWithEach_thenCreatesNestedPrefix() {
-        record Tag(String name) {}
+    @Nested
+    class WithEachTests {
 
-        var tags = List.of(new Tag(null));
-        var validation = Validation.create();
+        @Test
+        void givenRootErrorInConsumer_whenWithEach_thenConvertsToIndexedFieldError() {
+            record Tag(String name) {}
 
-        validation.withField("tags", () -> {
+            var tags = List.of(new Tag(null), new Tag("valid"));
+            var validation = Validation.create();
+
             validation.withEach(tags, tag -> {
                 if (tag.name() == null) {
                     validation.addError("must not be null");
                 }
             });
-        });
 
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsKey(FieldKey.of("tags", 0));
-        assertThat(errors.fieldErrors().get(FieldKey.of("tags", 0)))
-                .containsExactly(TemplateString.of("must not be null"));
-    }
+            var errors = validation.finish();
+            assertThat(errors.fieldErrors()).containsOnlyKeys(FieldKey.of(0));
+            assertThat(errors.fieldErrors().get(FieldKey.of(0)))
+                    .containsExactly(TemplateString.of("must not be null"));
+        }
 
-    @Test
-    void givenMultipleErrorsOnSameElement_whenWithEach_thenAllErrorsAccumulated() {
-        record Tag(String name, String color) {}
+        @Test
+        void givenFieldErrorInConsumer_whenWithEach_thenPrefixesWithIndex() {
+            record Tag(String name) {}
 
-        var tags = List.of(new Tag(null, null));
-        var validation = Validation.create();
+            var tags = List.of(new Tag(null), new Tag(""));
+            var validation = Validation.create();
 
-        validation.withEach(tags, tag -> {
-            if (tag.name() == null) {
-                validation.addErrorAt("name", "must not be null");
-            }
-            if (tag.color() == null) {
-                validation.addErrorAt("color", "must not be null");
-            }
-        });
+            validation.withEach(tags, tag -> {
+                if (tag.name() == null) {
+                    validation.addErrorAt("name", "must not be null");
+                } else if (tag.name().isBlank()) {
+                    validation.addErrorAt("name", "must not be blank");
+                }
+            });
 
-        var errors = validation.finish();
-        assertThat(errors.fieldErrors()).containsKeys(
-                FieldKey.of(0, "name"),
-                FieldKey.of(0, "color")
-        );
-    }
+            var errors = validation.finish();
+            assertThat(errors.fieldErrors()).containsKeys(
+                    FieldKey.of(0, "name"),
+                    FieldKey.of(1, "name")
+            );
+            assertThat(errors.fieldErrors().get(FieldKey.of(0, "name")))
+                    .containsExactly(TemplateString.of("must not be null"));
+            assertThat(errors.fieldErrors().get(FieldKey.of(1, "name")))
+                    .containsExactly(TemplateString.of("must not be blank"));
+        }
 
-    @Test
-    void givenNullItems_whenWithEach_thenThrowsNullPointerException() {
-        var validation = Validation.create();
+        @Test
+        void givenEmptyIterable_whenWithEach_thenNoErrorsAdded() {
+            var validation = Validation.create();
 
-        assertThatThrownBy(() -> validation.withEach(null, item -> {}))
-                .isInstanceOf(NullPointerException.class);
+            validation.withEach(List.of(), item -> {
+                validation.addError("should not be called");
+            });
+
+            var errors = validation.finish();
+            assertThat(errors.isEmpty()).isTrue();
+        }
+
+        @Test
+        void givenNoErrorsInConsumer_whenWithEach_thenNoErrorsAdded() {
+            var validation = Validation.create();
+
+            validation.withEach(List.of("a", "b"), item -> {
+                // No errors added
+            });
+
+            var errors = validation.finish();
+            assertThat(errors.isEmpty()).isTrue();
+        }
+
+        @Test
+        void givenNestedWithField_whenWithEach_thenCreatesNestedPrefix() {
+            record Tag(String name) {}
+
+            var tags = List.of(new Tag(null));
+            var validation = Validation.create();
+
+            validation.withField("tags", () -> {
+                validation.withEach(tags, tag -> {
+                    if (tag.name() == null) {
+                        validation.addError("must not be null");
+                    }
+                });
+            });
+
+            var errors = validation.finish();
+            assertThat(errors.fieldErrors()).containsKey(FieldKey.of("tags", 0));
+            assertThat(errors.fieldErrors().get(FieldKey.of("tags", 0)))
+                    .containsExactly(TemplateString.of("must not be null"));
+        }
+
+        @Test
+        void givenMultipleErrorsOnSameElement_whenWithEach_thenAllErrorsAccumulated() {
+            record Tag(String name, String color) {}
+
+            var tags = List.of(new Tag(null, null));
+            var validation = Validation.create();
+
+            validation.withEach(tags, tag -> {
+                if (tag.name() == null) {
+                    validation.addErrorAt("name", "must not be null");
+                }
+                if (tag.color() == null) {
+                    validation.addErrorAt("color", "must not be null");
+                }
+            });
+
+            var errors = validation.finish();
+            assertThat(errors.fieldErrors()).containsKeys(
+                    FieldKey.of(0, "name"),
+                    FieldKey.of(0, "color")
+            );
+        }
+
+        @Test
+        void givenNullItems_whenWithEach_thenThrowsNullPointerException() {
+            var validation = Validation.create();
+
+            assertThatThrownBy(() -> validation.withEach(null, item -> {}))
+                    .isInstanceOf(NullPointerException.class);
+        }
     }
 }
