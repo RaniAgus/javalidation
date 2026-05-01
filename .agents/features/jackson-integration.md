@@ -16,7 +16,7 @@ It covers **two distinct serialization scenarios** with different audiences and 
 | **Audience** | Internal backend-to-backend traffic | Frontends / BFFs |
 | **Messages** | Opaque `{code, args}` — not yet formatted | Already formatted strings |
 | **Round-trip** | ✓ Full deserialize → `Result<T>` | ✗ Read-only / one-way |
-| **FieldKey format** | Raw array `["items", 0]` | Rendered string (`items[0].price`) |
+| **FieldKey format** | Raw array `["items", 0, "price"]` | Rendered string (`items[0].price`) |
 | **Layout options** | Fixed (`ok`, `value`/`errors`) | Structured (default) or Flattened |
 | **Notation options** | N/A | Property-path, Dots, Brackets |
 
@@ -30,6 +30,8 @@ It covers **two distinct serialization scenarios** with different audiences and 
 - The receiving backend needs to **reconstruct a `Result<T>` Java object** (deserialize round-trip)
 - Message formatting is deferred — each side resolves keys in its own locale / `MessageSource`
 - The `FieldKey` path must survive as typed data (string vs integer segment distinction preserved)
+- The receiving backend may **cache `Result.Err` responses** — e.g. a "not found" result for a
+  given ID — to avoid redundant calls to the real API on subsequent requests
 
 ### Wire Format
 
@@ -139,7 +141,7 @@ Controls how `FieldKey` is rendered as a JSON key string. Applies to both layout
 |----------|---------------|----------------------|------------------|-----------------|
 | Property-path (default) | `.withPropertyPathNotation()` | `property_path` | `items[0].price` | [conform](https://conform.guide/) |
 | Dots | `.withDotNotation()` | `dots` | `items.0.price` | [react-hook-form](https://react-hook-form.com/) |
-| Brackets | `.withBracketNotation()` | `brackets` | `[items][0][price]` | — |
+| Brackets | `.withBracketNotation()` | `brackets` | `items[0][price]` | [qs](https://github.com/ljharb/qs) |
 
 ### Message Formatting
 
