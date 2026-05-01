@@ -37,7 +37,7 @@ Controls how `FieldKey` paths are serialized to JSON keys.
 |-------|---------|
 | `property_path` (default) | `items[0].price` |
 | `dots` | `items.0.price` |
-| `brackets` | `[items][0][price]` |
+| `brackets` | `items[0][price]` |
 
 ### `use-message-source`
 
