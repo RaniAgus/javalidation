@@ -85,6 +85,7 @@ class JakartaValidationsTest {
             "FutureOrPresentRecord",
             "PatternRecord",
             "PatternFlagsRecord",
+            "MultiPatternRecord",
             "DecimalMinInclusiveRecord",
             "DecimalMinExclusiveRecord",
             "DecimalMaxInclusiveRecord",
@@ -1256,6 +1257,46 @@ class JakartaValidationsTest {
             assertThat(validator.validate(new PatternFlagsRecord("hello123")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[a-z]+$");
+        }
+    }
+
+    // ── multiple @Pattern ─────────────────────────────────────────────────────
+    @Nested
+    class MultiPattern {
+        MultiPatternRecordValidator validator = new MultiPatternRecordValidator();
+
+        @Test
+        void givenNullValue_whenValidate_thenIsEmpty() {
+            assertThat(validator.validate(new MultiPatternRecord(null)))
+                    .isEmpty();
+        }
+
+        @Test
+        void givenValueMatchingBothPatterns_whenValidate_thenIsEmpty() {
+            assertThat(validator.validate(new MultiPatternRecord("hello")))
+                    .isEmpty();
+        }
+
+        @Test
+        void givenValueFailingFirstPattern_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new MultiPatternRecord("Hello")))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[a-z]+$");
+        }
+
+        @Test
+        void givenValueFailingSecondPattern_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new MultiPatternRecord("ab")))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^.{3,10}$");
+        }
+
+        @Test
+        void givenValueFailingBothPatterns_whenValidate_thenHasTwoFieldErrors() {
+            assertThat(validator.validate(new MultiPatternRecord("AB")))
+                    .hasErrorCount(2)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[a-z]+$")
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^.{3,10}$");
         }
     }
 

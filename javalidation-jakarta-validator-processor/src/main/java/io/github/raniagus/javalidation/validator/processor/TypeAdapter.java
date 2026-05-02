@@ -1,9 +1,11 @@
 package io.github.raniagus.javalidation.validator.processor;
 
 import java.lang.annotation.Annotation;
+import java.util.List;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -79,11 +81,26 @@ public record TypeAdapter(TypeMirror type, Element element, ProcessingEnvironmen
      * This works for both declaration annotations and type-use annotations (TypeCompound).
      */
     public @Nullable AnnotationMirror getAnnotationMirror(Class<? extends Annotation> annotationClass) {
-        String annotationName = annotationClass.getName();
+        String annotationName = annotationClass.getCanonicalName();
         for (var annotationMirror : type.getAnnotationMirrors()) {
             var annotationType = annotationMirror.getAnnotationType();
             if (annotationType.toString().equals(annotationName)) {
                 return annotationMirror;
+            }
+        }
+        return null;
+    }
+
+    public @Nullable AnnotationMirror getElementAnnotationMirror(Class<? extends Annotation> annotationClass) {
+        String annotationName = annotationClass.getCanonicalName();
+        var sources = element instanceof RecordComponentElement rce
+                ? List.of(element.getAnnotationMirrors(), rce.getAccessor().getAnnotationMirrors())
+                : List.of(element.getAnnotationMirrors());
+        for (var mirrors : sources) {
+            for (var annotationMirror : mirrors) {
+                if (annotationMirror.getAnnotationType().toString().equals(annotationName)) {
+                    return annotationMirror;
+                }
             }
         }
         return null;

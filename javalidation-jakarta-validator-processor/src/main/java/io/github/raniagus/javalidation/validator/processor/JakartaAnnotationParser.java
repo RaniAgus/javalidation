@@ -4,6 +4,7 @@ import jakarta.validation.constraints.*;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -23,26 +24,29 @@ public final class JakartaAnnotationParser {
     }
 
     public static Stream<NullUnsafeWriter> parseNullUnsafeWriters(TypeAdapter type) {
-        return Stream.<NullUnsafeWriter>of(
-                parseSizeAnnotation(type),
-                parseMinAnnotation(type),
-                parseMaxAnnotation(type),
-                parsePositiveAnnotation(type),
-                parsePositiveOrZeroAnnotation(type),
-                parseNegativeAnnotation(type),
-                parseNegativeOrZeroAnnotation(type),
-                parseEmailAnnotation(type),
-                parsePatternAnnotation(type),
-                parseAssertTrueAnnotation(type),
-                parseAssertFalseAnnotation(type),
-                parseDecimalMaxAnnotation(type),
-                parseDecimalMinAnnotation(type),
-                parseDigitsAnnotation(type),
-                parseFutureAnnotation(type),
-                parseFutureOrPresentAnnotation(type),
-                parsePastAnnotation(type),
-                parsePastOrPresentAnnotation(type)
-        ).filter(Objects::nonNull);
+        return Stream.concat(
+                Stream.of(
+                        parseSizeAnnotation(type),
+                        parseMinAnnotation(type),
+                        parseMaxAnnotation(type),
+                        parsePositiveAnnotation(type),
+                        parsePositiveOrZeroAnnotation(type),
+                        parseNegativeAnnotation(type),
+                        parseNegativeOrZeroAnnotation(type),
+                        parseEmailAnnotation(type),
+                        parsePatternAnnotation(type),
+                        parseAssertTrueAnnotation(type),
+                        parseAssertFalseAnnotation(type),
+                        parseDecimalMaxAnnotation(type),
+                        parseDecimalMinAnnotation(type),
+                        parseDigitsAnnotation(type),
+                        parseFutureAnnotation(type),
+                        parseFutureOrPresentAnnotation(type),
+                        parsePastAnnotation(type),
+                        parsePastOrPresentAnnotation(type)
+                ).filter(Objects::nonNull),
+                parsePatternListAnnotation(type)
+        );
     }
 
     public static @Nullable NullSafeWriter parseNotNullAnnotation(TypeAdapter type) {
@@ -266,13 +270,38 @@ public final class JakartaAnnotationParser {
         if (annotationMirror == null) {
             return null;
         }
+        return parsePatternAnnotationMirror(annotationMirror, type, 0);
+    }
+
+    public static Stream<NullUnsafeWriter> parsePatternListAnnotation(TypeAdapter type) {
+        var listMirror = type.getElementAnnotationMirror(Pattern.List.class);
+        if (listMirror == null) {
+            return Stream.empty();
+        }
+
+        Object value = getAnnotationValue(listMirror, "value");
+        if (!(value instanceof List<?> list)) {
+            return Stream.empty();
+        }
+
+        var patterns = list.stream()
+                .flatMap(obj -> obj instanceof AnnotationValue av ? Stream.of(av.getValue()) : Stream.empty())
+                .flatMap(av -> av instanceof AnnotationMirror am ? Stream.of(am) : Stream.empty())
+                .toList();
+
+        return IntStream.range(0, patterns.size())
+                .mapToObj(i -> parsePatternAnnotationMirror(patterns.get(i), type, i + 1));
+    }
+
+    private static NullUnsafeWriter.Pattern parsePatternAnnotationMirror(AnnotationMirror annotationMirror, TypeAdapter type, int index) {
         warnIfGroupsPresent(annotationMirror, type);
 
-        String regexp = getAnnotationStringValue(annotationMirror, "regexp", "");
+        String regexp = getAnnotationStringValue(annotationMirror, "regexp", ".*");
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Pattern.message");
         List<String> flags = getAnnotationFlagsValue(annotationMirror);
 
         return new NullUnsafeWriter.Pattern(
+                index,
                 regexp.replace("\\", "\\\\"),
                 flags,
                 resolveMessage(message, "{regexp}"),

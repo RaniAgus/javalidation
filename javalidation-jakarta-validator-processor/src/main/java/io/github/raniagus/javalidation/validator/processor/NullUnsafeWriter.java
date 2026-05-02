@@ -228,7 +228,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
         }
     }
 
-    record Pattern(String regex, List<String> flags, String message, Object... args) implements NullUnsafeWriter {
+    record Pattern(int index, String regex, List<String> flags, String message, Object... args) implements NullUnsafeWriter {
         @Override
         public Stream<String> imports() {
             return Stream.of("java.util.regex.Pattern");
@@ -237,16 +237,16 @@ public interface NullUnsafeWriter extends ValidationWriter {
         @Override
         public void writePropertiesTo(ValidationOutput out) {
             out.write("""
-                    private static final Pattern %s_PATTERN = Pattern.compile("%s"%s);
-                    """.formatted(out.getVariable().toUpperCase(), regex,
+                    private static final Pattern %s_PATTERN%s = Pattern.compile("%s"%s);
+                    """.formatted(out.getVariable().toUpperCase(), getIndexSuffix(), regex,
                             joinPatternFlags(flags)));
         }
 
         @Override
         public void writeBodyTo(ValidationOutput out) {
             out.write("""
-                    if (!%s_PATTERN.matcher(%s.toString()).matches()) {\
-                    """.formatted(out.getVariable().toUpperCase(), out.getVariable()));
+                    if (!%s_PATTERN%s.matcher(%s.toString()).matches()) {\
+                    """.formatted(out.getVariable().toUpperCase(), getIndexSuffix(), out.getVariable()));
             out.incrementIndentationLevel();
             out.write("""
                     validation.addError("%s"%s);\
@@ -265,6 +265,10 @@ public interface NullUnsafeWriter extends ValidationWriter {
         private String joinPatternFlags(List<String> flags) {
             return flags.isEmpty() ? ""
                     : flags.stream().collect(Collectors.joining(" | Pattern.", ", Pattern.", ""));
+        }
+
+        private String getIndexSuffix() {
+            return index > 1 ? "_" + index : "";
         }
     }
 
