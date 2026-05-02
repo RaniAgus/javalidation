@@ -45,6 +45,7 @@ class JakartaValidationsTest {
             "SizeCollectionRecord",
             "SizeMapRecord",
             "EmailRecord",
+            "EmailRegexpRecord",
             "MinRecord",
             "MinDoubleRecord",
             "MinIntegerRecord",
@@ -310,6 +311,38 @@ class JakartaValidationsTest {
         @Test
         void givenSpacesInEmail_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new EmailRecord("user name@example.com")))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Email.message");
+        }
+    }
+
+    // ── @Email(regexp) ────────────────────────────────────────────────────────
+    @Nested
+    class EmailRegexp {
+        EmailRegexpRecordValidator validator = new EmailRegexpRecordValidator();
+
+        @Test
+        void givenNullValue_whenValidate_thenIsEmpty() {
+            assertThat(validator.validate(new EmailRegexpRecord(null)))
+                    .isEmpty();
+        }
+
+        @Test
+        void givenValidEmailMatchingRegexp_whenValidate_thenIsEmpty() {
+            assertThat(validator.validate(new EmailRegexpRecord("user@example.com")))
+                    .isEmpty();
+        }
+
+        @Test
+        void givenValidEmailNotMatchingRegexp_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new EmailRegexpRecord("user@other.com")))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Email.message");
+        }
+
+        @Test
+        void givenInvalidEmailMatchingRegexp_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new EmailRegexpRecord("not-an-email-example")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Email.message");
         }

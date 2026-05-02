@@ -182,6 +182,49 @@ public interface NullUnsafeWriter extends ValidationWriter {
         }
     }
 
+    String EMAIL_REGEX = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$";
+
+    record EmailPattern(@Nullable String regexp, String message) implements NullUnsafeWriter {
+        @Override
+        public Stream<String> imports() {
+            return Stream.of("java.util.regex.Pattern");
+        }
+
+        @Override
+        public void writePropertiesTo(ValidationOutput out) {
+            if (regexp == null) {
+                out.write("""
+                        private static final Pattern %s_PATTERN = Pattern.compile("%s");
+                        """.formatted(out.getVariable().toUpperCase(), EMAIL_REGEX));
+            } else {
+                out.write("""
+                        private static final Pattern %1$s_EMAIL_PATTERN = Pattern.compile("%2$s");
+                        private static final Pattern %1$s_REGEXP_PATTERN = Pattern.compile("%3$s");
+                        """.formatted(out.getVariable().toUpperCase(), EMAIL_REGEX, regexp));
+            }
+        }
+
+        @Override
+        public void writeBodyTo(ValidationOutput out) {
+            if (regexp == null) {
+                out.write("""
+                        if (!%s_PATTERN.matcher(%s.toString()).matches()) {\
+                        """.formatted(out.getVariable().toUpperCase(), out.getVariable()));
+            } else {
+                out.write("""
+                        if (!%1$s_EMAIL_PATTERN.matcher(%2$s.toString()).matches()
+                                || !%1$s_REGEXP_PATTERN.matcher(%2$s.toString()).matches()) {\
+                        """.formatted(out.getVariable().toUpperCase(), out.getVariable()));
+            }
+            out.incrementIndentationLevel();
+            out.write("""
+                    validation.addError("%s");\
+                    """.formatted(message));
+            out.decrementIndentationLevel();
+            out.write("}");
+        }
+    }
+
     record Pattern(String regex, String message, Object... args) implements NullUnsafeWriter {
         @Override
         public Stream<String> imports() {

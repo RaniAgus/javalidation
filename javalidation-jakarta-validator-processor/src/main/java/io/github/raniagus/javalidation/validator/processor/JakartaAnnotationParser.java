@@ -249,8 +249,9 @@ public final class JakartaAnnotationParser {
         warnIfGroupsPresent(annotationMirror, type);
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Email.message");
-        return new NullUnsafeWriter.Pattern(
-                "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
+        String regexp = getAnnotationStringValue(annotationMirror, "regexp", ".*");
+        return new NullUnsafeWriter.EmailPattern(
+                regexp.equals(".*") ? null : regexp,
                 resolveMessage(message)
         );
     }
