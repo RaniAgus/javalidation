@@ -43,12 +43,12 @@ public class JavalidationSpringValidator implements Validator {
 
     public void toErrors(ValidationErrors validationErrors, Errors errors) {
         for (TemplateString rootError : validationErrors.rootErrors()) {
-            errors.reject("", templateStringFormatter.format(rootError));
+            errors.reject(rootError.message(), rootError.args(), templateStringFormatter.format(rootError));
         }
         for (var entry : validationErrors.fieldErrors().entrySet()) {
             String field = fieldKeyFormatter.format(entry.getKey());
             for (TemplateString error : entry.getValue()) {
-                errors.rejectValue(field, "", templateStringFormatter.format(error));
+                errors.rejectValue(field, error.message(), error.args(), templateStringFormatter.format(error));
             }
         }
     }
@@ -56,10 +56,14 @@ public class JavalidationSpringValidator implements Validator {
     public static ValidationErrors toValidationErrors(Errors errors) {
         Validation validation = Validation.create();
         for (ObjectError error : errors.getGlobalErrors()) {
-            validation.addError(Objects.toString(error.getDefaultMessage()));
+            String code = error.getCode() != null ? error.getCode() : Objects.toString(error.getDefaultMessage());
+            Object[] args = error.getArguments() != null ? error.getArguments() : new Object[0];
+            validation.addError(code, args);
         }
         for (FieldError error : errors.getFieldErrors()) {
-            validation.addErrorAt(error.getField(), Objects.toString(error.getDefaultMessage()));
+            String code = error.getCode() != null ? error.getCode() : Objects.toString(error.getDefaultMessage());
+            Object[] args = error.getArguments() != null ? error.getArguments() : new Object[0];
+            validation.addErrorAt(error.getField(), code, args);
         }
         return validation.finish();
     }

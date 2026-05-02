@@ -27,4 +27,21 @@ class JavalidationSpringValidatorTest {
                 .hasRootError("root error")
                 .hasFieldError("field", "error");
     }
+
+    @Test
+    void givenErrorsWithArgs_whenRoundTrip_thenKeyAndArgsArePreserved() {
+        record Value(String name) {}
+
+        Validation validation = Validation.create();
+        validation.addError("greeting.message", "World", 42);
+        validation.addErrorAt("name", "size.message", 3, 20);
+
+        Errors errors = new SimpleErrors(new Value("test"));
+        validator.toErrors(validation.finish(), errors);
+
+        assertThat(toValidationErrors(errors))
+                .hasErrorCount(2)
+                .hasRootError("greeting.message", "World", 42)
+                .hasFieldError("name", "size.message", 3, 20);
+    }
 }
