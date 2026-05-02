@@ -20,7 +20,7 @@ public class PastOrPresentRecordValidator implements InitializableValidator<Past
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!(value.isAfter(Instant.now()) == false)) {
+            if (value.isAfter(Instant.now())) {
                 validation.addError("io.github.raniagus.javalidation.constraints.PastOrPresent.message");
             }
         });

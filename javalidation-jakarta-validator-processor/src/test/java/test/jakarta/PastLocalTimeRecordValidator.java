@@ -20,7 +20,7 @@ public class PastLocalTimeRecordValidator implements InitializableValidator<Past
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!(value.isBefore(LocalTime.now()) == true)) {
+            if (!value.isBefore(LocalTime.now())) {
                 validation.addError("io.github.raniagus.javalidation.constraints.Past.message");
             }
         });

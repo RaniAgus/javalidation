@@ -20,7 +20,7 @@ public class FutureRecordValidator implements InitializableValidator<FutureRecor
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!(value.isAfter(Instant.now()) == true)) {
+            if (!value.isAfter(Instant.now())) {
                 validation.addError("io.github.raniagus.javalidation.constraints.Future.message");
             }
         });

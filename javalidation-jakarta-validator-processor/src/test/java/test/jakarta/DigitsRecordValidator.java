@@ -2,6 +2,7 @@ package test.jakarta;
 
 import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.validator.InitializableValidator;
+import io.github.raniagus.javalidation.validator.Predicates;
 import io.github.raniagus.javalidation.validator.ValidatorsHolder;
 import javax.annotation.processing.Generated;
 import org.jspecify.annotations.NullMarked;
@@ -19,8 +20,7 @@ public class DigitsRecordValidator implements InitializableValidator<DigitsRecor
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            var value_bd = value.stripTrailingZeros();
-            if (!(value_bd.precision() - value_bd.scale() <= 5 && Math.max(value_bd.scale(), 0) <= 2)) {
+            if (!Predicates.digits(value, 5, 2)) {
                 validation.addError("io.github.raniagus.javalidation.constraints.Digits.message", 5, 2);
             }
         });

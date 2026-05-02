@@ -20,7 +20,7 @@ public class PastYearMonthRecordValidator implements InitializableValidator<Past
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!(value.isBefore(YearMonth.now()) == true)) {
+            if (!value.isBefore(YearMonth.now())) {
                 validation.addError("io.github.raniagus.javalidation.constraints.Past.message");
             }
         });

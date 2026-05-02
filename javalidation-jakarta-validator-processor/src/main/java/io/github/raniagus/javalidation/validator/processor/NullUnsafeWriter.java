@@ -61,29 +61,22 @@ public interface NullUnsafeWriter extends ValidationWriter {
 
         @Override
         public void writePropertiesTo(ValidationOutput out) {
-            String fieldName = constantName(out.getVariable());
             switch (kind) {
                 case BIG_DECIMAL, NUMBER, CHAR_SEQUENCE -> out.write("""
                         private static final BigDecimal %s = new BigDecimal("%s");
-                        """.formatted(fieldName, value));
+                        """.formatted(constantName(out.getVariable()), value));
                 case BIG_INTEGER -> out.write("""
                         private static final BigInteger %s = new BigInteger("%s");
-                        """.formatted(fieldName, value));
+                        """.formatted(constantName(out.getVariable()), value));
                 case BYTE, SHORT, INTEGER, LONG, DOUBLE, FLOAT -> { /* primitives: no caching needed */ }
             }
         }
 
         @Override
         public void writeBodyTo(ValidationOutput out) {
-            String fieldName = constantName(out.getVariable());
-            String comparison = switch (kind) {
-                case BIG_DECIMAL, BIG_INTEGER -> "%s.compareTo(%s) %s 0".formatted(out.getVariable(), fieldName, operator);
-                case BYTE, SHORT, INTEGER, LONG, DOUBLE, FLOAT -> "%s %s %s".formatted(out.getVariable(), operator, value);
-                case NUMBER, CHAR_SEQUENCE -> "new BigDecimal(%s.toString()).compareTo(%s) %s 0".formatted(out.getVariable(), fieldName, operator);
-            };
             out.write("""
                     if (!(%s)) {\
-                    """.formatted(comparison));
+                    """.formatted(comparison(out)));
             out.incrementIndentationLevel();
             out.write("""
                     validation.addError("%s"%s);\
@@ -92,13 +85,24 @@ public interface NullUnsafeWriter extends ValidationWriter {
             out.write("}");
         }
 
+        private String comparison(ValidationOutput out) {
+            return switch (kind) {
+                case BIG_DECIMAL, BIG_INTEGER -> "%s.compareTo(%s) %s 0".formatted(
+                        out.getVariable(), constantName(out.getVariable()), operator);
+                case BYTE, SHORT, INTEGER, LONG, DOUBLE, FLOAT -> "%s %s %s".formatted(
+                        out.getVariable(), operator, value);
+                case NUMBER, CHAR_SEQUENCE -> "new BigDecimal(%s.toString()).compareTo(%s) %s 0".formatted(
+                        out.getVariable(), constantName(out.getVariable()), operator);
+            };
+        }
+
         private String constantName(String variable) {
             String opSuffix = switch (operator) {
                 case ">=" -> "GE";
                 case ">"  -> "GT";
                 case "<=" -> "LE";
                 case "<"  -> "LT";
-                default   -> operator;
+                default -> operator;
             };
             String valueSuffix = value.toString().replace("-", "N").replace(".", "_");
             return variable.toUpperCase() + "_" + opSuffix + "_" + valueSuffix;
@@ -140,9 +144,15 @@ public interface NullUnsafeWriter extends ValidationWriter {
 
         @Override
         public void writeBodyTo(ValidationOutput out) {
-            out.write("""
-                if (!(%s.%s(%s) == %s)) {\
-                """.formatted(normalized(out.getVariable()), accessor, now(), result));
+            if (result) {
+                out.write("""
+                    if (!%s.%s(%s)) {\
+                    """.formatted(normalized(out.getVariable()), accessor, now()));
+            } else {
+                out.write("""
+                    if (%s.%s(%s)) {\
+                    """.formatted(normalized(out.getVariable()), accessor, now()));
+            }
             out.incrementIndentationLevel();
             out.write("""
                 validation.addError("%s");\
@@ -182,19 +192,17 @@ public interface NullUnsafeWriter extends ValidationWriter {
         }
     }
 
-    String EMAIL_REGEX = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$";
-
     record EmailPattern(@Nullable String regexp, List<String> flags, String message) implements NullUnsafeWriter {
         @Override
         public Stream<String> imports() {
-            return Stream.of("java.util.regex.Pattern");
+            return Stream.concat(
+                    Stream.of("io.github.raniagus.javalidation.validator.Predicates"),
+                    regexp != null ? Stream.of("java.util.regex.Pattern") : Stream.empty()
+            );
         }
 
         @Override
         public void writePropertiesTo(ValidationOutput out) {
-            out.write("""
-                        private static final Pattern %s_EMAIL_PATTERN = Pattern.compile("%s");
-                        """.formatted(out.getVariable().toUpperCase(), EMAIL_REGEX));
             if (regexp != null) {
                 out.write("""
                         private static final Pattern %1$s_REGEXP_PATTERN = Pattern.compile("%2$s"%3$s);
@@ -206,12 +214,11 @@ public interface NullUnsafeWriter extends ValidationWriter {
         public void writeBodyTo(ValidationOutput out) {
             if (regexp == null) {
                 out.write("""
-                        if (!%s_EMAIL_PATTERN.matcher(%s.toString()).matches()) {\
-                        """.formatted(out.getVariable().toUpperCase(), out.getVariable()));
+                        if (!Predicates.isEmail(%s)) {\
+                        """.formatted(out.getVariable()));
             } else {
                 out.write("""
-                        if (!%1$s_EMAIL_PATTERN.matcher(%2$s.toString()).matches()
-                                || !%1$s_REGEXP_PATTERN.matcher(%2$s.toString()).matches()) {\
+                        if (!Predicates.isEmail(%2$s) || !%1$s_REGEXP_PATTERN.matcher(%2$s).matches()) {\
                         """.formatted(out.getVariable().toUpperCase(), out.getVariable()));
             }
             out.incrementIndentationLevel();
@@ -282,40 +289,49 @@ public interface NullUnsafeWriter extends ValidationWriter {
         @Override
         public Stream<String> imports() {
             return switch (kind) {
-                case CHAR_SEQUENCE -> Stream.of("java.util.regex.Pattern");
-                case BIG_DECIMAL -> Stream.empty();
-                case BIG_INTEGER, NUMBER, BYTE, SHORT, INTEGER, LONG, DOUBLE, FLOAT -> Stream.of("java.math.BigDecimal");
+                case CHAR_SEQUENCE -> Stream.of("io.github.raniagus.javalidation.validator.Predicates", "java.util.function.Predicate");
+                case BIG_INTEGER, NUMBER, BYTE, SHORT, INTEGER, LONG, DOUBLE, FLOAT -> Stream.of(
+                        "io.github.raniagus.javalidation.validator.Predicates",
+                        "java.math.BigDecimal"
+                );
+                case BIG_DECIMAL -> Stream.of("io.github.raniagus.javalidation.validator.Predicates");
             };
         }
 
         @Override
         public void writePropertiesTo(ValidationOutput out) {
-            if (kind == NumericKind.CHAR_SEQUENCE) {
-                String pattern = "^-?\\\\d{0," + integer + "}(\\\\.\\\\d{0," + fraction + "})?$";
-                out.write("""
-                        private static final Pattern %s_DIGITS_PATTERN = Pattern.compile("%s");
-                        """.formatted(out.getVariable().toUpperCase(), pattern));
+            switch (kind) {
+                case CHAR_SEQUENCE ->
+                        out.write("""
+                            private static final Predicate<CharSequence> %s_DIGITS_PREDICATE = Predicates.digits(%d, %d);
+                            """.formatted(out.getVariable().toUpperCase(), integer, fraction));
+                case BIG_INTEGER, NUMBER, BYTE, SHORT, INTEGER, LONG, DOUBLE, FLOAT, BIG_DECIMAL -> {
+                    // No Predicate to precompile
+                }
             }
         }
 
         @Override
         public void writeBodyTo(ValidationOutput out) {
-            if (kind == NumericKind.CHAR_SEQUENCE) {
-                out.write("""
-                    if (!%s_DIGITS_PATTERN.matcher(%s.toString()).matches()) {\
-                    """.formatted(out.getVariable().toUpperCase(), out.getVariable()));
-            } else {
-                String bdExpr = switch (kind) {
-                    case CHAR_SEQUENCE -> throw new IllegalStateException("CHAR_SEQUENCE should be handled separately");
-                    case BIG_DECIMAL -> "%s.stripTrailingZeros()".formatted(out.getVariable());
-                    case BIG_INTEGER, NUMBER -> "new BigDecimal(%s.toString()).stripTrailingZeros()".formatted(out.getVariable());
-                    case BYTE, SHORT, INTEGER, LONG, DOUBLE, FLOAT -> "BigDecimal.valueOf(%s)".formatted(out.getVariable());
-                };
-                out.write("var %s_bd = %s;".formatted(out.getVariable(), bdExpr));
-                out.write("""
-                    if (!(%1$s_bd.precision() - %1$s_bd.scale() <= %2$s && Math.max(%1$s_bd.scale(), 0) <= %3$s)) {\
-                    """.formatted(out.getVariable(), integer, fraction));
+            switch (kind) {
+                case CHAR_SEQUENCE ->
+                        out.write("""
+                            if (!%s_DIGITS_PREDICATE.test(%s)) {\
+                            """.formatted(out.getVariable().toUpperCase(), out.getVariable()));
+                case BIG_INTEGER, NUMBER ->
+                        out.write("""
+                            if (!Predicates.digits(new BigDecimal(%s.toString()), %d, %d)) {\
+                            """.formatted(out.getVariable(), integer, fraction));
+                case BYTE, SHORT, INTEGER, LONG, DOUBLE, FLOAT ->
+                        out.write("""
+                            if (!Predicates.digits(BigDecimal.valueOf(%s), %d, %d)) {\
+                            """.formatted(out.getVariable(), integer, fraction));
+                case BIG_DECIMAL ->
+                        out.write("""
+                            if (!Predicates.digits(%s, %d, %d)) {\
+                            """.formatted(out.getVariable(), integer, fraction));
             }
+
             out.incrementIndentationLevel();
             out.write("""
                 validation.addError("%s", %s, %s);\

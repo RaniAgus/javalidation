@@ -20,7 +20,7 @@ public class PastCalendarRecordValidator implements InitializableValidator<PastC
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!(Instant.ofEpochMilli(value.getTimeInMillis()).isBefore(Instant.now()) == true)) {
+            if (!Instant.ofEpochMilli(value.getTimeInMillis()).isBefore(Instant.now())) {
                 validation.addError("io.github.raniagus.javalidation.constraints.Past.message");
             }
         });

@@ -20,7 +20,7 @@ public class PastMinguoDateRecordValidator implements InitializableValidator<Pas
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!(value.isBefore(MinguoDate.now()) == true)) {
+            if (!value.isBefore(MinguoDate.now())) {
                 validation.addError("io.github.raniagus.javalidation.constraints.Past.message");
             }
         });

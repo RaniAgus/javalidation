@@ -20,7 +20,7 @@ public class PastMonthDayRecordValidator implements InitializableValidator<PastM
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!(value.isBefore(MonthDay.now()) == true)) {
+            if (!value.isBefore(MonthDay.now())) {
                 validation.addError("io.github.raniagus.javalidation.constraints.Past.message");
             }
         });

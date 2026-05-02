@@ -20,7 +20,7 @@ public class PastThaiBuddhistDateRecordValidator implements InitializableValidat
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!(value.isBefore(ThaiBuddhistDate.now()) == true)) {
+            if (!value.isBefore(ThaiBuddhistDate.now())) {
                 validation.addError("io.github.raniagus.javalidation.constraints.Past.message");
             }
         });

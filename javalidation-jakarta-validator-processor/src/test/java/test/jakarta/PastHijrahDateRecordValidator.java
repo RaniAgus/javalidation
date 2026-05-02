@@ -20,7 +20,7 @@ public class PastHijrahDateRecordValidator implements InitializableValidator<Pas
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!(value.isBefore(HijrahDate.now()) == true)) {
+            if (!value.isBefore(HijrahDate.now())) {
                 validation.addError("io.github.raniagus.javalidation.constraints.Past.message");
             }
         });

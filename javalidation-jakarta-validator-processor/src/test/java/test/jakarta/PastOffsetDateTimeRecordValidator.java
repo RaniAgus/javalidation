@@ -20,7 +20,7 @@ public class PastOffsetDateTimeRecordValidator implements InitializableValidator
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!(value.isBefore(OffsetDateTime.now()) == true)) {
+            if (!value.isBefore(OffsetDateTime.now())) {
                 validation.addError("io.github.raniagus.javalidation.constraints.Past.message");
             }
         });

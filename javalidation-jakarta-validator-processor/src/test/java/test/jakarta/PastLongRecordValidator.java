@@ -20,7 +20,7 @@ public class PastLongRecordValidator implements InitializableValidator<PastLongR
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!(Instant.ofEpochMilli(value).isBefore(Instant.now()) == true)) {
+            if (!Instant.ofEpochMilli(value).isBefore(Instant.now())) {
                 validation.addError("io.github.raniagus.javalidation.constraints.Past.message");
             }
         });

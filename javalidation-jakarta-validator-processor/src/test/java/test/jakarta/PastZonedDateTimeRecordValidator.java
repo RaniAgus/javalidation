@@ -20,7 +20,7 @@ public class PastZonedDateTimeRecordValidator implements InitializableValidator<
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!(value.isBefore(ZonedDateTime.now()) == true)) {
+            if (!value.isBefore(ZonedDateTime.now())) {
                 validation.addError("io.github.raniagus.javalidation.constraints.Past.message");
             }
         });

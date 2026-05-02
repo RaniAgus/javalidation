@@ -20,7 +20,7 @@ public class FutureOrPresentRecordValidator implements InitializableValidator<Fu
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!(value.isBefore(Instant.now()) == false)) {
+            if (value.isBefore(Instant.now())) {
                 validation.addError("io.github.raniagus.javalidation.constraints.FutureOrPresent.message");
             }
         });

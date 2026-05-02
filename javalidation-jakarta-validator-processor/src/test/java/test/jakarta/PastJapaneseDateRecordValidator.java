@@ -20,7 +20,7 @@ public class PastJapaneseDateRecordValidator implements InitializableValidator<P
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!(value.isBefore(JapaneseDate.now()) == true)) {
+            if (!value.isBefore(JapaneseDate.now())) {
                 validation.addError("io.github.raniagus.javalidation.constraints.Past.message");
             }
         });
