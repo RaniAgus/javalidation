@@ -168,11 +168,9 @@ public class Validation {
         Objects.requireNonNull(field);
         Objects.requireNonNull(messages);
         if (!messages.isEmpty()) {
+            FieldKey key = prefix.isEmpty() ? field : field.withPrefix(prefix.toArray(FieldKeyPart[]::new));
             fieldErrors
-                    .computeIfAbsent(
-                            field.withPrefix(prefix.toArray(FieldKeyPart[]::new)),
-                            k -> new ArrayList<>(messages.size())
-                    )
+                    .computeIfAbsent(key, k -> new ArrayList<>(messages.size()))
                     .addAll(messages);
         }
     }
