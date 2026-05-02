@@ -55,7 +55,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
             return switch (kind) {
                 case BIG_DECIMAL, NUMBER, CHAR_SEQUENCE -> Stream.of("java.math.BigDecimal");
                 case BIG_INTEGER -> Stream.of("java.math.BigInteger");
-                case BYTE, SHORT, INTEGER, LONG -> Stream.empty();
+                case BYTE, SHORT, INTEGER, LONG, DOUBLE, FLOAT -> Stream.empty();
             };
         }
 
@@ -69,7 +69,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
                 case BIG_INTEGER -> out.write("""
                         private static final BigInteger %s = new BigInteger("%s");
                         """.formatted(fieldName, value));
-                case BYTE, SHORT, INTEGER, LONG -> { /* primitives: no caching needed */ }
+                case BYTE, SHORT, INTEGER, LONG, DOUBLE, FLOAT -> { /* primitives: no caching needed */ }
             }
         }
 
@@ -78,7 +78,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
             String fieldName = constantName(out.getVariable());
             String comparison = switch (kind) {
                 case BIG_DECIMAL, BIG_INTEGER -> "%s.compareTo(%s) %s 0".formatted(out.getVariable(), fieldName, operator);
-                case BYTE, SHORT, INTEGER, LONG -> "%s %s %s".formatted(out.getVariable(), operator, value);
+                case BYTE, SHORT, INTEGER, LONG, DOUBLE, FLOAT -> "%s %s %s".formatted(out.getVariable(), operator, value);
                 case NUMBER, CHAR_SEQUENCE -> "new BigDecimal(%s.toString()).compareTo(%s) %s 0".formatted(out.getVariable(), fieldName, operator);
             };
             out.write("""
@@ -228,7 +228,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
             return switch (kind) {
                 case CHAR_SEQUENCE -> Stream.of("java.util.regex.Pattern");
                 case BIG_DECIMAL -> Stream.empty();
-                case BIG_INTEGER, NUMBER, BYTE, SHORT, INTEGER, LONG -> Stream.of("java.math.BigDecimal");
+                case BIG_INTEGER, NUMBER, BYTE, SHORT, INTEGER, LONG, DOUBLE, FLOAT -> Stream.of("java.math.BigDecimal");
             };
         }
 
@@ -253,7 +253,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
                     case CHAR_SEQUENCE -> throw new IllegalStateException("CHAR_SEQUENCE should be handled separately");
                     case BIG_DECIMAL -> "%s.stripTrailingZeros()".formatted(out.getVariable());
                     case BIG_INTEGER, NUMBER -> "new BigDecimal(%s.toString()).stripTrailingZeros()".formatted(out.getVariable());
-                    case BYTE, SHORT, INTEGER, LONG -> "BigDecimal.valueOf(%s)".formatted(out.getVariable());
+                    case BYTE, SHORT, INTEGER, LONG, DOUBLE, FLOAT -> "BigDecimal.valueOf(%s)".formatted(out.getVariable());
                 };
                 out.write("var %s_bd = %s;".formatted(out.getVariable(), bdExpr));
                 out.write("""

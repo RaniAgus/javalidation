@@ -46,12 +46,14 @@ class JakartaValidationsTest {
             "SizeMapRecord",
             "EmailRecord",
             "MinRecord",
+            "MinDoubleRecord",
             "MinIntegerRecord",
             "MinShortRecord",
             "MinByteRecord",
             "MinNumberRecord",
             "MinCharSequenceRecord",
             "MaxReferenceRecord",
+            "MaxFloatRecord",
             "MaxBigIntegerRecord",
             "MaxBigDecimalRecord",
             "MaxPrimitiveRecord",
@@ -475,6 +477,31 @@ class JakartaValidationsTest {
         }
     }
 
+    // ── @Min on double ────────────────────────────────────────────────────────
+    @Nested
+    class MinDouble {
+        MinDoubleRecordValidator validator = new MinDoubleRecordValidator();
+
+        @Test
+        void givenAboveMin_whenValidate_thenIsEmpty() {
+            assertThat(validator.validate(new MinDoubleRecord(1.5)))
+                    .isEmpty();
+        }
+
+        @Test
+        void givenAtMin_whenValidate_thenIsEmpty() {
+            assertThat(validator.validate(new MinDoubleRecord(0.0)))
+                    .isEmpty();
+        }
+
+        @Test
+        void givenBelowMin_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new MinDoubleRecord(-0.1)))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Min.message", 0);
+        }
+    }
+
     // ── @Max ──────────────────────────────────────────────────────────────────
     @Nested
     class Max {
@@ -555,6 +582,37 @@ class JakartaValidationsTest {
         @Test
         void givenAboveBigDecimalMax_whenValidate_thenHasFieldError() {
             assertThat(bigDecimalValidator.validate(new MaxBigDecimalRecord(BigDecimal.valueOf(101L))))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Max.message", 100);
+        }
+    }
+
+    // ── @Max on Float ─────────────────────────────────────────────────────────
+    @Nested
+    class MaxFloat {
+        MaxFloatRecordValidator validator = new MaxFloatRecordValidator();
+
+        @Test
+        void givenNullValue_whenValidate_thenIsEmpty() {
+            assertThat(validator.validate(new MaxFloatRecord(null)))
+                    .isEmpty();
+        }
+
+        @Test
+        void givenAtMax_whenValidate_thenIsEmpty() {
+            assertThat(validator.validate(new MaxFloatRecord(100f)))
+                    .isEmpty();
+        }
+
+        @Test
+        void givenBelowMax_whenValidate_thenIsEmpty() {
+            assertThat(validator.validate(new MaxFloatRecord(50.5f)))
+                    .isEmpty();
+        }
+
+        @Test
+        void givenAboveMax_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new MaxFloatRecord(100.1f)))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Max.message", 100);
         }

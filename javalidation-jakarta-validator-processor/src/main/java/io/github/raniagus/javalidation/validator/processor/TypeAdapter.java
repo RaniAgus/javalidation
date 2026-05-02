@@ -23,6 +23,8 @@ public record TypeAdapter(TypeMirror type, Element element, ProcessingEnvironmen
         if (isOfType("java.lang.Short") || type.getKind() == TypeKind.SHORT) return NumericKind.SHORT;
         if (isOfType("java.lang.Integer") || type.getKind() == TypeKind.INT) return NumericKind.INTEGER;
         if (isOfType("java.lang.Long") || type.getKind() == TypeKind.LONG) return NumericKind.LONG;
+        if (isOfType("java.lang.Double") || type.getKind() == TypeKind.DOUBLE) return NumericKind.DOUBLE;
+        if (isOfType("java.lang.Float") || type.getKind() == TypeKind.FLOAT) return NumericKind.FLOAT;
         if (isOfType("java.lang.Number")) return NumericKind.NUMBER;
         if (isOfType("java.lang.CharSequence")) return NumericKind.CHAR_SEQUENCE;
         return null;
