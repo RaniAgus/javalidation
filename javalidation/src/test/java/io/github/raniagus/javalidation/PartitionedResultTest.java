@@ -28,6 +28,85 @@ class PartitionedResultTest {
     }
 
     @Nested
+    class MapTests {
+
+        @Test
+        void givenPartialResult_whenMap_thenValueIsTransformedAndErrorsPreserved() {
+            var errors = ValidationErrors.of("some.error");
+            var partitioned = new PartialResult<>("hello", errors);
+
+            var mapped = partitioned.map(String::length);
+
+            assertThat(mapped.success()).isEqualTo(5);
+            assertThat(mapped.errors()).isEqualTo(errors);
+        }
+
+        @Test
+        void givenPartialResultWithNoErrors_whenMap_thenValueIsTransformedAndErrorsStillEmpty() {
+            var partitioned = new PartialResult<>("hello", ValidationErrors.empty());
+
+            var mapped = partitioned.map(String::toUpperCase);
+
+            assertThat(mapped.success()).isEqualTo("HELLO");
+            assertThat(mapped.errors()).isEqualTo(ValidationErrors.empty());
+        }
+    }
+
+    @Nested
+    class MapErrTests {
+
+        @Test
+        void givenPartialResult_whenMapErr_thenErrorsAreTransformedAndValuePreserved() {
+            var originalErrors = ValidationErrors.of("original.error");
+            var partitioned = new PartialResult<>("value", originalErrors);
+            var replacementErrors = ValidationErrors.of("replacement.error");
+
+            var mapped = partitioned.mapErr(e -> replacementErrors);
+
+            assertThat(mapped.success()).isEqualTo("value");
+            assertThat(mapped.errors()).isEqualTo(replacementErrors);
+        }
+
+        @Test
+        void givenPartialResultWithNoErrors_whenMapErr_thenErrorsRemainEmpty() {
+            var partitioned = new PartialResult<>("value", ValidationErrors.empty());
+
+            var mapped = partitioned.mapErr(e -> ValidationErrors.of("should.not.appear"));
+
+            assertThat(mapped.success()).isEqualTo("value");
+            // mapErr applies unconditionally — the mapper ran but errors were empty going in
+            assertThat(mapped.errors()).isEqualTo(ValidationErrors.of("should.not.appear"));
+        }
+    }
+
+    @Nested
+    class BimapTests {
+
+        @Test
+        void givenPartialResult_whenBimap_thenBothValueAndErrorsAreTransformed() {
+            var originalErrors = ValidationErrors.of("original.error");
+            var partitioned = new PartialResult<>("hello", originalErrors);
+            var replacementErrors = ValidationErrors.of("replacement.error");
+
+            var mapped = partitioned.bimap(String::length, e -> replacementErrors);
+
+            assertThat(mapped.success()).isEqualTo(5);
+            assertThat(mapped.errors()).isEqualTo(replacementErrors);
+        }
+
+        @Test
+        void givenPartialResultWithNoErrors_whenBimap_thenValueIsTransformedAndErrorsRemainEmpty() {
+            var partitioned = new PartialResult<>("hello", ValidationErrors.empty());
+
+            var mapped = partitioned.bimap(String::toUpperCase, e -> ValidationErrors.of("unused"));
+
+            assertThat(mapped.success()).isEqualTo("HELLO");
+            // mapErr side of bimap also applies unconditionally
+            assertThat(mapped.errors()).isEqualTo(ValidationErrors.of("unused"));
+        }
+    }
+
+    @Nested
     class ToResultTests {
 
         @Test
