@@ -152,7 +152,19 @@ FieldKeyPart.ofPath(Object[])  → FieldKeyPart[]
 ## Test Conventions
 
 Tests use plain AssertJ (`org.assertj.core.api.Assertions`) — **not** `JavalidationAssertions`.
+This is because `javalidation` is the root module; `javalidation-assertj` depends on it, so the
+core module cannot depend on the assertj module without creating a circular dependency.
+
 `ValidationErrors` is compared by value as a record, constructed inline in expected values.
+
+`Result` is a sealed interface with no `isOk()`/`isErr()` methods. To assert on its variant in
+core tests use `instanceof` patterns:
+```java
+assertThat(result).isInstanceOf(Result.Ok.class);
+assertThat(result).isInstanceOf(Result.Err.class);
+```
+In all other modules (`javalidation-assertj` consumers) prefer `JavalidationAssertions.assertThat(result)`
+which provides `.isOk()`, `.isErr()`, `.hasErrors()`, etc.
 
 For general naming, class structure, and AssertJ patterns, see `.agents/testing-style.md`.
 
