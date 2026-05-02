@@ -550,6 +550,25 @@ public sealed interface Result<T extends @Nullable Object> {
         return ensure(predicate, () -> ValidationErrors.at(field, message, args));
     }
 
+    /**
+     * Filters the success value using a predicate, adding a field error at the given {@link FieldKey} path
+     * if the predicate fails.
+     * <p>
+     * Behaves like {@link #ensureAt(Predicate, String, String, Object...)} but accepts a pre-built
+     * {@link FieldKey}, which allows arbitrary mixed (string + integer) field paths.
+     *
+     * @param predicate the condition to test
+     * @param field the field key path for the error
+     * @param message the error message template (supports MessageFormat placeholders)
+     * @param args arguments for the message template
+     * @return this result if the predicate passes or this is already {@link Err}, otherwise a new {@link Err}
+     * @see #ensureAt(Predicate, String, String, Object...)
+     * @see #and(Result)
+     */
+    default Result<T> ensureAt(Predicate<T> predicate, FieldKey field, String message, Object... args) {
+        return ensure(predicate, () -> ValidationErrors.at(field, message, args));
+    }
+
     private Result<T> ensure(Predicate<T> predicate, Supplier<ValidationErrors> errorsSupplier) {
         return flatMap(value -> predicate.test(value) ? this : new Err<>(errorsSupplier.get()));
     }

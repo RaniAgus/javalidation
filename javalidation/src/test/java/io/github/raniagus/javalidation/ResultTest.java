@@ -674,6 +674,31 @@ class ResultTest {
         }
 
         @Test
+        void givenOkAndFailingPredicate_whenEnsureAtWithFieldKey_thenReturnsFieldKeyErr() {
+            var fieldKey = FieldKey.of("items", 0, "name");
+            var result = Result.ok("hi").ensureAt(
+                    s -> s.length() >= 5,
+                    fieldKey,
+                    "Must be at least 5 characters"
+            );
+
+            var errors = result.errors();
+            assertThat(errors.fieldErrors()).containsKey(fieldKey);
+        }
+
+        @Test
+        void givenOkAndPassingPredicate_whenEnsureAtWithFieldKey_thenReturnsOk() {
+            var fieldKey = FieldKey.of("items", 0, "name");
+            var result = Result.ok("hello").ensureAt(
+                    s -> s.length() >= 5,
+                    fieldKey,
+                    "Must be at least 5 characters"
+            );
+
+            assertThat(result.getOrThrow()).isEqualTo("hello");
+        }
+
+        @Test
         void givenErr_whenEnsureAt_thenPreservesError() {
             var result = Result.<String>error("initial error").ensureAt(
                     s -> s.length() >= 5,
