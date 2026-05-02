@@ -53,7 +53,7 @@
         <jspecify.version>1.0.0</jspecify.version>
         <jackson.version>3.0.4</jackson.version>
         <spring-boot.version>4.0.2</spring-boot.version>
-        <junit.version>5.9.0</junit.version>
+        <junit.version>6.0.2</junit.version>
         <assertj.version>3.23.1</assertj.version>
     </properties>
 
@@ -128,19 +128,19 @@
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
-                <version>[${junit.version},6.0.0)</version>
+                <version>${junit.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-params</artifactId>
-                <version>[${junit.version},6.0.0)</version>
+                <version>${junit.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
-                <version>[${assertj.version},4.0.0)</version>
+                <version>${assertj.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
