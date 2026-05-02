@@ -1,9 +1,10 @@
 package io.github.raniagus.javalidation.validator.processor;
 
 import jakarta.validation.constraints.*;
+import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.function.BiFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.lang.model.element.AnnotationMirror;
@@ -24,29 +25,70 @@ public final class JakartaAnnotationParser {
     }
 
     public static Stream<NullUnsafeWriter> parseNullUnsafeWriters(TypeAdapter type) {
-        return Stream.concat(
-                Stream.of(
-                        parseSizeAnnotation(type),
-                        parseMinAnnotation(type),
-                        parseMaxAnnotation(type),
-                        parsePositiveAnnotation(type),
-                        parsePositiveOrZeroAnnotation(type),
-                        parseNegativeAnnotation(type),
-                        parseNegativeOrZeroAnnotation(type),
-                        parseEmailAnnotation(type),
-                        parsePatternAnnotation(type),
-                        parseAssertTrueAnnotation(type),
-                        parseAssertFalseAnnotation(type),
-                        parseDecimalMaxAnnotation(type),
-                        parseDecimalMinAnnotation(type),
-                        parseDigitsAnnotation(type),
-                        parseFutureAnnotation(type),
-                        parseFutureOrPresentAnnotation(type),
-                        parsePastAnnotation(type),
-                        parsePastOrPresentAnnotation(type)
-                ).filter(Objects::nonNull),
-                parsePatternListAnnotation(type)
-        );
+        return Stream.of(
+                parseRepeatableAnnotation(type, Size.class, Size.List.class,
+                        (mirror, i) -> parseSizeAnnotationMirror(mirror, type)),
+                parseRepeatableAnnotation(type, Min.class, Min.List.class,
+                        (mirror, i) -> parseMinAnnotationMirror(mirror, type)),
+                parseRepeatableAnnotation(type, Max.class, Max.List.class,
+                        (mirror, i) -> parseMaxAnnotationMirror(mirror, type)),
+                parseRepeatableAnnotation(type, Positive.class, Positive.List.class,
+                        (mirror, i) -> parsePositiveAnnotationMirror(mirror, type)),
+                parseRepeatableAnnotation(type, PositiveOrZero.class, PositiveOrZero.List.class,
+                        (mirror, i) -> parsePositiveOrZeroAnnotationMirror(mirror, type)),
+                parseRepeatableAnnotation(type, Negative.class, Negative.List.class,
+                        (mirror, i) -> parseNegativeAnnotationMirror(mirror, type)),
+                parseRepeatableAnnotation(type, NegativeOrZero.class, NegativeOrZero.List.class,
+                        (mirror, i) -> parseNegativeOrZeroAnnotationMirror(mirror, type)),
+                parseRepeatableAnnotation(type, Email.class, Email.List.class,
+                        (mirror, i) -> parseEmailAnnotationMirror(mirror, type)),
+                parseRepeatableAnnotation(type, Pattern.class, Pattern.List.class,
+                        (mirror, i) -> parsePatternAnnotationMirror(mirror, type, i + 1)),
+                parseRepeatableAnnotation(type, AssertTrue.class, AssertTrue.List.class,
+                        (mirror, i) -> parseAssertTrueAnnotationMirror(mirror, type)),
+                parseRepeatableAnnotation(type, AssertFalse.class, AssertFalse.List.class,
+                        (mirror, i) -> parseAssertFalseAnnotationMirror(mirror, type)),
+                parseRepeatableAnnotation(type, DecimalMax.class, DecimalMax.List.class,
+                        (mirror, i) -> parseDecimalMaxAnnotationMirror(mirror, type)),
+                parseRepeatableAnnotation(type, DecimalMin.class, DecimalMin.List.class,
+                        (mirror, i) -> parseDecimalMinAnnotationMirror(mirror, type)),
+                parseRepeatableAnnotation(type, Digits.class, Digits.List.class,
+                        (mirror, i) -> parseDigitsAnnotationMirror(mirror, type)),
+                parseRepeatableAnnotation(type, Future.class, Future.List.class,
+                        (mirror, i) -> parseFutureAnnotationMirror(mirror, type)),
+                parseRepeatableAnnotation(type, FutureOrPresent.class, FutureOrPresent.List.class,
+                        (mirror, i) -> parseFutureOrPresentAnnotationMirror(mirror, type)),
+                parseRepeatableAnnotation(type, Past.class, Past.List.class,
+                        (mirror, i) -> parsePastAnnotationMirror(mirror, type)),
+                parseRepeatableAnnotation(type, PastOrPresent.class, PastOrPresent.List.class,
+                        (mirror, i) -> parsePastOrPresentAnnotationMirror(mirror, type))
+        ).flatMap(s -> s);
+    }
+
+    private static Stream<NullUnsafeWriter> parseRepeatableAnnotation(
+            TypeAdapter type,
+            Class<? extends Annotation> annotationClass,
+            Class<? extends Annotation> listClass,
+            BiFunction<AnnotationMirror, Integer, @Nullable NullUnsafeWriter> parser) {
+        var single = type.getAnnotationMirror(annotationClass);
+        if (single != null) {
+            return Stream.ofNullable(parser.apply(single, 0));
+        }
+        var listMirror = type.getElementAnnotationMirror(listClass);
+        if (listMirror == null) {
+            return Stream.empty();
+        }
+        Object value = getAnnotationValue(listMirror, "value");
+        if (!(value instanceof List<?> list)) {
+            return Stream.empty();
+        }
+        var mirrors = list.stream()
+                .flatMap(obj -> obj instanceof AnnotationValue av ? Stream.of(av.getValue()) : Stream.empty())
+                .flatMap(av -> av instanceof AnnotationMirror am ? Stream.of(am) : Stream.empty())
+                .toList();
+        return IntStream.range(0, mirrors.size())
+                .mapToObj(i -> parser.apply(mirrors.get(i), i))
+                .filter(Objects::nonNull);
     }
 
     public static @Nullable NullSafeWriter parseNotNullAnnotation(TypeAdapter type) {
@@ -93,16 +135,12 @@ public final class JakartaAnnotationParser {
         return new NullSafeWriter.NullSafeAccessor("isBlank", resolveMessage(message));
     }
 
-    public static @Nullable NullUnsafeWriter parseSizeAnnotation(TypeAdapter type) {
-        var annotationMirror = type.getAnnotationMirror(Size.class);
-        if (annotationMirror == null) {
-            return null;
-        }
-        warnIfGroupsPresent(annotationMirror, type);
+    private static @Nullable NullUnsafeWriter parseSizeAnnotationMirror(AnnotationMirror mirror, TypeAdapter type) {
+        warnIfGroupsPresent(mirror, type);
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Size.message");
-        int min = getAnnotationIntValue(annotationMirror, "min", 0);
-        int max = getAnnotationIntValue(annotationMirror, "max", Integer.MAX_VALUE);
+        String message = getAnnotationStringValue(mirror, "message", "io.github.raniagus.javalidation.constraints.Size.message");
+        int min = getAnnotationIntValue(mirror, "min", 0);
+        int max = getAnnotationIntValue(mirror, "max", Integer.MAX_VALUE);
 
         return new NullUnsafeWriter.Size(
                 type.isCollection() || type.isOfType("java.util.Map") ? "size" : "length",
@@ -112,20 +150,15 @@ public final class JakartaAnnotationParser {
         );
     }
 
-    public static @Nullable NullUnsafeWriter parseMinAnnotation(TypeAdapter type) {
+    private static @Nullable NullUnsafeWriter parseMinAnnotationMirror(AnnotationMirror mirror, TypeAdapter type) {
         NumericKind numericKind = type.getNumericKind();
         if (numericKind == null) {
             return null;
         }
+        warnIfGroupsPresent(mirror, type);
 
-        var annotationMirror = type.getAnnotationMirror(Min.class);
-        if (annotationMirror == null) {
-            return null;
-        }
-        warnIfGroupsPresent(annotationMirror, type);
-
-        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Min.message");
-        long value = getAnnotationLongValue(annotationMirror, "value", 0);
+        String message = getAnnotationStringValue(mirror, "message", "io.github.raniagus.javalidation.constraints.Min.message");
+        long value = getAnnotationLongValue(mirror, "value", 0);
 
         return new NullUnsafeWriter.NumericCompare(
                 ">=",
@@ -136,20 +169,15 @@ public final class JakartaAnnotationParser {
         );
     }
 
-    public static @Nullable NullUnsafeWriter parseMaxAnnotation(TypeAdapter type) {
+    private static @Nullable NullUnsafeWriter parseMaxAnnotationMirror(AnnotationMirror mirror, TypeAdapter type) {
         NumericKind numericKind = type.getNumericKind();
         if (numericKind == null) {
             return null;
         }
+        warnIfGroupsPresent(mirror, type);
 
-        var annotationMirror = type.getAnnotationMirror(Max.class);
-        if (annotationMirror == null) {
-            return null;
-        }
-        warnIfGroupsPresent(annotationMirror, type);
-
-        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Max.message");
-        long value = getAnnotationLongValue(annotationMirror, "value", 0);
+        String message = getAnnotationStringValue(mirror, "message", "io.github.raniagus.javalidation.constraints.Max.message");
+        long value = getAnnotationLongValue(mirror, "value", 0);
 
         return new NullUnsafeWriter.NumericCompare(
                 "<=",
@@ -160,19 +188,14 @@ public final class JakartaAnnotationParser {
         );
     }
 
-    public static @Nullable NullUnsafeWriter parsePositiveAnnotation(TypeAdapter type) {
+    private static @Nullable NullUnsafeWriter parsePositiveAnnotationMirror(AnnotationMirror mirror, TypeAdapter type) {
         NumericKind numericKind = type.getNumericKind();
         if (numericKind == null) {
             return null;
         }
+        warnIfGroupsPresent(mirror, type);
 
-        var annotationMirror = type.getAnnotationMirror(Positive.class);
-        if (annotationMirror == null) {
-            return null;
-        }
-        warnIfGroupsPresent(annotationMirror, type);
-
-        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Positive.message");
+        String message = getAnnotationStringValue(mirror, "message", "io.github.raniagus.javalidation.constraints.Positive.message");
         return new NullUnsafeWriter.NumericCompare(
                 ">",
                 0,
@@ -182,19 +205,14 @@ public final class JakartaAnnotationParser {
         );
     }
 
-    public static @Nullable NullUnsafeWriter parsePositiveOrZeroAnnotation(TypeAdapter type) {
+    private static @Nullable NullUnsafeWriter parsePositiveOrZeroAnnotationMirror(AnnotationMirror mirror, TypeAdapter type) {
         NumericKind numericKind = type.getNumericKind();
         if (numericKind == null) {
             return null;
         }
+        warnIfGroupsPresent(mirror, type);
 
-        var annotationMirror = type.getAnnotationMirror(PositiveOrZero.class);
-        if (annotationMirror == null) {
-            return null;
-        }
-        warnIfGroupsPresent(annotationMirror, type);
-
-        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.PositiveOrZero.message");
+        String message = getAnnotationStringValue(mirror, "message", "io.github.raniagus.javalidation.constraints.PositiveOrZero.message");
         return new NullUnsafeWriter.NumericCompare(
                 ">=",
                 0,
@@ -204,19 +222,14 @@ public final class JakartaAnnotationParser {
         );
     }
 
-    public static @Nullable NullUnsafeWriter parseNegativeAnnotation(TypeAdapter type) {
+    private static @Nullable NullUnsafeWriter parseNegativeAnnotationMirror(AnnotationMirror mirror, TypeAdapter type) {
         NumericKind numericKind = type.getNumericKind();
         if (numericKind == null) {
             return null;
         }
+        warnIfGroupsPresent(mirror, type);
 
-        var annotationMirror = type.getAnnotationMirror(Negative.class);
-        if (annotationMirror == null) {
-            return null;
-        }
-        warnIfGroupsPresent(annotationMirror, type);
-
-        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Negative.message");
+        String message = getAnnotationStringValue(mirror, "message", "io.github.raniagus.javalidation.constraints.Negative.message");
         return new NullUnsafeWriter.NumericCompare(
                 "<",
                 0,
@@ -226,19 +239,14 @@ public final class JakartaAnnotationParser {
         );
     }
 
-    public static @Nullable NullUnsafeWriter parseNegativeOrZeroAnnotation(TypeAdapter type) {
+    private static @Nullable NullUnsafeWriter parseNegativeOrZeroAnnotationMirror(AnnotationMirror mirror, TypeAdapter type) {
         NumericKind numericKind = type.getNumericKind();
         if (numericKind == null) {
             return null;
         }
+        warnIfGroupsPresent(mirror, type);
 
-        var annotationMirror = type.getAnnotationMirror(NegativeOrZero.class);
-        if (annotationMirror == null) {
-            return null;
-        }
-        warnIfGroupsPresent(annotationMirror, type);
-
-        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.NegativeOrZero.message");
+        String message = getAnnotationStringValue(mirror, "message", "io.github.raniagus.javalidation.constraints.NegativeOrZero.message");
         return new NullUnsafeWriter.NumericCompare(
                 "<=",
                 0,
@@ -248,16 +256,12 @@ public final class JakartaAnnotationParser {
         );
     }
 
-    public static @Nullable NullUnsafeWriter parseEmailAnnotation(TypeAdapter type) {
-        var annotationMirror = type.getAnnotationMirror(Email.class);
-        if (annotationMirror == null) {
-            return null;
-        }
-        warnIfGroupsPresent(annotationMirror, type);
+    private static @Nullable NullUnsafeWriter parseEmailAnnotationMirror(AnnotationMirror mirror, TypeAdapter type) {
+        warnIfGroupsPresent(mirror, type);
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Email.message");
-        String regexp = getAnnotationStringValue(annotationMirror, "regexp", ".*");
-        List<String> flags = getAnnotationFlagsValue(annotationMirror);
+        String message = getAnnotationStringValue(mirror, "message", "io.github.raniagus.javalidation.constraints.Email.message");
+        String regexp = getAnnotationStringValue(mirror, "regexp", ".*");
+        List<String> flags = getAnnotationFlagsValue(mirror);
         return new NullUnsafeWriter.EmailPattern(
                 regexp.equals(".*") ? null : regexp,
                 flags,
@@ -265,40 +269,12 @@ public final class JakartaAnnotationParser {
         );
     }
 
-    public static @Nullable NullUnsafeWriter parsePatternAnnotation(TypeAdapter type) {
-        var annotationMirror = type.getAnnotationMirror(Pattern.class);
-        if (annotationMirror == null) {
-            return null;
-        }
-        return parsePatternAnnotationMirror(annotationMirror, type, 0);
-    }
+    private static @Nullable NullUnsafeWriter parsePatternAnnotationMirror(AnnotationMirror mirror, TypeAdapter type, int index) {
+        warnIfGroupsPresent(mirror, type);
 
-    public static Stream<NullUnsafeWriter> parsePatternListAnnotation(TypeAdapter type) {
-        var listMirror = type.getElementAnnotationMirror(Pattern.List.class);
-        if (listMirror == null) {
-            return Stream.empty();
-        }
-
-        Object value = getAnnotationValue(listMirror, "value");
-        if (!(value instanceof List<?> list)) {
-            return Stream.empty();
-        }
-
-        var patterns = list.stream()
-                .flatMap(obj -> obj instanceof AnnotationValue av ? Stream.of(av.getValue()) : Stream.empty())
-                .flatMap(av -> av instanceof AnnotationMirror am ? Stream.of(am) : Stream.empty())
-                .toList();
-
-        return IntStream.range(0, patterns.size())
-                .mapToObj(i -> parsePatternAnnotationMirror(patterns.get(i), type, i + 1));
-    }
-
-    private static NullUnsafeWriter.Pattern parsePatternAnnotationMirror(AnnotationMirror annotationMirror, TypeAdapter type, int index) {
-        warnIfGroupsPresent(annotationMirror, type);
-
-        String regexp = getAnnotationStringValue(annotationMirror, "regexp", ".*");
-        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Pattern.message");
-        List<String> flags = getAnnotationFlagsValue(annotationMirror);
+        String regexp = getAnnotationStringValue(mirror, "regexp", ".*");
+        String message = getAnnotationStringValue(mirror, "message", "io.github.raniagus.javalidation.constraints.Pattern.message");
+        List<String> flags = getAnnotationFlagsValue(mirror);
 
         return new NullUnsafeWriter.Pattern(
                 index,
@@ -309,43 +285,30 @@ public final class JakartaAnnotationParser {
         );
     }
 
-    public static @Nullable NullUnsafeWriter parseAssertTrueAnnotation(TypeAdapter type) {
-        var annotationMirror = type.getAnnotationMirror(AssertTrue.class);
-        if (annotationMirror == null) {
-            return null;
-        }
-        warnIfGroupsPresent(annotationMirror, type);
+    private static @Nullable NullUnsafeWriter parseAssertTrueAnnotationMirror(AnnotationMirror mirror, TypeAdapter type) {
+        warnIfGroupsPresent(mirror, type);
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.AssertTrue.message");
+        String message = getAnnotationStringValue(mirror, "message", "io.github.raniagus.javalidation.constraints.AssertTrue.message");
         return new NullUnsafeWriter.EqualTo("true", resolveMessage(message));
     }
 
-    public static @Nullable NullUnsafeWriter parseAssertFalseAnnotation(TypeAdapter type) {
-        var annotationMirror = type.getAnnotationMirror(AssertFalse.class);
-        if (annotationMirror == null) {
-            return null;
-        }
-        warnIfGroupsPresent(annotationMirror, type);
+    private static @Nullable NullUnsafeWriter parseAssertFalseAnnotationMirror(AnnotationMirror mirror, TypeAdapter type) {
+        warnIfGroupsPresent(mirror, type);
 
-        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.AssertFalse.message");
+        String message = getAnnotationStringValue(mirror, "message", "io.github.raniagus.javalidation.constraints.AssertFalse.message");
         return new NullUnsafeWriter.EqualTo("false", resolveMessage(message));
     }
 
-    public static @Nullable NullUnsafeWriter parseDecimalMaxAnnotation(TypeAdapter type) {
+    private static @Nullable NullUnsafeWriter parseDecimalMaxAnnotationMirror(AnnotationMirror mirror, TypeAdapter type) {
         NumericKind numericKind = type.getNumericKind();
         if (numericKind == null) {
             return null;
         }
+        warnIfGroupsPresent(mirror, type);
 
-        var annotationMirror = type.getAnnotationMirror(DecimalMax.class);
-        if (annotationMirror == null) {
-            return null;
-        }
-        warnIfGroupsPresent(annotationMirror, type);
-
-        String value = getAnnotationStringValue(annotationMirror, "value", "0");
-        boolean inclusive = getAnnotationBooleanValue(annotationMirror, "inclusive", true);
-        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.DecimalMax%s.message".formatted(inclusive ? "" : ".exclusive"));
+        String value = getAnnotationStringValue(mirror, "value", "0");
+        boolean inclusive = getAnnotationBooleanValue(mirror, "inclusive", true);
+        String message = getAnnotationStringValue(mirror, "message", "io.github.raniagus.javalidation.constraints.DecimalMax%s.message".formatted(inclusive ? "" : ".exclusive"));
 
         try {
             return new NullUnsafeWriter.NumericCompare(
@@ -360,21 +323,16 @@ public final class JakartaAnnotationParser {
         }
     }
 
-    public static @Nullable NullUnsafeWriter parseDecimalMinAnnotation(TypeAdapter type) {
+    private static @Nullable NullUnsafeWriter parseDecimalMinAnnotationMirror(AnnotationMirror mirror, TypeAdapter type) {
         NumericKind numericKind = type.getNumericKind();
         if (numericKind == null) {
             return null;
         }
+        warnIfGroupsPresent(mirror, type);
 
-        var annotationMirror = type.getAnnotationMirror(DecimalMin.class);
-        if (annotationMirror == null) {
-            return null;
-        }
-        warnIfGroupsPresent(annotationMirror, type);
-
-        String value = getAnnotationStringValue(annotationMirror, "value", "0");
-        boolean inclusive = getAnnotationBooleanValue(annotationMirror, "inclusive", true);
-        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.DecimalMin%s.message".formatted(inclusive ? "" : ".exclusive"));
+        String value = getAnnotationStringValue(mirror, "value", "0");
+        boolean inclusive = getAnnotationBooleanValue(mirror, "inclusive", true);
+        String message = getAnnotationStringValue(mirror, "message", "io.github.raniagus.javalidation.constraints.DecimalMin%s.message".formatted(inclusive ? "" : ".exclusive"));
 
         try {
             return new NullUnsafeWriter.NumericCompare(
@@ -389,21 +347,16 @@ public final class JakartaAnnotationParser {
         }
     }
 
-    public static @Nullable NullUnsafeWriter parseDigitsAnnotation(TypeAdapter type) {
+    private static @Nullable NullUnsafeWriter parseDigitsAnnotationMirror(AnnotationMirror mirror, TypeAdapter type) {
         NumericKind numericKind = type.getNumericKind();
         if (numericKind == null) {
             return null;
         }
+        warnIfGroupsPresent(mirror, type);
 
-        var annotationMirror = type.getAnnotationMirror(Digits.class);
-        if (annotationMirror == null) {
-            return null;
-        }
-        warnIfGroupsPresent(annotationMirror, type);
-
-        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Digits.message");
-        int integer = getAnnotationIntValue(annotationMirror, "integer", 0);
-        int fraction = getAnnotationIntValue(annotationMirror, "fraction", 0);
+        String message = getAnnotationStringValue(mirror, "message", "io.github.raniagus.javalidation.constraints.Digits.message");
+        int integer = getAnnotationIntValue(mirror, "integer", 0);
+        int fraction = getAnnotationIntValue(mirror, "fraction", 0);
 
         return new NullUnsafeWriter.Digits(
                 integer,
@@ -413,86 +366,61 @@ public final class JakartaAnnotationParser {
         );
     }
 
-    public static @Nullable NullUnsafeWriter parseFutureAnnotation(TypeAdapter type) {
+    private static @Nullable NullUnsafeWriter parseFutureAnnotationMirror(AnnotationMirror mirror, TypeAdapter type) {
         TemporalKind temporalKind = type.getTemporalKind();
         if (temporalKind == null) {
             return null;
         }
+        warnIfGroupsPresent(mirror, type);
 
-        var annotationMirror = type.getAnnotationMirror(Future.class);
-        if (annotationMirror == null) {
-            return null;
-        }
-        warnIfGroupsPresent(annotationMirror, type);
-
-        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Future.message");
+        String message = getAnnotationStringValue(mirror, "message", "io.github.raniagus.javalidation.constraints.Future.message");
         return new NullUnsafeWriter.TemporalCompare(
                 "isAfter", true, temporalKind, resolveMessage(message));
     }
 
-    public static @Nullable NullUnsafeWriter parseFutureOrPresentAnnotation(TypeAdapter type) {
+    private static @Nullable NullUnsafeWriter parseFutureOrPresentAnnotationMirror(AnnotationMirror mirror, TypeAdapter type) {
         TemporalKind temporalKind = type.getTemporalKind();
         if (temporalKind == null) {
             return null;
         }
+        warnIfGroupsPresent(mirror, type);
 
-        var annotationMirror = type.getAnnotationMirror(FutureOrPresent.class);
-        if (annotationMirror == null) {
-            return null;
-        }
-        warnIfGroupsPresent(annotationMirror, type);
-
-        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.FutureOrPresent.message");
+        String message = getAnnotationStringValue(mirror, "message", "io.github.raniagus.javalidation.constraints.FutureOrPresent.message");
         return new NullUnsafeWriter.TemporalCompare(
                 "isBefore", false, temporalKind, resolveMessage(message));
     }
 
-    public static @Nullable NullUnsafeWriter parsePastAnnotation(TypeAdapter type) {
+    private static @Nullable NullUnsafeWriter parsePastAnnotationMirror(AnnotationMirror mirror, TypeAdapter type) {
         TemporalKind temporalKind = type.getTemporalKind();
         if (temporalKind == null) {
             return null;
         }
+        warnIfGroupsPresent(mirror, type);
 
-        var annotationMirror = type.getAnnotationMirror(Past.class);
-        if (annotationMirror == null) {
-            return null;
-        }
-        warnIfGroupsPresent(annotationMirror, type);
-
-        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Past.message");
+        String message = getAnnotationStringValue(mirror, "message", "io.github.raniagus.javalidation.constraints.Past.message");
         return new NullUnsafeWriter.TemporalCompare(
                 "isBefore", true, temporalKind, resolveMessage(message));
     }
 
-    public static @Nullable NullUnsafeWriter parsePastOrPresentAnnotation(TypeAdapter type) {
+    private static @Nullable NullUnsafeWriter parsePastOrPresentAnnotationMirror(AnnotationMirror mirror, TypeAdapter type) {
         TemporalKind temporalKind = type.getTemporalKind();
         if (temporalKind == null) {
             return null;
         }
+        warnIfGroupsPresent(mirror, type);
 
-        var annotationMirror = type.getAnnotationMirror(PastOrPresent.class);
-        if (annotationMirror == null) {
-            return null;
-        }
-        warnIfGroupsPresent(annotationMirror, type);
-
-        String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.PastOrPresent.message");
+        String message = getAnnotationStringValue(mirror, "message", "io.github.raniagus.javalidation.constraints.PastOrPresent.message");
         return new NullUnsafeWriter.TemporalCompare(
                 "isAfter", false, temporalKind, resolveMessage(message));
     }
 
     private static String resolveMessage(String message, String... params) {
-        // Replace named placeholders with positional ones
         for (int i = 0; i < params.length; i++) {
             message = message.replace(params[i], "{" + i + "}");
         }
-
         return message;
     }
 
-    /**
-     * Extract a string value from an annotation mirror.
-     */
     private static List<String> getAnnotationFlagsValue(AnnotationMirror mirror) {
         Object value = getAnnotationValue(mirror, "flags");
         if (value instanceof List<?> list && !list.isEmpty()) {
@@ -513,13 +441,9 @@ public final class JakartaAnnotationParser {
             }
             return string;
         }
-
         return defaultValue;
     }
 
-    /**
-     * Extract a long value from an annotation mirror.
-     */
     private static long getAnnotationLongValue(AnnotationMirror mirror, String attributeName, long defaultValue) {
         Object value = getAnnotationValue(mirror, attributeName);
         if (value instanceof Number number) {
@@ -528,9 +452,6 @@ public final class JakartaAnnotationParser {
         return defaultValue;
     }
 
-    /**
-     * Extract an int value from an annotation mirror.
-     */
     private static int getAnnotationIntValue(AnnotationMirror mirror, String attributeName, int defaultValue) {
         Object value = getAnnotationValue(mirror, attributeName);
         if (value instanceof Number number) {
@@ -539,9 +460,6 @@ public final class JakartaAnnotationParser {
         return defaultValue;
     }
 
-    /**
-     * Extract a boolean value from an annotation mirror.
-     */
     private static boolean getAnnotationBooleanValue(AnnotationMirror mirror, String attributeName, boolean defaultValue) {
         Object value = getAnnotationValue(mirror, attributeName);
         if (value instanceof Boolean bool) {
