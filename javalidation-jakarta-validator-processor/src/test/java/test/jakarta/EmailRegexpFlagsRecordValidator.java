@@ -9,19 +9,21 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
-public class EmailRecordValidator implements InitializableValidator<EmailRecord> {
+public class EmailRegexpFlagsRecordValidator implements InitializableValidator<EmailRegexpFlagsRecord> {
     private static final Pattern VALUE_EMAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$");
+    private static final Pattern VALUE_REGEXP_PATTERN = Pattern.compile(".*example.*", Pattern.CASE_INSENSITIVE);
 
     @Override
     public void initialize(ValidatorsHolder holder) {
     }
 
     @Override
-    public void validate(Validation validation, EmailRecord root) {
+    public void validate(Validation validation, EmailRegexpFlagsRecord root) {
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!VALUE_EMAIL_PATTERN.matcher(value.toString()).matches()) {
+            if (!VALUE_EMAIL_PATTERN.matcher(value.toString()).matches()
+                    || !VALUE_REGEXP_PATTERN.matcher(value.toString()).matches()) {
                 validation.addError("io.github.raniagus.javalidation.constraints.Email.message");
             }
         });

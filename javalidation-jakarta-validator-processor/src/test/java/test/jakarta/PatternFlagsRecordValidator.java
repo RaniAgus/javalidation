@@ -9,20 +9,20 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
-public class EmailRecordValidator implements InitializableValidator<EmailRecord> {
-    private static final Pattern VALUE_EMAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$");
+public class PatternFlagsRecordValidator implements InitializableValidator<PatternFlagsRecord> {
+    private static final Pattern VALUE_PATTERN = Pattern.compile("^[a-z]+$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     @Override
     public void initialize(ValidatorsHolder holder) {
     }
 
     @Override
-    public void validate(Validation validation, EmailRecord root) {
+    public void validate(Validation validation, PatternFlagsRecord root) {
         validation.withField("value", () -> {
             var value = root.value();
             if (value == null) return;
-            if (!VALUE_EMAIL_PATTERN.matcher(value.toString()).matches()) {
-                validation.addError("io.github.raniagus.javalidation.constraints.Email.message");
+            if (!VALUE_PATTERN.matcher(value.toString()).matches()) {
+                validation.addError("io.github.raniagus.javalidation.constraints.Pattern.message", "^[a-z]+$");
             }
         });
     }

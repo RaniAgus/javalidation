@@ -46,6 +46,7 @@ class JakartaValidationsTest {
             "SizeMapRecord",
             "EmailRecord",
             "EmailRegexpRecord",
+            "EmailRegexpFlagsRecord",
             "MinRecord",
             "MinDoubleRecord",
             "MinIntegerRecord",
@@ -83,6 +84,7 @@ class JakartaValidationsTest {
             "FutureRecord",
             "FutureOrPresentRecord",
             "PatternRecord",
+            "PatternFlagsRecord",
             "DecimalMinInclusiveRecord",
             "DecimalMinExclusiveRecord",
             "DecimalMaxInclusiveRecord",
@@ -343,6 +345,44 @@ class JakartaValidationsTest {
         @Test
         void givenInvalidEmailMatchingRegexp_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new EmailRegexpRecord("not-an-email-example")))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Email.message");
+        }
+    }
+
+    // ── @Email(regexp, flags) ─────────────────────────────────────────────────
+    @Nested
+    class EmailRegexpFlags {
+        EmailRegexpFlagsRecordValidator validator = new EmailRegexpFlagsRecordValidator();
+
+        @Test
+        void givenNullValue_whenValidate_thenIsEmpty() {
+            assertThat(validator.validate(new EmailRegexpFlagsRecord(null)))
+                    .isEmpty();
+        }
+
+        @Test
+        void givenValidEmailMatchingRegexpSameCase_whenValidate_thenIsEmpty() {
+            assertThat(validator.validate(new EmailRegexpFlagsRecord("user@example.com")))
+                    .isEmpty();
+        }
+
+        @Test
+        void givenValidEmailMatchingRegexpDifferentCase_whenValidate_thenIsEmpty() {
+            assertThat(validator.validate(new EmailRegexpFlagsRecord("user@EXAMPLE.com")))
+                    .isEmpty();
+        }
+
+        @Test
+        void givenValidEmailNotMatchingRegexp_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new EmailRegexpFlagsRecord("user@other.com")))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Email.message");
+        }
+
+        @Test
+        void givenInvalidEmailMatchingRegexp_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new EmailRegexpFlagsRecord("not-an-email-example")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Email.message");
         }
@@ -1183,6 +1223,37 @@ class JakartaValidationsTest {
         @Test
         void givenNonMatchingValue_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new PatternRecord("Hello123")))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[a-z]+$");
+        }
+    }
+
+    // ── @Pattern(flags) ───────────────────────────────────────────────────────
+    @Nested
+    class PatternFlags {
+        PatternFlagsRecordValidator validator = new PatternFlagsRecordValidator();
+
+        @Test
+        void givenNullValue_whenValidate_thenIsEmpty() {
+            assertThat(validator.validate(new PatternFlagsRecord(null)))
+                    .isEmpty();
+        }
+
+        @Test
+        void givenMatchingValueSameCase_whenValidate_thenIsEmpty() {
+            assertThat(validator.validate(new PatternFlagsRecord("hello")))
+                    .isEmpty();
+        }
+
+        @Test
+        void givenMatchingValueDifferentCase_whenValidate_thenIsEmpty() {
+            assertThat(validator.validate(new PatternFlagsRecord("HELLO")))
+                    .isEmpty();
+        }
+
+        @Test
+        void givenNonMatchingValue_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new PatternFlagsRecord("hello123")))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[a-z]+$");
         }

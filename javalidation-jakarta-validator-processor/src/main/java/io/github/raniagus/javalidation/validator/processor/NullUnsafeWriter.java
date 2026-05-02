@@ -184,7 +184,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
 
     String EMAIL_REGEX = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$";
 
-    record EmailPattern(@Nullable String regexp, String message) implements NullUnsafeWriter {
+    record EmailPattern(@Nullable String regexp, List<String> flags, String message) implements NullUnsafeWriter {
         @Override
         public Stream<String> imports() {
             return Stream.of("java.util.regex.Pattern");
@@ -192,15 +192,13 @@ public interface NullUnsafeWriter extends ValidationWriter {
 
         @Override
         public void writePropertiesTo(ValidationOutput out) {
-            if (regexp == null) {
-                out.write("""
-                        private static final Pattern %s_PATTERN = Pattern.compile("%s");
+            out.write("""
+                        private static final Pattern %s_EMAIL_PATTERN = Pattern.compile("%s");
                         """.formatted(out.getVariable().toUpperCase(), EMAIL_REGEX));
-            } else {
+            if (regexp != null) {
                 out.write("""
-                        private static final Pattern %1$s_EMAIL_PATTERN = Pattern.compile("%2$s");
-                        private static final Pattern %1$s_REGEXP_PATTERN = Pattern.compile("%3$s");
-                        """.formatted(out.getVariable().toUpperCase(), EMAIL_REGEX, regexp));
+                        private static final Pattern %1$s_REGEXP_PATTERN = Pattern.compile("%2$s"%3$s);
+                        """.formatted(out.getVariable().toUpperCase(), regexp, joinPatternFlags(flags)));
             }
         }
 
@@ -208,7 +206,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
         public void writeBodyTo(ValidationOutput out) {
             if (regexp == null) {
                 out.write("""
-                        if (!%s_PATTERN.matcher(%s.toString()).matches()) {\
+                        if (!%s_EMAIL_PATTERN.matcher(%s.toString()).matches()) {\
                         """.formatted(out.getVariable().toUpperCase(), out.getVariable()));
             } else {
                 out.write("""
@@ -223,9 +221,14 @@ public interface NullUnsafeWriter extends ValidationWriter {
             out.decrementIndentationLevel();
             out.write("}");
         }
+
+        private String joinPatternFlags(List<String> flags) {
+            return flags.isEmpty() ? ""
+                    : flags.stream().collect(Collectors.joining(" | Pattern.", ", Pattern.", ""));
+        }
     }
 
-    record Pattern(String regex, String message, Object... args) implements NullUnsafeWriter {
+    record Pattern(String regex, List<String> flags, String message, Object... args) implements NullUnsafeWriter {
         @Override
         public Stream<String> imports() {
             return Stream.of("java.util.regex.Pattern");
@@ -234,8 +237,9 @@ public interface NullUnsafeWriter extends ValidationWriter {
         @Override
         public void writePropertiesTo(ValidationOutput out) {
             out.write("""
-                    private static final Pattern %s_PATTERN = Pattern.compile("%s");
-                    """.formatted(out.getVariable().toUpperCase(), regex));
+                    private static final Pattern %s_PATTERN = Pattern.compile("%s"%s);
+                    """.formatted(out.getVariable().toUpperCase(), regex,
+                            joinPatternFlags(flags)));
         }
 
         @Override
@@ -256,6 +260,11 @@ public interface NullUnsafeWriter extends ValidationWriter {
             return Stream.of(args)
                     .map(arg -> arg instanceof String ? "\"" + arg + "\"" : arg.toString())
                     .collect(Collectors.joining(", ", ",", ""));
+        }
+
+        private String joinPatternFlags(List<String> flags) {
+            return flags.isEmpty() ? ""
+                    : flags.stream().collect(Collectors.joining(" | Pattern.", ", Pattern.", ""));
         }
     }
 

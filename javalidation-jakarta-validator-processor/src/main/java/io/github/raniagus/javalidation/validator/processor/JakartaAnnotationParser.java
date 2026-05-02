@@ -3,8 +3,11 @@ package io.github.raniagus.javalidation.validator.processor;
 import jakarta.validation.constraints.*;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
+import javax.lang.model.element.VariableElement;
 import org.jspecify.annotations.Nullable;
 
 public final class JakartaAnnotationParser {
@@ -250,8 +253,10 @@ public final class JakartaAnnotationParser {
 
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Email.message");
         String regexp = getAnnotationStringValue(annotationMirror, "regexp", ".*");
+        List<String> flags = getAnnotationFlagsValue(annotationMirror);
         return new NullUnsafeWriter.EmailPattern(
                 regexp.equals(".*") ? null : regexp,
+                flags,
                 resolveMessage(message)
         );
     }
@@ -265,9 +270,11 @@ public final class JakartaAnnotationParser {
 
         String regexp = getAnnotationStringValue(annotationMirror, "regexp", "");
         String message = getAnnotationStringValue(annotationMirror, "message", "io.github.raniagus.javalidation.constraints.Pattern.message");
+        List<String> flags = getAnnotationFlagsValue(annotationMirror);
 
         return new NullUnsafeWriter.Pattern(
                 regexp.replace("\\", "\\\\"),
+                flags,
                 resolveMessage(message, "{regexp}"),
                 regexp
         );
@@ -457,6 +464,18 @@ public final class JakartaAnnotationParser {
     /**
      * Extract a string value from an annotation mirror.
      */
+    private static List<String> getAnnotationFlagsValue(AnnotationMirror mirror) {
+        Object value = getAnnotationValue(mirror, "flags");
+        if (value instanceof List<?> list && !list.isEmpty()) {
+            return list.stream()
+                    .flatMap(obj -> obj instanceof AnnotationValue av ? Stream.of(av.getValue()) : Stream.empty())
+                    .flatMap(av -> av instanceof VariableElement ve ? Stream.of(ve) : Stream.empty())
+                    .map(ve -> ve.getSimpleName().toString())
+                    .toList();
+        }
+        return List.of();
+    }
+
     private static String getAnnotationStringValue(AnnotationMirror mirror, String attributeName, String defaultValue) {
         Object value = getAnnotationValue(mirror, attributeName);
         if (value instanceof String string) {
