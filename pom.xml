@@ -54,7 +54,7 @@
         <jackson.version>3.0.4</jackson.version>
         <spring-boot.version>4.0.2</spring-boot.version>
         <junit.version>6.0.2</junit.version>
-        <assertj.version>3.23.1</assertj.version>
+        <assertj.version>3.27.7</assertj.version>
     </properties>
 
     <dependencyManagement>
