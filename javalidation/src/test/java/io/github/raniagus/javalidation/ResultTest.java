@@ -443,6 +443,27 @@ class ResultTest {
             assertThatThrownBy(result::getOrThrow)
                     .isInstanceOf(JavalidationException.class);
         }
+
+        @Test
+        void givenOk_whenPeekThrowsJavalidationException_thenCatchesAndReturnsErr() {
+            var result = Result.ok(42).peek(value -> {
+                throw JavalidationException.of("error in peek");
+            });
+
+            assertThat(result).isInstanceOf(Result.Err.class);
+            var errors = result.errors();
+            assertThat(errors.rootErrors()).hasSize(1);
+            assertThat(errors.rootErrors().getFirst().message()).isEqualTo("error in peek");
+        }
+
+        @Test
+        void givenOk_whenPeekThrowsOtherException_thenPropagatesException() {
+            assertThatThrownBy(() -> Result.ok(42).peek(value -> {
+                throw new IllegalStateException("unexpected error");
+            }))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("unexpected error");
+        }
     }
 
     @Nested
@@ -467,6 +488,29 @@ class ResultTest {
 
             assertThat(box[0]).isEqualTo(0);
             assertThat(result.getOrThrow()).isEqualTo(42);
+        }
+
+        @Test
+        void givenErr_whenPeekErrThrowsJavalidationException_thenCatchesAndReturnsErr() {
+            var result = Result.<Integer>error("initial error")
+                    .peekErr(errors -> {
+                        throw JavalidationException.of("error in peekErr");
+                    });
+
+            assertThat(result).isInstanceOf(Result.Err.class);
+            var errors = result.errors();
+            assertThat(errors.rootErrors()).hasSize(1);
+            assertThat(errors.rootErrors().getFirst().message()).isEqualTo("error in peekErr");
+        }
+
+        @Test
+        void givenErr_whenPeekErrThrowsOtherException_thenPropagatesException() {
+            assertThatThrownBy(() -> Result.<Integer>error("initial error")
+                    .peekErr(errors -> {
+                        throw new IllegalStateException("unexpected error");
+                    }))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("unexpected error");
         }
     }
 

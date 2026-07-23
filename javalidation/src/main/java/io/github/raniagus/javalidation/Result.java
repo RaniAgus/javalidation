@@ -26,7 +26,8 @@ import org.jspecify.annotations.Nullable;
  * <b>Error Channel Design:</b>
  * <p>
  * This library implements a dedicated error channel for well-known validation failures, similar to Effect.TS.
- * Methods like {@link #map(Function)} and {@link #flatMap(Function)} automatically catch
+ * Methods like {@link #map(Function)}, {@link #flatMap(Function)}, {@link #peek(Consumer)},
+ * and {@link #peekErr(Consumer)} automatically catch
  * {@link JavalidationException} and convert it to {@link Err}, enabling seamless error handling:
  * <pre>{@code
  * Result<User> user = Result.ok(userId)
@@ -395,7 +396,11 @@ public sealed interface Result<T extends @Nullable Object> {
      * Performs a side effect with the success value without transforming it.
      * <p>
      * This is useful for logging, debugging, or other side effects in the success path.
-     * The value is not modified, and this result is returned unchanged.
+     * The value is not modified, and this result is returned unchanged unless the action fails
+     * with {@link JavalidationException}.
+     * <p>
+     * <b>Exception handling (Error Channel):</b> If the action throws {@link JavalidationException},
+     * it is caught and converted to {@link Err}.
      * <p>
      * Example:
      * <pre>{@code
@@ -405,20 +410,28 @@ public sealed interface Result<T extends @Nullable Object> {
      * }</pre>
      *
      * @param action action to perform with the success value (must not be null)
-     * @return this result unchanged
+     * @return this result unchanged, or {@link Err} if the action throws {@link JavalidationException}
      */
     default Result<T> peek(Consumer<T> action) {
-        if (this instanceof Ok<T>(T value)) {
-            action.accept(value);
+        try {
+            if (this instanceof Ok<T>(T value)) {
+                action.accept(value);
+            }
+            return this;
+        } catch (JavalidationException e) {
+            return new Err<>(e.getErrors());
         }
-        return this;
     }
 
     /**
      * Performs a side effect with the validation errors without transforming them.
      * <p>
      * This is useful for logging, debugging, or other side effects in the error path.
-     * The errors are not modified, and this result is returned unchanged.
+     * The errors are not modified, and this result is returned unchanged unless the action fails
+     * with {@link JavalidationException}.
+     * <p>
+     * <b>Exception handling (Error Channel):</b> If the action throws {@link JavalidationException},
+     * it is caught and converted to {@link Err}.
      * <p>
      * Example:
      * <pre>{@code
@@ -428,13 +441,17 @@ public sealed interface Result<T extends @Nullable Object> {
      * }</pre>
      *
      * @param action action to perform with the validation errors (must not be null)
-     * @return this result unchanged
+     * @return this result unchanged, or {@link Err} if the action throws {@link JavalidationException}
      */
     default Result<T> peekErr(Consumer<ValidationErrors> action) {
-        if (this instanceof Err<T>(ValidationErrors errors)) {
-            action.accept(errors);
+        try {
+            if (this instanceof Err<T>(ValidationErrors errors)) {
+                action.accept(errors);
+            }
+            return this;
+        } catch (JavalidationException e) {
+            return new Err<>(e.getErrors());
         }
-        return this;
     }
 
     /**

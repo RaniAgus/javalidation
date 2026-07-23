@@ -56,6 +56,9 @@ Result<User> user = validateEmail(email)
 result.peek(u -> logger.info("Valid user: {}", u.name()));
 ```
 
+`peek` catches `JavalidationException` thrown by the side-effect action and converts it to `Err`.
+All other exceptions propagate normally.
+
 ---
 
 ## Filtering on the Happy Path
@@ -104,6 +107,9 @@ Result<User> result = findInCache(id)
 ```java
 result.peekErr(errors -> logger.warn("{} errors", errors.count()));
 ```
+
+`peekErr` catches `JavalidationException` thrown by the side-effect action and converts it to `Err`.
+All other exceptions propagate normally.
 
 ### `or` — eager or lazy fallback
 
@@ -193,7 +199,7 @@ String message = switch (result) {
 
 ## Error Channel Design
 
-`map`, `flatMap`, `flatMapErr` catch **only** `JavalidationException` and convert it to `Err`.
+`map`, `flatMap`, `flatMapErr`, `peek`, and `peekErr` catch **only** `JavalidationException` and convert it to `Err`.
 All other exceptions (NPE, ISE, IOException, etc.) propagate normally. This distinguishes:
 - **Expected validation failures** (`JavalidationException`) → `Err`, safe to return to clients
 - **Programming errors / bugs** (other exceptions) → propagate, log at boundary, return 500
