@@ -43,15 +43,15 @@ public final class ResultCombiner3<T1 extends @Nullable Object, T2 extends @Null
     }
 
     public Result<T1> first() {
-        return ResultSlot.toResult(result1);
+        return result1.toResult();
     }
 
     public Result<T2> second() {
-        return ResultSlot.toResult(result2);
+        return result2.toResult();
     }
 
     public Result<T3> third() {
-        return ResultSlot.toResult(result3);
+        return result3.toResult();
     }
 
     /**
@@ -88,9 +88,9 @@ public final class ResultCombiner3<T1 extends @Nullable Object, T2 extends @Null
     public <T4 extends @Nullable Object> ResultCombiner4<T1, T2, T3, T4> and(TriFunction<T1, T2, T3, Result<T4>> result4) {
         if (ResultSlot.allOk(result1, result2, result3)) {
             return new ResultCombiner4<>(result1, result2, result3, ResultSlot.from(() -> result4.apply(
-                    ResultSlot.value(result1),
-                    ResultSlot.value(result2),
-                    ResultSlot.value(result3)
+                    result1.value(),
+                    result2.value(),
+                    result3.value()
             )));
         }
         return new ResultCombiner4<>(result1, result2, result3, ResultSlot.skipped());
@@ -149,9 +149,9 @@ public final class ResultCombiner3<T1 extends @Nullable Object, T2 extends @Null
     public <R extends @Nullable Object> Result<R> combine(TriFunction<T1, T2, T3, R> onSuccess) {
         return ResultSlot.combine(
                 () -> onSuccess.apply(
-                        ResultSlot.value(result1),
-                        ResultSlot.value(result2),
-                        ResultSlot.value(result3)
+                        result1.value(),
+                        result2.value(),
+                        result3.value()
                 ),
                 result1, result2, result3
         );
@@ -163,6 +163,6 @@ public final class ResultCombiner3<T1 extends @Nullable Object, T2 extends @Null
      * @return {@link Result.Ok} with the third value if all results succeed, otherwise {@link Result.Err}
      */
     public Result<T3> getLast() {
-        return ResultSlot.combine(() -> ResultSlot.value(result3), result1, result2, result3);
+        return ResultSlot.combine(() -> result3.value(), result1, result2, result3);
     }
 }

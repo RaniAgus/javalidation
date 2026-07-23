@@ -63,31 +63,31 @@ public final class ResultCombiner7<T1 extends @Nullable Object, T2 extends @Null
     }
 
     public Result<T1> first() {
-        return ResultSlot.toResult(result1);
+        return result1.toResult();
     }
 
     public Result<T2> second() {
-        return ResultSlot.toResult(result2);
+        return result2.toResult();
     }
 
     public Result<T3> third() {
-        return ResultSlot.toResult(result3);
+        return result3.toResult();
     }
 
     public Result<T4> fourth() {
-        return ResultSlot.toResult(result4);
+        return result4.toResult();
     }
 
     public Result<T5> fifth() {
-        return ResultSlot.toResult(result5);
+        return result5.toResult();
     }
 
     public Result<T6> sixth() {
-        return ResultSlot.toResult(result6);
+        return result6.toResult();
     }
 
     public Result<T7> seventh() {
-        return ResultSlot.toResult(result7);
+        return result7.toResult();
     }
 
     /**
@@ -124,13 +124,13 @@ public final class ResultCombiner7<T1 extends @Nullable Object, T2 extends @Null
     public <T8 extends @Nullable Object> ResultCombiner8<T1, T2, T3, T4, T5, T6, T7, T8> and(SeptaFunction<T1, T2, T3, T4, T5, T6, T7, Result<T8>> result8) {
         if (ResultSlot.allOk(result1, result2, result3, result4, result5, result6, result7)) {
             return new ResultCombiner8<>(result1, result2, result3, result4, result5, result6, result7, ResultSlot.from(() -> result8.apply(
-                    ResultSlot.value(result1),
-                    ResultSlot.value(result2),
-                    ResultSlot.value(result3),
-                    ResultSlot.value(result4),
-                    ResultSlot.value(result5),
-                    ResultSlot.value(result6),
-                    ResultSlot.value(result7)
+                    result1.value(),
+                    result2.value(),
+                    result3.value(),
+                    result4.value(),
+                    result5.value(),
+                    result6.value(),
+                    result7.value()
             )));
         }
         return new ResultCombiner8<>(result1, result2, result3, result4, result5, result6, result7, ResultSlot.skipped());
@@ -233,13 +233,13 @@ public final class ResultCombiner7<T1 extends @Nullable Object, T2 extends @Null
     public <R extends @Nullable Object> Result<R> combine(SeptaFunction<T1, T2, T3, T4, T5, T6, T7, R> onSuccess) {
         return ResultSlot.combine(
                 () -> onSuccess.apply(
-                        ResultSlot.value(result1),
-                        ResultSlot.value(result2),
-                        ResultSlot.value(result3),
-                        ResultSlot.value(result4),
-                        ResultSlot.value(result5),
-                        ResultSlot.value(result6),
-                        ResultSlot.value(result7)
+                        result1.value(),
+                        result2.value(),
+                        result3.value(),
+                        result4.value(),
+                        result5.value(),
+                        result6.value(),
+                        result7.value()
                 ),
                 result1, result2, result3, result4, result5, result6, result7
         );
@@ -251,6 +251,6 @@ public final class ResultCombiner7<T1 extends @Nullable Object, T2 extends @Null
      * @return {@link Result.Ok} with the seventh value if all results succeed, otherwise {@link Result.Err}
      */
     public Result<T7> getLast() {
-        return ResultSlot.combine(() -> ResultSlot.value(result7), result1, result2, result3, result4, result5, result6, result7);
+        return ResultSlot.combine(() -> result7.value(), result1, result2, result3, result4, result5, result6, result7);
     }
 }

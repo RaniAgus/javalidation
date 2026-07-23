@@ -69,43 +69,43 @@ public final class ResultCombiner10<T1 extends @Nullable Object, T2 extends @Nul
     }
 
     public Result<T1> first() {
-        return ResultSlot.toResult(result1);
+        return result1.toResult();
     }
 
     public Result<T2> second() {
-        return ResultSlot.toResult(result2);
+        return result2.toResult();
     }
 
     public Result<T3> third() {
-        return ResultSlot.toResult(result3);
+        return result3.toResult();
     }
 
     public Result<T4> fourth() {
-        return ResultSlot.toResult(result4);
+        return result4.toResult();
     }
 
     public Result<T5> fifth() {
-        return ResultSlot.toResult(result5);
+        return result5.toResult();
     }
 
     public Result<T6> sixth() {
-        return ResultSlot.toResult(result6);
+        return result6.toResult();
     }
 
     public Result<T7> seventh() {
-        return ResultSlot.toResult(result7);
+        return result7.toResult();
     }
 
     public Result<T8> eighth() {
-        return ResultSlot.toResult(result8);
+        return result8.toResult();
     }
 
     public Result<T9> ninth() {
-        return ResultSlot.toResult(result9);
+        return result9.toResult();
     }
 
     public Result<T10> tenth() {
-        return ResultSlot.toResult(result10);
+        return result10.toResult();
     }
 
     /**
@@ -127,16 +127,16 @@ public final class ResultCombiner10<T1 extends @Nullable Object, T2 extends @Nul
     public <R extends @Nullable Object> Result<R> combine(DecaFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R> onSuccess) {
         return ResultSlot.combine(
                 () -> onSuccess.apply(
-                        ResultSlot.value(result1),
-                        ResultSlot.value(result2),
-                        ResultSlot.value(result3),
-                        ResultSlot.value(result4),
-                        ResultSlot.value(result5),
-                        ResultSlot.value(result6),
-                        ResultSlot.value(result7),
-                        ResultSlot.value(result8),
-                        ResultSlot.value(result9),
-                        ResultSlot.value(result10)
+                        result1.value(),
+                        result2.value(),
+                        result3.value(),
+                        result4.value(),
+                        result5.value(),
+                        result6.value(),
+                        result7.value(),
+                        result8.value(),
+                        result9.value(),
+                        result10.value()
                 ),
                 result1, result2, result3, result4, result5, result6, result7, result8, result9, result10
         );
@@ -148,6 +148,6 @@ public final class ResultCombiner10<T1 extends @Nullable Object, T2 extends @Nul
      * @return {@link Result.Ok} with the tenth value if all results succeed, otherwise {@link Result.Err}
      */
     public Result<T10> getLast() {
-        return ResultSlot.combine(() -> ResultSlot.value(result10), result1, result2, result3, result4, result5, result6, result7, result8, result9, result10);
+        return ResultSlot.combine(() -> result10.value(), result1, result2, result3, result4, result5, result6, result7, result8, result9, result10);
     }
 }

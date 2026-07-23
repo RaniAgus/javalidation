@@ -53,23 +53,23 @@ public final class ResultCombiner5<T1 extends @Nullable Object, T2 extends @Null
     }
 
     public Result<T1> first() {
-        return ResultSlot.toResult(result1);
+        return result1.toResult();
     }
 
     public Result<T2> second() {
-        return ResultSlot.toResult(result2);
+        return result2.toResult();
     }
 
     public Result<T3> third() {
-        return ResultSlot.toResult(result3);
+        return result3.toResult();
     }
 
     public Result<T4> fourth() {
-        return ResultSlot.toResult(result4);
+        return result4.toResult();
     }
 
     public Result<T5> fifth() {
-        return ResultSlot.toResult(result5);
+        return result5.toResult();
     }
 
     /**
@@ -106,11 +106,11 @@ public final class ResultCombiner5<T1 extends @Nullable Object, T2 extends @Null
     public <T6 extends @Nullable Object> ResultCombiner6<T1, T2, T3, T4, T5, T6> and(PentaFunction<T1, T2, T3, T4, T5, Result<T6>> result6) {
         if (ResultSlot.allOk(result1, result2, result3, result4, result5)) {
             return new ResultCombiner6<>(result1, result2, result3, result4, result5, ResultSlot.from(() -> result6.apply(
-                    ResultSlot.value(result1),
-                    ResultSlot.value(result2),
-                    ResultSlot.value(result3),
-                    ResultSlot.value(result4),
-                    ResultSlot.value(result5)
+                    result1.value(),
+                    result2.value(),
+                    result3.value(),
+                    result4.value(),
+                    result5.value()
             )));
         }
         return new ResultCombiner6<>(result1, result2, result3, result4, result5, ResultSlot.skipped());
@@ -191,11 +191,11 @@ public final class ResultCombiner5<T1 extends @Nullable Object, T2 extends @Null
     public <R extends @Nullable Object> Result<R> combine(PentaFunction<T1, T2, T3, T4, T5, R> onSuccess) {
         return ResultSlot.combine(
                 () -> onSuccess.apply(
-                        ResultSlot.value(result1),
-                        ResultSlot.value(result2),
-                        ResultSlot.value(result3),
-                        ResultSlot.value(result4),
-                        ResultSlot.value(result5)
+                        result1.value(),
+                        result2.value(),
+                        result3.value(),
+                        result4.value(),
+                        result5.value()
                 ),
                 result1, result2, result3, result4, result5
         );
@@ -207,6 +207,6 @@ public final class ResultCombiner5<T1 extends @Nullable Object, T2 extends @Null
      * @return {@link Result.Ok} with the fifth value if all results succeed, otherwise {@link Result.Err}
      */
     public Result<T5> getLast() {
-        return ResultSlot.combine(() -> ResultSlot.value(result5), result1, result2, result3, result4, result5);
+        return ResultSlot.combine(() -> result5.value(), result1, result2, result3, result4, result5);
     }
 }

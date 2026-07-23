@@ -10,9 +10,38 @@ import org.jspecify.annotations.Nullable;
 sealed interface ResultSlot<T extends @Nullable Object> permits ResultSlot.Value, ResultSlot.Skipped {
 
     record Value<T extends @Nullable Object>(Result<T> result) implements ResultSlot<T> {
+        @Override
+        public boolean isOk() {
+            return result instanceof Result.Ok<?>;
+        }
+
+        @Override
+        public T value() {
+            if (result instanceof Result.Ok<T>(T v)) {
+                return v;
+            }
+            throw new IllegalStateException("Result slot does not contain a success value");
+        }
+
+        @Override
+        public Result<T> toResult() {
+            return result;
+        }
     }
 
     record Skipped<T extends @Nullable Object>() implements ResultSlot<T> {
+    }
+
+    default boolean isOk() {
+        return false;
+    }
+
+    default T value() {
+        throw new IllegalStateException("Result slot does not contain a success value");
+    }
+
+    default Result<T> toResult() {
+        return Result.error(ValidationErrors.empty());
     }
 
     static <T extends @Nullable Object> ResultSlot<T> of(Result<T> result) {
@@ -33,22 +62,9 @@ sealed interface ResultSlot<T extends @Nullable Object> permits ResultSlot.Value
 
     static boolean allOk(ResultSlot<?>... slots) {
         for (ResultSlot<?> slot : slots) {
-            if (!(slot instanceof Value<?>(Result<?> result)) || !(result instanceof Result.Ok<?>)) {
-                return false;
-            }
+            if (!slot.isOk()) return false;
         }
         return true;
-    }
-
-    static <T extends @Nullable Object> T value(ResultSlot<T> slot) {
-        if (slot instanceof Value<T>(Result<T> result) && result instanceof Result.Ok<T>(T value)) {
-            return value;
-        }
-        throw new IllegalStateException("Result slot does not contain a success value");
-    }
-
-    static <T extends @Nullable Object> Result<T> toResult(ResultSlot<T> slot) {
-        return slot instanceof Value<T>(var r) ? r : Result.error(ValidationErrors.empty());
     }
 
     static <R extends @Nullable Object> Result<R> combine(Supplier<R> onSuccess, ResultSlot<?>... slots) {
@@ -56,8 +72,8 @@ sealed interface ResultSlot<T extends @Nullable Object> permits ResultSlot.Value
         boolean hasSkipped = false;
 
         for (ResultSlot<?> slot : slots) {
-            if (slot instanceof Value<?>(Result<?> result) && result instanceof Result.Err<?>(ValidationErrors errors)) {
-                validation.addAll(errors);
+            if (slot instanceof Value<?>(Result<?> result)) {
+                validation.addAll(result.errors());
             } else if (slot instanceof Skipped<?>) {
                 hasSkipped = true;
             }

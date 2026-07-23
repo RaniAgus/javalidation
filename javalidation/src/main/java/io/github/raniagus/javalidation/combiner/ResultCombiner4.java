@@ -48,19 +48,19 @@ public final class ResultCombiner4<T1 extends @Nullable Object, T2 extends @Null
     }
 
     public Result<T1> first() {
-        return ResultSlot.toResult(result1);
+        return result1.toResult();
     }
 
     public Result<T2> second() {
-        return ResultSlot.toResult(result2);
+        return result2.toResult();
     }
 
     public Result<T3> third() {
-        return ResultSlot.toResult(result3);
+        return result3.toResult();
     }
 
     public Result<T4> fourth() {
-        return ResultSlot.toResult(result4);
+        return result4.toResult();
     }
 
     /**
@@ -97,10 +97,10 @@ public final class ResultCombiner4<T1 extends @Nullable Object, T2 extends @Null
     public <T5 extends @Nullable Object> ResultCombiner5<T1, T2, T3, T4, T5> and(QuadFunction<T1, T2, T3, T4, Result<T5>> result5) {
         if (ResultSlot.allOk(result1, result2, result3, result4)) {
             return new ResultCombiner5<>(result1, result2, result3, result4, ResultSlot.from(() -> result5.apply(
-                    ResultSlot.value(result1),
-                    ResultSlot.value(result2),
-                    ResultSlot.value(result3),
-                    ResultSlot.value(result4)
+                    result1.value(),
+                    result2.value(),
+                    result3.value(),
+                    result4.value()
             )));
         }
         return new ResultCombiner5<>(result1, result2, result3, result4, ResultSlot.skipped());
@@ -170,10 +170,10 @@ public final class ResultCombiner4<T1 extends @Nullable Object, T2 extends @Null
     public <R extends @Nullable Object> Result<R> combine(QuadFunction<T1, T2, T3, T4, R> onSuccess) {
         return ResultSlot.combine(
                 () -> onSuccess.apply(
-                        ResultSlot.value(result1),
-                        ResultSlot.value(result2),
-                        ResultSlot.value(result3),
-                        ResultSlot.value(result4)
+                        result1.value(),
+                        result2.value(),
+                        result3.value(),
+                        result4.value()
                 ),
                 result1, result2, result3, result4
         );
@@ -185,6 +185,6 @@ public final class ResultCombiner4<T1 extends @Nullable Object, T2 extends @Null
      * @return {@link Result.Ok} with the fourth value if all results succeed, otherwise {@link Result.Err}
      */
     public Result<T4> getLast() {
-        return ResultSlot.combine(() -> ResultSlot.value(result4), result1, result2, result3, result4);
+        return ResultSlot.combine(() -> result4.value(), result1, result2, result3, result4);
     }
 }

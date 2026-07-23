@@ -40,7 +40,7 @@ public final class ResultCombiner2<T1 extends @Nullable Object, T2 extends @Null
         ResultSlot<T1> slot1 = ResultSlot.of(result1);
         this.result1 = slot1;
         this.result2 = ResultSlot.allOk(slot1)
-                ? ResultSlot.from(() -> result2.apply(ResultSlot.value(slot1)))
+                ? ResultSlot.from(() -> result2.apply(slot1.value()))
                 : ResultSlot.skipped();
     }
 
@@ -50,11 +50,11 @@ public final class ResultCombiner2<T1 extends @Nullable Object, T2 extends @Null
     }
 
     public Result<T1> first()  {
-        return ResultSlot.toResult(result1);
+        return result1.toResult();
     }
     
     public Result<T2> second() {
-        return ResultSlot.toResult(result2);
+        return result2.toResult();
     }
 
     /**
@@ -89,8 +89,8 @@ public final class ResultCombiner2<T1 extends @Nullable Object, T2 extends @Null
     public <T3 extends @Nullable Object> ResultCombiner3<T1, T2, T3> and(BiFunction<T1, T2, Result<T3>> result3) {
         if (ResultSlot.allOk(result1, result2)) {
             return new ResultCombiner3<>(result1, result2, ResultSlot.from(() -> result3.apply(
-                    ResultSlot.value(result1),
-                    ResultSlot.value(result2)
+                    result1.value(),
+                    result2.value()
             )));
         }
         return new ResultCombiner3<>(result1, result2, ResultSlot.skipped());
@@ -138,8 +138,8 @@ public final class ResultCombiner2<T1 extends @Nullable Object, T2 extends @Null
     public <R extends @Nullable Object> Result<R> combine(BiFunction<T1, T2, R> onSuccess) {
         return ResultSlot.combine(
                 () -> onSuccess.apply(
-                        ResultSlot.value(result1),
-                        ResultSlot.value(result2)
+                        result1.value(),
+                        result2.value()
                 ),
                 result1, result2
         );
@@ -151,6 +151,6 @@ public final class ResultCombiner2<T1 extends @Nullable Object, T2 extends @Null
      * @return {@link Result.Ok} with the second value if all results succeed, otherwise {@link Result.Err}
      */
     public Result<T2> getLast() {
-        return ResultSlot.combine(() -> ResultSlot.value(result2), result1, result2);
+        return ResultSlot.combine(() -> result2.value(), result1, result2);
     }
 }
