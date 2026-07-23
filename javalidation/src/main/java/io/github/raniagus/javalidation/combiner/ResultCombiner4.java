@@ -122,8 +122,8 @@ public final class ResultCombiner4<T1 extends @Nullable Object, T2 extends @Null
     public <X extends @Nullable Object, T5 extends @Nullable Object> ResultCombiner5<T1, T2, T3, T4, T5> andUsing(
             Function<ResultCombiner4<T1, T2, T3, T4>, Result<X>> projector,
             Function<X, Result<T5>> fn) {
-        var projected = projector.apply(this);
-        if (projected instanceof Result.Ok<X>(var x)) {
+        Result<X> projected = projector.apply(this);
+        if (projected instanceof Result.Ok<X>(X x)) {
             return new ResultCombiner5<>(result1, result2, result3, result4, ResultSlot.from(() -> fn.apply(x)));
         }
         return new ResultCombiner5<>(result1, result2, result3, result4, ResultSlot.skipped());
@@ -133,8 +133,8 @@ public final class ResultCombiner4<T1 extends @Nullable Object, T2 extends @Null
     public <X extends @Nullable Object, Y extends @Nullable Object, T5 extends @Nullable Object> ResultCombiner5<T1, T2, T3, T4, T5> andUsing(
             Function<ResultCombiner4<T1, T2, T3, T4>, ResultCombiner2<X, Y>> projector,
             BiFunction<X, Y, Result<T5>> fn) {
-        var sub = projector.apply(this);
-        if (sub.first() instanceof Result.Ok<X>(var x) && sub.second() instanceof Result.Ok<Y>(var y)) {
+        ResultCombiner2<X, Y> sub = projector.apply(this);
+        if (sub.first() instanceof Result.Ok<X>(X x) && sub.second() instanceof Result.Ok<Y>(Y y)) {
             return new ResultCombiner5<>(result1, result2, result3, result4, ResultSlot.from(() -> fn.apply(x, y)));
         }
         return new ResultCombiner5<>(result1, result2, result3, result4, ResultSlot.skipped());
@@ -144,8 +144,8 @@ public final class ResultCombiner4<T1 extends @Nullable Object, T2 extends @Null
     public <X extends @Nullable Object, Y extends @Nullable Object, Z extends @Nullable Object, T5 extends @Nullable Object> ResultCombiner5<T1, T2, T3, T4, T5> andUsing(
             Function<ResultCombiner4<T1, T2, T3, T4>, ResultCombiner3<X, Y, Z>> projector,
             TriFunction<X, Y, Z, Result<T5>> fn) {
-        var sub = projector.apply(this);
-        if (sub.first() instanceof Result.Ok<X>(var x) && sub.second() instanceof Result.Ok<Y>(var y) && sub.third() instanceof Result.Ok<Z>(var z)) {
+        ResultCombiner3<X, Y, Z> sub = projector.apply(this);
+        if (sub.first() instanceof Result.Ok<X>(X x) && sub.second() instanceof Result.Ok<Y>(Y y) && sub.third() instanceof Result.Ok<Z>(Z z)) {
             return new ResultCombiner5<>(result1, result2, result3, result4, ResultSlot.from(() -> fn.apply(x, y, z)));
         }
         return new ResultCombiner5<>(result1, result2, result3, result4, ResultSlot.skipped());

@@ -112,8 +112,8 @@ public final class ResultCombiner2<T1 extends @Nullable Object, T2 extends @Null
     public <X extends @Nullable Object, T3 extends @Nullable Object> ResultCombiner3<T1, T2, T3> andUsing(
             Function<ResultCombiner2<T1, T2>, Result<X>> projector,
             Function<X, Result<T3>> fn) {
-        var projected = projector.apply(this);
-        if (projected instanceof Result.Ok<X>(var x)) {
+        Result<X> projected = projector.apply(this);
+        if (projected instanceof Result.Ok<X>(X x)) {
             return new ResultCombiner3<>(result1, result2, ResultSlot.from(() -> fn.apply(x)));
         }
         return new ResultCombiner3<>(result1, result2, ResultSlot.skipped());

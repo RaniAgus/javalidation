@@ -112,8 +112,8 @@ public final class ResultCombiner3<T1 extends @Nullable Object, T2 extends @Null
     public <X extends @Nullable Object, T4 extends @Nullable Object> ResultCombiner4<T1, T2, T3, T4> andUsing(
             Function<ResultCombiner3<T1, T2, T3>, Result<X>> projector,
             Function<X, Result<T4>> fn) {
-        var projected = projector.apply(this);
-        if (projected instanceof Result.Ok<X>(var x)) {
+        Result<X> projected = projector.apply(this);
+        if (projected instanceof Result.Ok<X>(X x)) {
             return new ResultCombiner4<>(result1, result2, result3, ResultSlot.from(() -> fn.apply(x)));
         }
         return new ResultCombiner4<>(result1, result2, result3, ResultSlot.skipped());
@@ -123,8 +123,8 @@ public final class ResultCombiner3<T1 extends @Nullable Object, T2 extends @Null
     public <X extends @Nullable Object, Y extends @Nullable Object, T4 extends @Nullable Object> ResultCombiner4<T1, T2, T3, T4> andUsing(
             Function<ResultCombiner3<T1, T2, T3>, ResultCombiner2<X, Y>> projector,
             BiFunction<X, Y, Result<T4>> fn) {
-        var sub = projector.apply(this);
-        if (sub.first() instanceof Result.Ok<X>(var x) && sub.second() instanceof Result.Ok<Y>(var y)) {
+        ResultCombiner2<X, Y> sub = projector.apply(this);
+        if (sub.first() instanceof Result.Ok<X>(X x) && sub.second() instanceof Result.Ok<Y>(Y y)) {
             return new ResultCombiner4<>(result1, result2, result3, ResultSlot.from(() -> fn.apply(x, y)));
         }
         return new ResultCombiner4<>(result1, result2, result3, ResultSlot.skipped());
