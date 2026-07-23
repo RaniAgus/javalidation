@@ -235,6 +235,31 @@ public sealed interface Result<T extends @Nullable Object> {
     }
 
     /**
+     * Combines this result with another result computed from this result's success value.
+     * <p>
+     * The function is only called if this result is {@link Ok}. If this result is {@link Err},
+     * the function is skipped and the existing errors are preserved by the final {@code combine()}.
+     * <p>
+     * If the function throws {@link JavalidationException}, it is caught and converted to {@link Err}.
+     * Other exceptions propagate normally.
+     * <p>
+     * Example:
+     * <pre>{@code
+     * Result<Order> order = validateUser(user)
+     *     .and(validUser -> validateAddress(validUser.address()))
+     *     .combine((validUser, address) -> new Order(validUser, address));
+     * }</pre>
+     *
+     * @param result supplies the result to combine with this one, using this result's success value
+     * @param <U> the type of the supplied result's success value
+     * @return a {@link ResultCombiner2} that can be chained with more results or terminated with {@code combine()}
+     * @see ResultCombiner2
+     */
+    default <U extends @Nullable Object> ResultCombiner2<T, U> and(Function<T, Result<U>> result) {
+        return new ResultCombiner2<>(this, result);
+    }
+
+    /**
      * Provides a fallback result if this result is an error (lazy evaluation).
      * <p>
      * This implements short-circuit evaluation: if this result is {@link Ok}, the supplier is not called.

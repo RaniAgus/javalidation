@@ -94,6 +94,26 @@ Result<Person> person = validateName(name)
 ```
 
 Combiners are available from 2 (`ResultCombiner2`) up to 10 (`ResultCombiner10`).
+Each combiner also has `getLast()`, equivalent to `combine((a, b, ..., n) -> n)`.
+
+### Dependent `and(function)` Steps
+
+`Result.and(function)` and `ResultCombiner2` through `ResultCombiner9` also accept a function that
+receives the success values collected so far and returns the next `Result`.
+
+```java
+Result<Order> order = validateUser(input)
+    .and(user -> validateAddress(user.address()))
+    .and((user, address) -> validateCart(user, address))
+    .and(validateFeatureFlags()) // independent; still contributes errors
+    .combine((user, address, cart, flags) -> new Order(user, address, cart, flags));
+```
+
+Semantics:
+- `and(Result)` is independent and always contributes its errors.
+- `and(function)` is dependent and runs only when all previous values are `Ok`.
+- If a dependent step is skipped, it contributes no value and no error.
+- Later independent `and(Result)` steps still accumulate errors after a dependent skip or failure.
 
 ---
 
@@ -103,6 +123,7 @@ Combiners are available from 2 (`ResultCombiner2`) up to 10 (`ResultCombiner10`)
 |-----------|----------------|-----------|
 | `Validation.addError*` + `finish/check` | ✓ | ✗ |
 | `Result.and(…).combine(…)` | ✓ | ✗ |
+| Dependent `and(function)` inside a combiner | skips dependent step only | ✗ for later independent steps |
 | `Result.map` / `flatMap` chain | ✗ | ✓ (stops at first Err) |
 | `Result.ensure` chain | ✗ | ✓ (stops at first failed predicate) |
 | `ResultCollector.toResultList()` | ✓ | ✗ |

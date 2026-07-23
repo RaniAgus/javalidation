@@ -156,6 +156,27 @@ Result<Address> address = validateStreet(street)
 // Up to 10 results (ResultCombiner2 through ResultCombiner10)
 ```
 
+`and(function)` derives the next result from the previous success values:
+
+```java
+Result<Order> order = validateUser(input)
+    .and(user -> validateAddress(user.address()))
+    .and((user, address) -> validateCart(user, address))
+    .combine((user, address, cart) -> new Order(user, address, cart));
+```
+
+Dependent `and(function)` calls are skipped when any prior required value is unavailable. Later
+independent `and(Result)` calls still contribute their errors, so dependent chaining does not make
+the whole combiner fail-fast.
+
+Use `getLast()` when the combined value should be the last result in the chain:
+
+```java
+Result<Address> address = validateUser(input)
+    .and(user -> validateAddress(user.address()))
+    .getLast();
+```
+
 ---
 
 ## Eliminating a Result
@@ -199,7 +220,7 @@ String message = switch (result) {
 
 ## Error Channel Design
 
-`map`, `flatMap`, `flatMapErr`, `peek`, and `peekErr` catch **only** `JavalidationException` and convert it to `Err`.
+`map`, `flatMap`, `flatMapErr`, `peek`, `peekErr`, and dependent `and(function)` catch **only** `JavalidationException` and convert it to `Err`.
 All other exceptions (NPE, ISE, IOException, etc.) propagate normally. This distinguishes:
 - **Expected validation failures** (`JavalidationException`) → `Err`, safe to return to clients
 - **Programming errors / bugs** (other exceptions) → propagate, log at boundary, return 500

@@ -33,22 +33,25 @@ import org.jspecify.annotations.Nullable;
  * @param <T4> the type of the fourth result's success value
  * @param <T5> the type of the fifth result's success value
  * @param <T6> the type of the sixth result's success value
- * @param result1 the first result to combine
- * @param result2 the second result to combine
- * @param result3 the third result to combine
- * @param result4 the fourth result to combine
- * @param result5 the fifth result to combine
- * @param result6 the sixth result to combine
  * @see Result#and(Result)
  */
-public record ResultCombiner6<T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object>(
-        Result<T1> result1,
-        Result<T2> result2,
-        Result<T3> result3,
-        Result<T4> result4,
-        Result<T5> result5,
-        Result<T6> result6
-) {
+public final class ResultCombiner6<T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> {
+    private final ResultSlot<T1> result1;
+    private final ResultSlot<T2> result2;
+    private final ResultSlot<T3> result3;
+    private final ResultSlot<T4> result4;
+    private final ResultSlot<T5> result5;
+    private final ResultSlot<T6> result6;
+
+    ResultCombiner6(ResultSlot<T1> result1, ResultSlot<T2> result2, ResultSlot<T3> result3, ResultSlot<T4> result4, ResultSlot<T5> result5, ResultSlot<T6> result6) {
+        this.result1 = result1;
+        this.result2 = result2;
+        this.result3 = result3;
+        this.result4 = result4;
+        this.result5 = result5;
+        this.result6 = result6;
+    }
+
     /**
      * Chains another result, producing a {@link ResultCombiner7}.
      * <p>
@@ -66,9 +69,33 @@ public record ResultCombiner6<T1 extends @Nullable Object, T2 extends @Nullable 
      * @return a combiner for 7 results
      */
     public <T7 extends @Nullable Object> ResultCombiner7<T1, T2, T3, T4, T5, T6, T7> and(Result<T7> result7) {
-        return new ResultCombiner7<>(result1, result2, result3, result4, result5, result6, result7);
+        return new ResultCombiner7<>(result1, result2, result3, result4, result5, result6, ResultSlot.of(result7));
     }
 
+    /**
+     * Chains another result computed from the previous success values.
+     * <p>
+     * The function is only called if all previous results are {@link Result.Ok}. If any previous
+     * result is {@link Result.Err}, the function is skipped and existing errors are preserved by
+     * the final {@code combine()}.
+     *
+     * @param result7 supplies the next result using the previous success values
+     * @param <T7>    the type of the next result's success value
+     * @return a combiner for 7 results
+     */
+    public <T7 extends @Nullable Object> ResultCombiner7<T1, T2, T3, T4, T5, T6, T7> and(HexFunction<T1, T2, T3, T4, T5, T6, Result<T7>> result7) {
+        if (ResultSlot.allOk(result1, result2, result3, result4, result5, result6)) {
+            return new ResultCombiner7<>(result1, result2, result3, result4, result5, result6, ResultSlot.from(() -> result7.apply(
+                    ResultSlot.value(result1),
+                    ResultSlot.value(result2),
+                    ResultSlot.value(result3),
+                    ResultSlot.value(result4),
+                    ResultSlot.value(result5),
+                    ResultSlot.value(result6)
+            )));
+        }
+        return new ResultCombiner7<>(result1, result2, result3, result4, result5, result6, ResultSlot.skipped());
+    }
 
     /**
      * Combines the 6 results by applying the success function if all are {@link Result.Ok}.
@@ -87,16 +114,25 @@ public record ResultCombiner6<T1 extends @Nullable Object, T2 extends @Nullable 
      * @return {@link Result.Ok} with the combined value if all results succeed, otherwise {@link Result.Err}
      */
     public <R extends @Nullable Object> Result<R> combine(HexFunction<T1, T2, T3, T4, T5, T6, R> onSuccess) {
-        return Result.combine(
+        return ResultSlot.combine(
                 () -> onSuccess.apply(
-                        result1.getOrThrow(),
-                        result2.getOrThrow(),
-                        result3.getOrThrow(),
-                        result4.getOrThrow(),
-                        result5.getOrThrow(),
-                        result6.getOrThrow()
+                        ResultSlot.value(result1),
+                        ResultSlot.value(result2),
+                        ResultSlot.value(result3),
+                        ResultSlot.value(result4),
+                        ResultSlot.value(result5),
+                        ResultSlot.value(result6)
                 ),
                 result1, result2, result3, result4, result5, result6
         );
+    }
+
+    /**
+     * Returns the last success value if all results are {@link Result.Ok}, otherwise accumulates all errors.
+     *
+     * @return {@link Result.Ok} with the sixth value if all results succeed, otherwise {@link Result.Err}
+     */
+    public Result<T6> getLast() {
+        return ResultSlot.combine(() -> ResultSlot.value(result6), result1, result2, result3, result4, result5, result6);
     }
 }

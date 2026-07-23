@@ -29,7 +29,8 @@ This module is the foundation of the library. Every other module depends on it.
 
 | File | Role |
 |------|------|
-| `ResultCombiner2.java` … `ResultCombiner10.java` | Applicative-style combiners for 2–10 `Result` values. Obtained via `Result.and(...)`. |
+| `ResultCombiner2.java` … `ResultCombiner10.java` | Public final classes for combining 2–10 `Result` values. Obtained via `Result.and(...)`; support eager independent `and(Result)` and dependent `and(function)` through arity 9. |
+| `ResultSlot.java` | Package-private internal slot state for combiners: wraps a real `Result` or marks a dependent result as `Skipped` when prior values are unavailable. |
 
 ### `format` sub-package — `io.github.raniagus.javalidation.format`
 
@@ -67,6 +68,8 @@ result.bimap(onSuccess, onError)       → Result<U>
 result.ensure(predicate, msg, args…)   → Result<T>
 result.ensureAt(predicate, field, msg) → Result<T>
 result.and(other)                      → ResultCombiner2<T,U>
+result.and(value -> otherResult)        → ResultCombiner2<T,U>
+result.and(...).getLast()               → Result<last>
 result.or(supplier)                    → Result<T>
 result.or(other)                       → Result<T>
 result.fold(onSuccess, onFailure)      → U

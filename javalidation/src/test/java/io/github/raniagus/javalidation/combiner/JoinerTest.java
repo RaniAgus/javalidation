@@ -1,13 +1,16 @@
 package io.github.raniagus.javalidation.combiner;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 
+import io.github.raniagus.javalidation.JavalidationException;
 import io.github.raniagus.javalidation.Result;
-import io.github.raniagus.javalidation.ValidationErrors;
 import io.github.raniagus.javalidation.TemplateString;
+import io.github.raniagus.javalidation.ValidationErrors;
 import io.github.raniagus.javalidation.util.ErrorStrings;
 import io.github.raniagus.javalidation.util.Person;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -38,6 +41,154 @@ class JoinerTest {
                     .combine(Person::new);
 
             assertThat(combined.errors())
+                    .extracting(ValidationErrors::rootErrors)
+                    .asInstanceOf(list(TemplateString.class))
+                    .map(TemplateString::message)
+                    .containsExactly("Error 1", "Error 2");
+        }
+
+        @Test
+        void givenTwoOkResults_whenGetLast_thenReturnsSecondValue() {
+            var result = Result.ok("Agustin")
+                    .and(Result.ok(23))
+                    .getLast();
+
+            assertThat(result.getOrThrow()).isEqualTo(23);
+        }
+
+        @Test
+        void givenTwoErrResults_whenGetLast_thenAccumulatesErrors() {
+            var result = Result.<String>error(ErrorStrings.ERROR_1)
+                    .and(Result.<Integer>error(ErrorStrings.ERROR_2))
+                    .getLast();
+
+            assertThat(result.errors())
+                    .extracting(ValidationErrors::rootErrors)
+                    .asInstanceOf(list(TemplateString.class))
+                    .map(TemplateString::message)
+                    .containsExactly("Error 1", "Error 2");
+        }
+    }
+
+    @Nested
+    class DependentAndTests {
+
+        @Test
+        void givenOkResult_whenDependentAnd_thenSuppliesContainedValue() {
+            var combined = Result.ok("Agustin")
+                    .and(name -> Result.ok(name.length()))
+                    .combine((name, length) -> name + ":" + length);
+
+            assertThat(combined.getOrThrow()).isEqualTo("Agustin:7");
+        }
+
+        @Test
+        void givenErrResult_whenDependentAnd_thenSkipsFunctionAndAccumulatesIndependentErrors() {
+            var called = new AtomicBoolean(false);
+
+            var combined = Result.<String>error(ErrorStrings.ERROR_1)
+                    .and(name -> {
+                        called.set(true);
+                        return Result.ok(name.length());
+                    })
+                    .and(Result.error(ErrorStrings.ERROR_2))
+                    .combine((name, length, ignored) -> name + length);
+
+            assertThat(called).isFalse();
+            assertThat(combined.errors())
+                    .extracting(ValidationErrors::rootErrors)
+                    .asInstanceOf(list(TemplateString.class))
+                    .map(TemplateString::message)
+                    .containsExactly("Error 1", "Error 2");
+        }
+
+        @Test
+        void givenDependentAndReturnsErr_whenIndependentAndFollows_thenAccumulatesBothErrors() {
+            var combined = Result.ok("Agustin")
+                    .and(name -> Result.<Integer>error(ErrorStrings.ERROR_2))
+                    .and(Result.error(ErrorStrings.ERROR_3))
+                    .combine((name, length, ignored) -> name + length);
+
+            assertThat(combined.errors())
+                    .extracting(ValidationErrors::rootErrors)
+                    .asInstanceOf(list(TemplateString.class))
+                    .map(TemplateString::message)
+                    .containsExactly("Error 2", "Error 3");
+        }
+
+        @Test
+        void givenPriorDependentAndReturnsErr_whenNextDependentAnd_thenSkipsFunctionAndAccumulatesIndependentErrors() {
+            var called = new AtomicBoolean(false);
+
+            var combined = Result.ok(1)
+                    .and(value -> Result.<Integer>error(ErrorStrings.ERROR_2))
+                    .and((first, second) -> {
+                        called.set(true);
+                        return Result.ok(first + second);
+                    })
+                    .and(Result.<Integer>error(ErrorStrings.ERROR_4))
+                    .combine((first, second, third, fourth) -> first + second + third + fourth);
+
+            assertThat(called).isFalse();
+            assertThat(combined.errors())
+                    .extracting(ValidationErrors::rootErrors)
+                    .asInstanceOf(list(TemplateString.class))
+                    .map(TemplateString::message)
+                    .containsExactly("Error 2", "Error 4");
+        }
+
+        @Test
+        void givenDependentAndThrowsJavalidationException_whenCombine_thenCatchesAndReturnsErr() {
+            var combined = Result.ok(1)
+                    .and(value -> {
+                        if (value > 0) {
+                            throw JavalidationException.of(ErrorStrings.ERROR_1);
+                        }
+                        return Result.ok(0);
+                    })
+                    .combine((first, second) -> first + second);
+
+            assertThat(combined.errors())
+                    .extracting(ValidationErrors::rootErrors)
+                    .asInstanceOf(list(TemplateString.class))
+                    .map(TemplateString::message)
+                    .containsExactly("Error 1");
+        }
+
+        @Test
+        void givenDependentAndThrowsOtherException_whenAnd_thenPropagatesException() {
+            assertThatThrownBy(() -> Result.ok(1)
+                    .and(value -> {
+                        throw new IllegalStateException("unexpected error");
+                    }))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("unexpected error");
+        }
+
+        @Test
+        void givenDependentAndChain_whenGetLast_thenReturnsLastValue() {
+            var result = Result.ok("Agustin")
+                    .and(name -> Result.ok(name.length()))
+                    .and((name, length) -> Result.ok(name.substring(0, length - 1)))
+                    .getLast();
+
+            assertThat(result.getOrThrow()).isEqualTo("Agusti");
+        }
+
+        @Test
+        void givenSkippedDependentAndIndependentError_whenGetLast_thenAccumulatesIndependentErrors() {
+            var called = new AtomicBoolean(false);
+
+            var result = Result.<String>error(ErrorStrings.ERROR_1)
+                    .and(name -> {
+                        called.set(true);
+                        return Result.ok(name.length());
+                    })
+                    .and(Result.<Integer>error(ErrorStrings.ERROR_2))
+                    .getLast();
+
+            assertThat(called).isFalse();
+            assertThat(result.errors())
                     .extracting(ValidationErrors::rootErrors)
                     .asInstanceOf(list(TemplateString.class))
                     .map(TemplateString::message)

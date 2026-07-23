@@ -27,16 +27,19 @@ import org.jspecify.annotations.Nullable;
  * @param <T1> the type of the first result's success value
  * @param <T2> the type of the second result's success value
  * @param <T3> the type of the third result's success value
- * @param result1 the first result to combine
- * @param result2 the second result to combine
- * @param result3 the third result to combine
  * @see Result#and(Result)
  */
-public record ResultCombiner3<T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object>(
-        Result<T1> result1,
-        Result<T2> result2,
-        Result<T3> result3
-) {
+public final class ResultCombiner3<T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> {
+    private final ResultSlot<T1> result1;
+    private final ResultSlot<T2> result2;
+    private final ResultSlot<T3> result3;
+
+    ResultCombiner3(ResultSlot<T1> result1, ResultSlot<T2> result2, ResultSlot<T3> result3) {
+        this.result1 = result1;
+        this.result2 = result2;
+        this.result3 = result3;
+    }
+
     /**
      * Chains another result, producing a {@link ResultCombiner4}.
      * <p>
@@ -54,9 +57,30 @@ public record ResultCombiner3<T1 extends @Nullable Object, T2 extends @Nullable 
      * @return a combiner for 4 results
      */
     public <T4 extends @Nullable Object> ResultCombiner4<T1, T2, T3, T4> and(Result<T4> result4) {
-        return new ResultCombiner4<>(result1, result2, result3, result4);
+        return new ResultCombiner4<>(result1, result2, result3, ResultSlot.of(result4));
     }
 
+    /**
+     * Chains another result computed from the previous success values.
+     * <p>
+     * The function is only called if all previous results are {@link Result.Ok}. If any previous
+     * result is {@link Result.Err}, the function is skipped and existing errors are preserved by
+     * the final {@code combine()}.
+     *
+     * @param result4 supplies the next result using the previous success values
+     * @param <T4>    the type of the next result's success value
+     * @return a combiner for 4 results
+     */
+    public <T4 extends @Nullable Object> ResultCombiner4<T1, T2, T3, T4> and(TriFunction<T1, T2, T3, Result<T4>> result4) {
+        if (ResultSlot.allOk(result1, result2, result3)) {
+            return new ResultCombiner4<>(result1, result2, result3, ResultSlot.from(() -> result4.apply(
+                    ResultSlot.value(result1),
+                    ResultSlot.value(result2),
+                    ResultSlot.value(result3)
+            )));
+        }
+        return new ResultCombiner4<>(result1, result2, result3, ResultSlot.skipped());
+    }
 
     /**
      * Combines the 3 results by applying the success function if all are {@link Result.Ok}.
@@ -75,13 +99,22 @@ public record ResultCombiner3<T1 extends @Nullable Object, T2 extends @Nullable 
      * @return {@link Result.Ok} with the combined value if all results succeed, otherwise {@link Result.Err}
      */
     public <R extends @Nullable Object> Result<R> combine(TriFunction<T1, T2, T3, R> onSuccess) {
-        return Result.combine(
+        return ResultSlot.combine(
                 () -> onSuccess.apply(
-                        result1.getOrThrow(),
-                        result2.getOrThrow(),
-                        result3.getOrThrow()
+                        ResultSlot.value(result1),
+                        ResultSlot.value(result2),
+                        ResultSlot.value(result3)
                 ),
                 result1, result2, result3
         );
+    }
+
+    /**
+     * Returns the last success value if all results are {@link Result.Ok}, otherwise accumulates all errors.
+     *
+     * @return {@link Result.Ok} with the third value if all results succeed, otherwise {@link Result.Err}
+     */
+    public Result<T3> getLast() {
+        return ResultSlot.combine(() -> ResultSlot.value(result3), result1, result2, result3);
     }
 }

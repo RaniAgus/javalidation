@@ -41,30 +41,33 @@ import org.jspecify.annotations.Nullable;
  * @param <T8> the type of the eighth result's success value
  * @param <T9> the type of the ninth result's success value
  * @param <T10> the type of the tenth result's success value
- * @param result1 the first result to combine
- * @param result2 the second result to combine
- * @param result3 the third result to combine
- * @param result4 the fourth result to combine
- * @param result5 the fifth result to combine
- * @param result6 the sixth result to combine
- * @param result7 the seventh result to combine
- * @param result8 the eighth result to combine
- * @param result9 the ninth result to combine
- * @param result10 the tenth result to combine
  * @see Result#and(Result)
  */
-public record ResultCombiner10<T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object, T9 extends @Nullable Object, T10 extends @Nullable Object>(
-        Result<T1> result1,
-        Result<T2> result2,
-        Result<T3> result3,
-        Result<T4> result4,
-        Result<T5> result5,
-        Result<T6> result6,
-        Result<T7> result7,
-        Result<T8> result8,
-        Result<T9> result9,
-        Result<T10> result10
-) {
+public final class ResultCombiner10<T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object, T9 extends @Nullable Object, T10 extends @Nullable Object> {
+    private final ResultSlot<T1> result1;
+    private final ResultSlot<T2> result2;
+    private final ResultSlot<T3> result3;
+    private final ResultSlot<T4> result4;
+    private final ResultSlot<T5> result5;
+    private final ResultSlot<T6> result6;
+    private final ResultSlot<T7> result7;
+    private final ResultSlot<T8> result8;
+    private final ResultSlot<T9> result9;
+    private final ResultSlot<T10> result10;
+
+    ResultCombiner10(ResultSlot<T1> result1, ResultSlot<T2> result2, ResultSlot<T3> result3, ResultSlot<T4> result4, ResultSlot<T5> result5, ResultSlot<T6> result6, ResultSlot<T7> result7, ResultSlot<T8> result8, ResultSlot<T9> result9, ResultSlot<T10> result10) {
+        this.result1 = result1;
+        this.result2 = result2;
+        this.result3 = result3;
+        this.result4 = result4;
+        this.result5 = result5;
+        this.result6 = result6;
+        this.result7 = result7;
+        this.result8 = result8;
+        this.result9 = result9;
+        this.result10 = result10;
+    }
+
 
     /**
      * Combines the 10 results by applying the success function if all are {@link Result.Ok}.
@@ -83,20 +86,29 @@ public record ResultCombiner10<T1 extends @Nullable Object, T2 extends @Nullable
      * @return {@link Result.Ok} with the combined value if all results succeed, otherwise {@link Result.Err}
      */
     public <R extends @Nullable Object> Result<R> combine(DecaFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R> onSuccess) {
-        return Result.combine(
+        return ResultSlot.combine(
                 () -> onSuccess.apply(
-                        result1.getOrThrow(),
-                        result2.getOrThrow(),
-                        result3.getOrThrow(),
-                        result4.getOrThrow(),
-                        result5.getOrThrow(),
-                        result6.getOrThrow(),
-                        result7.getOrThrow(),
-                        result8.getOrThrow(),
-                        result9.getOrThrow(),
-                        result10.getOrThrow()
+                        ResultSlot.value(result1),
+                        ResultSlot.value(result2),
+                        ResultSlot.value(result3),
+                        ResultSlot.value(result4),
+                        ResultSlot.value(result5),
+                        ResultSlot.value(result6),
+                        ResultSlot.value(result7),
+                        ResultSlot.value(result8),
+                        ResultSlot.value(result9),
+                        ResultSlot.value(result10)
                 ),
                 result1, result2, result3, result4, result5, result6, result7, result8, result9, result10
         );
+    }
+
+    /**
+     * Returns the last success value if all results are {@link Result.Ok}, otherwise accumulates all errors.
+     *
+     * @return {@link Result.Ok} with the tenth value if all results succeed, otherwise {@link Result.Err}
+     */
+    public Result<T10> getLast() {
+        return ResultSlot.combine(() -> ResultSlot.value(result10), result1, result2, result3, result4, result5, result6, result7, result8, result9, result10);
     }
 }
