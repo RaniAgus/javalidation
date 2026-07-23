@@ -49,6 +49,14 @@ public final class ResultCombiner2<T1 extends @Nullable Object, T2 extends @Null
         this.result2 = result2;
     }
 
+    public Result<T1> first()  {
+        return ResultSlot.toResult(result1);
+    }
+    
+    public Result<T2> second() {
+        return ResultSlot.toResult(result2);
+    }
+
     /**
      * Chains another result, producing a {@link ResultCombiner3}.
      * <p>
@@ -84,6 +92,29 @@ public final class ResultCombiner2<T1 extends @Nullable Object, T2 extends @Null
                     ResultSlot.value(result1),
                     ResultSlot.value(result2)
             )));
+        }
+        return new ResultCombiner3<>(result1, result2, ResultSlot.skipped());
+    }
+
+    /**
+     * Chains another result computed from a selected prior result.
+     * <p>
+     * The projector receives this combiner and returns the specific prior {@link Result} to depend on.
+     * The function is only called if that result is {@link Result.Ok}. Any prior results not selected
+     * by the projector still contribute their errors independently through their own slots.
+     *
+     * @param projector selects which prior result to depend on
+     * @param fn        supplies the next result using the selected success value
+     * @param <X>       the type of the selected result's success value
+     * @param <T3>      the type of the next result's success value
+     * @return a combiner for 3 results
+     */
+    public <X extends @Nullable Object, T3 extends @Nullable Object> ResultCombiner3<T1, T2, T3> andUsing(
+            Function<ResultCombiner2<T1, T2>, Result<X>> projector,
+            Function<X, Result<T3>> fn) {
+        var projected = projector.apply(this);
+        if (projected instanceof Result.Ok<X>(var x)) {
+            return new ResultCombiner3<>(result1, result2, ResultSlot.from(() -> fn.apply(x)));
         }
         return new ResultCombiner3<>(result1, result2, ResultSlot.skipped());
     }

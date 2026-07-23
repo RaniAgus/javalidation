@@ -47,6 +47,10 @@ sealed interface ResultSlot<T extends @Nullable Object> permits ResultSlot.Value
         throw new IllegalStateException("Result slot does not contain a success value");
     }
 
+    static <T extends @Nullable Object> Result<T> toResult(ResultSlot<T> slot) {
+        return slot instanceof Value<T>(var r) ? r : Result.error(ValidationErrors.empty());
+    }
+
     static <R extends @Nullable Object> Result<R> combine(Supplier<R> onSuccess, ResultSlot<?>... slots) {
         Validation validation = Validation.create();
         boolean hasSkipped = false;

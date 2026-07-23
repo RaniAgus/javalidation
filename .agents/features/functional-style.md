@@ -174,6 +174,29 @@ Dependent `and(function)` calls are skipped when any prior required value is una
 independent `and(Result)` calls still contribute their errors, so dependent chaining does not make
 the whole combiner fail-fast.
 
+Use `andUsing(projector, fn)` to depend on a **subset** of prior slots instead of all of them.
+The projector selects which prior results to guard on; the function is skipped if any selected
+result is `Err`, while unselected slots still contribute their errors independently:
+
+```java
+// R4 depends on R1 and R3 only — runs even if R2 fails
+Result<Order> order = validateUser(input)
+    .and(validateAddress(input))          // R2, not needed by R4
+    .and(validateSomething(input))        // R3
+    .andUsing(
+        r -> r.first().and(r.third()),    // guard on R1 and R3 only
+        (user, something) -> validateCart(user, something)
+    )
+    .combine((user, address, something, cart) -> new Order(user, address, something, cart));
+
+// Single-slot: depend only on the second slot of RC2
+result1.and(result2).andUsing(r -> r.second(), b -> validateFrom(b))
+```
+
+`andUsing` is available on `ResultCombiner2` through `ResultCombiner9` (RC10 terminates the chain).
+Each combiner has N−1 overloads: one per sub-combiner size 1 through N−1.
+The slot accessors `first()`, `second()`, …, `tenth()` are available on all combiners (RC2–RC10).
+
 Use `getLast()` when the combined value should be the last result in the chain:
 
 ```java

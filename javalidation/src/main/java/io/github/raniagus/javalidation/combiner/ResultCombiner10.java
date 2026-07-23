@@ -68,6 +68,45 @@ public final class ResultCombiner10<T1 extends @Nullable Object, T2 extends @Nul
         this.result10 = result10;
     }
 
+    public Result<T1> first() {
+        return ResultSlot.toResult(result1);
+    }
+
+    public Result<T2> second() {
+        return ResultSlot.toResult(result2);
+    }
+
+    public Result<T3> third() {
+        return ResultSlot.toResult(result3);
+    }
+
+    public Result<T4> fourth() {
+        return ResultSlot.toResult(result4);
+    }
+
+    public Result<T5> fifth() {
+        return ResultSlot.toResult(result5);
+    }
+
+    public Result<T6> sixth() {
+        return ResultSlot.toResult(result6);
+    }
+
+    public Result<T7> seventh() {
+        return ResultSlot.toResult(result7);
+    }
+
+    public Result<T8> eighth() {
+        return ResultSlot.toResult(result8);
+    }
+
+    public Result<T9> ninth() {
+        return ResultSlot.toResult(result9);
+    }
+
+    public Result<T10> tenth() {
+        return ResultSlot.toResult(result10);
+    }
 
     /**
      * Combines the 10 results by applying the success function if all are {@link Result.Ok}.

@@ -29,7 +29,7 @@ This module is the foundation of the library. Every other module depends on it.
 
 | File | Role |
 |------|------|
-| `ResultCombiner2.java` … `ResultCombiner10.java` | Public final classes for combining 2–10 `Result` values. Obtained via `Result.and(...)`; support eager independent `and(Result)` and dependent `and(function)` through arity 9. |
+| `ResultCombiner2.java` … `ResultCombiner10.java` | Public final classes for combining 2–10 `Result` values. Obtained via `Result.and(...)`; support eager independent `and(Result)`, dependent `and(function)` through arity 9, slot accessors `first()`/`second()`/…, and partial-dependency `andUsing(projector, fn)` (RC2–RC9). |
 | `ResultSlot.java` | Package-private internal slot state for combiners: wraps a real `Result` or marks a dependent result as `Skipped` when prior values are unavailable. |
 
 ### `format` sub-package — `io.github.raniagus.javalidation.format`
@@ -70,6 +70,8 @@ result.ensureAt(predicate, field, msg) → Result<T>
 result.and(other)                      → ResultCombiner2<T,U>
 result.and(value -> otherResult)        → ResultCombiner2<T,U>
 result.and(...).getLast()               → Result<last>
+result.and(...).andUsing(proj, fn)      → ResultCombinerN+1 (partial dependency — see functional-style.md)
+result.and(...).first()                 → Result<T1>   (slot accessor, available on all combiners)
 result.or(supplier)                    → Result<T>
 result.or(other)                       → Result<T>
 result.fold(onSuccess, onFailure)      → U

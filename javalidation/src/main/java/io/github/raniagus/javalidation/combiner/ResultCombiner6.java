@@ -2,6 +2,11 @@ package io.github.raniagus.javalidation.combiner;
 
 import io.github.raniagus.javalidation.Result;
 import io.github.raniagus.javalidation.function.HexFunction;
+import io.github.raniagus.javalidation.function.PentaFunction;
+import io.github.raniagus.javalidation.function.QuadFunction;
+import io.github.raniagus.javalidation.function.TriFunction;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -52,6 +57,30 @@ public final class ResultCombiner6<T1 extends @Nullable Object, T2 extends @Null
         this.result6 = result6;
     }
 
+    public Result<T1> first() {
+        return ResultSlot.toResult(result1);
+    }
+
+    public Result<T2> second() {
+        return ResultSlot.toResult(result2);
+    }
+
+    public Result<T3> third() {
+        return ResultSlot.toResult(result3);
+    }
+
+    public Result<T4> fourth() {
+        return ResultSlot.toResult(result4);
+    }
+
+    public Result<T5> fifth() {
+        return ResultSlot.toResult(result5);
+    }
+
+    public Result<T6> sixth() {
+        return ResultSlot.toResult(result6);
+    }
+
     /**
      * Chains another result, producing a {@link ResultCombiner7}.
      * <p>
@@ -93,6 +122,73 @@ public final class ResultCombiner6<T1 extends @Nullable Object, T2 extends @Null
                     ResultSlot.value(result5),
                     ResultSlot.value(result6)
             )));
+        }
+        return new ResultCombiner7<>(result1, result2, result3, result4, result5, result6, ResultSlot.skipped());
+    }
+
+    /**
+     * Chains another result computed from a selected prior result.
+     * <p>
+     * The projector receives this combiner and returns the specific prior {@link Result} to depend on.
+     * The function is only called if that result is {@link Result.Ok}. Any prior results not selected
+     * still contribute their errors independently through their own slots.
+     *
+     * @param projector selects which prior result to depend on
+     * @param fn        supplies the next result using the selected success value
+     * @param <X>       the type of the selected result's success value
+     * @param <T7>      the type of the next result's success value
+     * @return a combiner for 7 results
+     */
+    public <X extends @Nullable Object, T7 extends @Nullable Object> ResultCombiner7<T1, T2, T3, T4, T5, T6, T7> andUsing(
+            Function<ResultCombiner6<T1, T2, T3, T4, T5, T6>, Result<X>> projector,
+            Function<X, Result<T7>> fn) {
+        var projected = projector.apply(this);
+        if (projected instanceof Result.Ok<X>(var x)) {
+            return new ResultCombiner7<>(result1, result2, result3, result4, result5, result6, ResultSlot.from(() -> fn.apply(x)));
+        }
+        return new ResultCombiner7<>(result1, result2, result3, result4, result5, result6, ResultSlot.skipped());
+    }
+
+    /** Like {@link #andUsing(Function, Function)}, but selecting 2 prior results. */
+    public <X extends @Nullable Object, Y extends @Nullable Object, T7 extends @Nullable Object> ResultCombiner7<T1, T2, T3, T4, T5, T6, T7> andUsing(
+            Function<ResultCombiner6<T1, T2, T3, T4, T5, T6>, ResultCombiner2<X, Y>> projector,
+            BiFunction<X, Y, Result<T7>> fn) {
+        var sub = projector.apply(this);
+        if (sub.first() instanceof Result.Ok<X>(var x) && sub.second() instanceof Result.Ok<Y>(var y)) {
+            return new ResultCombiner7<>(result1, result2, result3, result4, result5, result6, ResultSlot.from(() -> fn.apply(x, y)));
+        }
+        return new ResultCombiner7<>(result1, result2, result3, result4, result5, result6, ResultSlot.skipped());
+    }
+
+    /** Like {@link #andUsing(Function, Function)}, but selecting 3 prior results. */
+    public <X extends @Nullable Object, Y extends @Nullable Object, Z extends @Nullable Object, T7 extends @Nullable Object> ResultCombiner7<T1, T2, T3, T4, T5, T6, T7> andUsing(
+            Function<ResultCombiner6<T1, T2, T3, T4, T5, T6>, ResultCombiner3<X, Y, Z>> projector,
+            TriFunction<X, Y, Z, Result<T7>> fn) {
+        var sub = projector.apply(this);
+        if (sub.first() instanceof Result.Ok<X>(var x) && sub.second() instanceof Result.Ok<Y>(var y) && sub.third() instanceof Result.Ok<Z>(var z)) {
+            return new ResultCombiner7<>(result1, result2, result3, result4, result5, result6, ResultSlot.from(() -> fn.apply(x, y, z)));
+        }
+        return new ResultCombiner7<>(result1, result2, result3, result4, result5, result6, ResultSlot.skipped());
+    }
+
+    /** Like {@link #andUsing(Function, Function)}, but selecting 4 prior results. */
+    public <X extends @Nullable Object, Y extends @Nullable Object, Z extends @Nullable Object, W extends @Nullable Object, T7 extends @Nullable Object> ResultCombiner7<T1, T2, T3, T4, T5, T6, T7> andUsing(
+            Function<ResultCombiner6<T1, T2, T3, T4, T5, T6>, ResultCombiner4<X, Y, Z, W>> projector,
+            QuadFunction<X, Y, Z, W, Result<T7>> fn) {
+        var sub = projector.apply(this);
+        if (sub.first() instanceof Result.Ok<X>(var x) && sub.second() instanceof Result.Ok<Y>(var y) && sub.third() instanceof Result.Ok<Z>(var z) && sub.fourth() instanceof Result.Ok<W>(var w)) {
+            return new ResultCombiner7<>(result1, result2, result3, result4, result5, result6, ResultSlot.from(() -> fn.apply(x, y, z, w)));
+        }
+        return new ResultCombiner7<>(result1, result2, result3, result4, result5, result6, ResultSlot.skipped());
+    }
+
+    /** Like {@link #andUsing(Function, Function)}, but selecting 5 prior results. */
+    public <X extends @Nullable Object, Y extends @Nullable Object, Z extends @Nullable Object, W extends @Nullable Object, V extends @Nullable Object, T7 extends @Nullable Object> ResultCombiner7<T1, T2, T3, T4, T5, T6, T7> andUsing(
+            Function<ResultCombiner6<T1, T2, T3, T4, T5, T6>, ResultCombiner5<X, Y, Z, W, V>> projector,
+            PentaFunction<X, Y, Z, W, V, Result<T7>> fn) {
+        var sub = projector.apply(this);
+        if (sub.first() instanceof Result.Ok<X>(var x) && sub.second() instanceof Result.Ok<Y>(var y) && sub.third() instanceof Result.Ok<Z>(var z) && sub.fourth() instanceof Result.Ok<W>(var w) && sub.fifth() instanceof Result.Ok<V>(var v)) {
+            return new ResultCombiner7<>(result1, result2, result3, result4, result5, result6, ResultSlot.from(() -> fn.apply(x, y, z, w, v)));
         }
         return new ResultCombiner7<>(result1, result2, result3, result4, result5, result6, ResultSlot.skipped());
     }

@@ -197,6 +197,128 @@ class JoinerTest {
     }
 
     @Nested
+    class AndUsingTests {
+
+        @Test
+        void givenGuardedSlotsOkAndNonGuardedErr_whenTwoSlotAndUsing_thenFunctionRuns() {
+            var result = Result.ok(1)
+                    .and(Result.<Integer>error(ErrorStrings.ERROR_2))
+                    .and(Result.ok(3))
+                    .andUsing(r -> r.first().and(r.third()), (a, c) -> Result.ok(a + c))
+                    .combine((a, b, c, d) -> a + b + c + d);
+
+            assertThat(result.errors())
+                    .extracting(ValidationErrors::rootErrors)
+                    .asInstanceOf(list(TemplateString.class))
+                    .map(TemplateString::message)
+                    .containsExactly("Error 2");
+        }
+
+        @Test
+        void givenGuardedSlotsOkAndFunctionReturnsErr_whenTwoSlotAndUsing_thenBothErrorsAccumulated() {
+            var result = Result.ok(1)
+                    .and(Result.<Integer>error(ErrorStrings.ERROR_2))
+                    .and(Result.ok(3))
+                    .andUsing(r -> r.first().and(r.third()), (a, c) -> Result.<Integer>error(ErrorStrings.ERROR_4))
+                    .combine((a, b, c, d) -> a + b + c + d);
+
+            assertThat(result.errors())
+                    .extracting(ValidationErrors::rootErrors)
+                    .asInstanceOf(list(TemplateString.class))
+                    .map(TemplateString::message)
+                    .containsExactly("Error 2", "Error 4");
+        }
+
+        @Test
+        void givenFirstGuardedSlotErr_whenTwoSlotAndUsing_thenFunctionSkippedAndErrorAccumulated() {
+            var called = new java.util.concurrent.atomic.AtomicBoolean(false);
+
+            var result = Result.<Integer>error(ErrorStrings.ERROR_1)
+                    .and(Result.ok(2))
+                    .and(Result.ok(3))
+                    .andUsing(r -> r.first().and(r.third()), (a, c) -> {
+                        called.set(true);
+                        return Result.ok(a + c);
+                    })
+                    .combine((a, b, c, d) -> a + b + c + d);
+
+            assertThat(called).isFalse();
+            assertThat(result.errors())
+                    .extracting(ValidationErrors::rootErrors)
+                    .asInstanceOf(list(TemplateString.class))
+                    .map(TemplateString::message)
+                    .containsExactly("Error 1");
+        }
+
+        @Test
+        void givenSecondGuardedSlotErr_whenTwoSlotAndUsing_thenFunctionSkippedAndErrorAccumulated() {
+            var called = new java.util.concurrent.atomic.AtomicBoolean(false);
+
+            var result = Result.ok(1)
+                    .and(Result.ok(2))
+                    .and(Result.<Integer>error(ErrorStrings.ERROR_3))
+                    .andUsing(r -> r.first().and(r.third()), (a, c) -> {
+                        called.set(true);
+                        return Result.ok(a + c);
+                    })
+                    .combine((a, b, c, d) -> a + b + c + d);
+
+            assertThat(called).isFalse();
+            assertThat(result.errors())
+                    .extracting(ValidationErrors::rootErrors)
+                    .asInstanceOf(list(TemplateString.class))
+                    .map(TemplateString::message)
+                    .containsExactly("Error 3");
+        }
+
+        @Test
+        void givenAllSlotsOk_whenTwoSlotAndUsing_thenCombineSucceeds() {
+            var result = Result.ok(1)
+                    .and(Result.ok(2))
+                    .and(Result.ok(3))
+                    .andUsing(r -> r.first().and(r.third()), (a, c) -> Result.ok(a + c))
+                    .combine((a, b, c, d) -> a + b + c + d);
+
+            assertThat(result.getOrThrow()).isEqualTo(1 + 2 + 3 + (1 + 3));
+        }
+
+        @Test
+        void givenAllSlotsErr_whenTwoSlotAndUsing_thenNoDoubleCountingOfErrors() {
+            var result = Result.<Integer>error(ErrorStrings.ERROR_1)
+                    .and(Result.<Integer>error(ErrorStrings.ERROR_2))
+                    .and(Result.<Integer>error(ErrorStrings.ERROR_3))
+                    .andUsing(r -> r.first().and(r.third()), (a, c) -> Result.ok(a + c))
+                    .combine((a, b, c, d) -> a + b + c + d);
+
+            assertThat(result.errors())
+                    .extracting(ValidationErrors::rootErrors)
+                    .asInstanceOf(list(TemplateString.class))
+                    .map(TemplateString::message)
+                    .containsExactly("Error 1", "Error 2", "Error 3");
+        }
+
+        @Test
+        void givenFirstSlotErrSecondOk_whenSingleSlotAndUsingOnRC2SelectingSecond_thenFunctionRuns() {
+            var called = new java.util.concurrent.atomic.AtomicBoolean(false);
+
+            var result = Result.<Integer>error(ErrorStrings.ERROR_1)
+                    .and(Result.ok(5))
+                    .andUsing(r -> r.second(), b -> {
+                        called.set(true);
+                        return Result.ok(b * 10);
+                    })
+                    .combine((a, b, c) -> a + b + c);
+
+            assertThat(called).isTrue();
+            assertThat(result.errors())
+                    .extracting(ValidationErrors::rootErrors)
+                    .asInstanceOf(list(TemplateString.class))
+                    .map(TemplateString::message)
+                    .containsExactly("Error 1");
+        }
+    }
+
+    @Nested
     class ResultCombiner3Tests {
 
         @Test
