@@ -127,4 +127,5 @@ Semantics:
 | `Result.map` / `flatMap` chain | ✗ | ✓ (stops at first Err) |
 | `Result.ensure` chain | ✗ | ✓ (stops at first failed predicate) |
 | `ResultCollector.toResultList()` | ✓ | ✗ |
+| `Result.sequence(list)` | ✓ (errors prefixed with `[i]`) | ✗ |
 | `Result.or(…)` | merges errors | tries fallback |

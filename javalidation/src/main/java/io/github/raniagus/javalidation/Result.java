@@ -1,6 +1,9 @@
 package io.github.raniagus.javalidation;
 
 import io.github.raniagus.javalidation.combiner.ResultCombiner2;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -855,5 +858,61 @@ public sealed interface Result<T extends @Nullable Object> {
             }
         }
         return validation.asResult(onSuccess);
+    }
+
+    /**
+     * Sequences a list of results into a single result containing a list of values.
+     * <p>
+     * All errors from all failed results are accumulated. Errors from each result are
+     * prefixed with their 0-based index ({@code [0]}, {@code [1]}, etc.) so that
+     * callers can identify which element failed.
+     * The success list is only built if every result is {@link Ok}.
+     * <p>
+     * Example:
+     * <pre>{@code
+     * List<Result<Item>> validated = items.stream()
+     *     .map(this::validateItem)
+     *     .toList();
+     * Result<List<Item>> result = Result.sequence(validated);
+     * // Errors appear as [0].field, [1].field, etc.
+     * }</pre>
+     *
+     * @param results the list of results to sequence
+     * @param <T> the type of the success values
+     * @return {@link Ok} with an immutable list of values if all results succeed,
+     *         otherwise {@link Err} with accumulated errors indexed by position
+     */
+    static <T extends @Nullable Object> Result<List<T>> sequence(List<Result<T>> results) {
+        Validation validation = Validation.create();
+        List<T> values = new ArrayList<>(results.size());
+        for (int i = 0; i < results.size(); i++) {
+            switch (results.get(i)) {
+                case Ok<T>(T value) -> values.add(value);
+                case Err<T>(ValidationErrors errors) -> validation.addAllAt(FieldKey.of(i), errors);
+            }
+        }
+        return validation.asResult(() -> List.copyOf(values));
+    }
+
+    /**
+     * Lifts an {@link Optional} into a {@code Result}, treating {@code empty} as an error.
+     * <p>
+     * Example:
+     * <pre>{@code
+     * Result<User> user = Result.ofOptional(findUser(id), "User not found");
+     *
+     * // With field prefix:
+     * Result<User> user = Result.ofOptional(findUser(id), "User not found")
+     *     .withPrefix("user");
+     * }</pre>
+     *
+     * @param optional the optional to lift
+     * @param message the error message if the optional is empty (supports MessageFormat placeholders)
+     * @param args arguments for the message template
+     * @param <T> the type of the value
+     * @return {@link Ok} with the optional's value if present, otherwise {@link Err}
+     */
+    static <T extends @Nullable Object> Result<T> ofOptional(Optional<T> optional, String message, Object... args) {
+        return optional.<Result<T>>map(Ok::new).orElseGet(() -> Result.error(message, args));
     }
 }

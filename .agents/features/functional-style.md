@@ -27,6 +27,11 @@ Result<String> err = Result.error(validationErrors);
 
 // Wrap a supplier that may throw JavalidationException
 Result<User> result = Result.of(() -> service.findOrThrow(id));
+
+// From Optional (empty → error)
+Result<User> result = Result.ofOptional(findUser(id), "user.not.found");
+// With field prefix on failure:
+Result.ofOptional(findUser(id), "user.not.found").withPrefix("user")
 ```
 
 ---
@@ -175,6 +180,17 @@ Use `getLast()` when the combined value should be the last result in the chain:
 Result<Address> address = validateUser(input)
     .and(user -> validateAddress(user.address()))
     .getLast();
+```
+
+### `sequence` — lift `List<Result<T>>` to `Result<List<T>>`
+
+Accumulates all errors with `[i]` index prefixes. For streaming, prefer `withIndex(toResultList())`.
+
+```java
+List<Result<Item>> validated = items.stream().map(this::validateItem).toList();
+Result<List<Item>> result = Result.sequence(validated);
+// On failure: errors appear as [0].field, [2].field, etc.
+// On success: Ok(List.copyOf(validItems))
 ```
 
 ---

@@ -15,7 +15,7 @@ fully i18n-compatible `Result<T>` with accumulated `ValidationErrors`.
 
 **Type Safety & Composition:**
 - **Type-safe error handling**: `Result<T>` sealed type (`Ok`/`Err`) ensures exhaustive handling at compile-time without `ClassCastException` risk
-- **Rich functional API**: `map`, `flatMap`, `ensure`, `fold`, and applicative combiners for composing validations
+- **Rich functional API**: `map`, `flatMap`, `ensure`, `fold`, `sequence`, and applicative combiners for composing validations
 - **Nested validation**: Prefix support for validating hierarchical data structures
 
 **Integrations & i18n:**
@@ -373,6 +373,17 @@ public Result<Item> validateItem(Item item) {
 }
 
 // Example Output: { "items[0].name": ["Name is required"], "items[1].price": ["Price must be a positive number"] }
+```
+
+For a pre-built `List<Result<T>>`, `Result.sequence()` is the ergonomic shorthand — errors are automatically prefixed with `[0]`, `[1]`, etc.:
+
+```java
+List<Result<Item>> validated = items.stream()
+    .map(this::validateItem)
+    .toList();
+
+Result<List<Item>> result = Result.sequence(validated);
+// Errors: [0].name, [1].price, etc.
 ```
 
 ## Imperative Validation
@@ -926,21 +937,24 @@ public void validateItemsList(Validation validation, List<Item> items) {
 
 | Method                                                    | Description                               |
 |-----------------------------------------------------------|-------------------------------------------|
-| `of(Supplier<T>)`/ `of(Runnable)`                         | Wrap supplier or runnable in try-catch    |
-| `ok(T)`                                                   | Create successful result                  |
-| `error(String, Object...)`                                | Create failed result with root error      |
-| `errorAt(String / Number, String, Object...)`             | Create failed result with field error     |
-| `error(ValidationErrors)`                                 | Create failed result from existing errors |
-| `map(Function)`                                           | Transform success value                   |
-| `flatMap(Function)`                                       | Chain validations                         |
-| `ensure(Predicate, String, Object...)`                    | Conditional validation                    |
-| `ensureAt(Predicate, String / Number, String, Object...)` | Conditional validation for fields         |
-| `and(Result)`                                             | Start applicative combiner chain          |
-| `or(Result)` / `or(Supplier)`                             | Provide fallback                          |
-| `fold(Function, Function)`                                | Handle both cases                         |
-| `getOrThrow()`                                            | Extract value or throw                    |
-| `getOrElse(T)` / `getOrElse(Supplier)`                    | Extract value or default                  |
-| `withPrefix(String / Number...)`                          | Namespace errors for nested objects       |
+| `of(Supplier<T>)`/ `of(Runnable)`                         | Wrap supplier or runnable in try-catch      |
+| `ok(T)`                                                   | Create successful result                    |
+| `error(String, Object...)`                                | Create failed result with root error        |
+| `errorAt(String / Number, String, Object...)`             | Create failed result with field error       |
+| `error(ValidationErrors)`                                 | Create failed result from existing errors   |
+| `ofOptional(Optional<T>, String, Object...)`              | Create result from Optional (empty → error) |
+| `combine(Supplier<R>, Result<?>...)`                      | Combine N results, accumulate all errors    |
+| `sequence(List<Result<T>>)`                               | Lift list of results, index errors by `[i]` |
+| `map(Function)`                                           | Transform success value                     |
+| `flatMap(Function)`                                       | Chain validations                           |
+| `ensure(Predicate, String, Object...)`                    | Conditional validation                      |
+| `ensureAt(Predicate, String / Number, String, Object...)` | Conditional validation for fields           |
+| `and(Result)`                                             | Start applicative combiner chain            |
+| `or(Result)` / `or(Supplier)`                             | Provide fallback                            |
+| `fold(Function, Function)`                                | Handle both cases                           |
+| `getOrThrow()`                                            | Extract value or throw                      |
+| `getOrElse(T)` / `getOrElse(Supplier)`                    | Extract value or default                    |
+| `withPrefix(String / Number...)`                          | Namespace errors for nested objects         |
 
 ### ValidationErrors
 
@@ -962,7 +976,7 @@ public void validateItemsList(Validation validation, List<Item> items) {
 | `addError(String, Object...)`                    | Add root-level error                                       |
 | `addErrorAt(String / Number, String, Object...)` | Add field-specific error                                   |
 | `addAll(ValidationErrors)`                       | Merge errors                                               |
-| `addAll(FieldKey, ValidationErrors)`             | Merge errors with prefix                                   |
+| `addAllAt(FieldKey, ValidationErrors)`           | Merge errors with prefix                                   |
 | `withField(String / Number, Runnable)`           | Scope validation under a field prefix                      |
 | `withEach(Iterable, Consumer / BiConsumer)`      | Scope validation over a collection (optionally with index) |
 | `check()`                                        | Throw if errors exist                                      |

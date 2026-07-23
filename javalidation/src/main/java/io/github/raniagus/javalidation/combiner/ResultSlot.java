@@ -1,5 +1,6 @@
 package io.github.raniagus.javalidation.combiner;
 
+import io.github.raniagus.javalidation.JavalidationException;
 import io.github.raniagus.javalidation.Result;
 import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.ValidationErrors;
@@ -22,8 +23,12 @@ sealed interface ResultSlot<T extends @Nullable Object> permits ResultSlot.Value
         return new Skipped<>();
     }
 
-    static <T extends @Nullable Object> ResultSlot<T> from(Supplier<Result<T>> result) {
-        return of(Result.of(() -> result.get().getOrThrow()));
+    static <T extends @Nullable Object> ResultSlot<T> from(Supplier<Result<T>> supplier) {
+        try {
+            return of(supplier.get());
+        } catch (JavalidationException e) {
+            return of(Result.error(e.getErrors()));
+        }
     }
 
     static boolean allOk(ResultSlot<?>... slots) {
@@ -54,10 +59,9 @@ sealed interface ResultSlot<T extends @Nullable Object> permits ResultSlot.Value
             }
         }
 
-        ValidationErrors errors = validation.finish();
-        if (errors.isNotEmpty() || hasSkipped) {
-            return Result.error(errors);
+        if (hasSkipped) {
+            return Result.error(validation.finish());
         }
-        return Result.of(onSuccess);
+        return validation.asResult(onSuccess);
     }
 }

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -753,6 +754,69 @@ class ResultTest {
             var errors = result.errors();
             assertThat(errors.rootErrors()).hasSize(1);
             assertThat(errors.fieldErrors()).doesNotContainKey(FieldKey.of("username"));
+        }
+    }
+
+    @Nested
+    class SequenceTests {
+
+        @Test
+        void givenAllOkResults_whenSequence_thenReturnsOkWithAllValues() {
+            var result = Result.sequence(List.of(Result.ok(1), Result.ok(2), Result.ok(3)));
+
+            assertThat(result.getOrThrow()).containsExactly(1, 2, 3);
+        }
+
+        @Test
+        void givenAllErrResults_whenSequence_thenPrefixesErrorsByIndex() {
+            var result = Result.sequence(List.of(
+                    Result.error("error1"),
+                    Result.errorAt("field", "error2")
+            ));
+
+            var errors = result.errors();
+            assertThat(errors.fieldErrors()).containsKey(FieldKey.of(0));
+            assertThat(errors.fieldErrors()).containsKey(FieldKey.of(1, "field"));
+        }
+
+        @Test
+        void givenMixedResults_whenSequence_thenUsesPositionalIndicesForErrors() {
+            var result = Result.sequence(List.of(
+                    Result.ok(1),
+                    Result.error("error1"),
+                    Result.ok(2),
+                    Result.error("error2")
+            ));
+
+            var errors = result.errors();
+            assertThat(errors.fieldErrors()).containsKey(FieldKey.of(1));
+            assertThat(errors.fieldErrors()).containsKey(FieldKey.of(3));
+        }
+
+        @Test
+        void givenEmptyList_whenSequence_thenReturnsOkWithEmptyList() {
+            var result = Result.sequence(List.<Result<Integer>>of());
+
+            assertThat(result.getOrThrow()).isEmpty();
+        }
+    }
+
+    @Nested
+    class OfOptionalTests {
+
+        @Test
+        void givenPresentOptional_whenOfOptional_thenReturnsOkWithValue() {
+            var result = Result.ofOptional(Optional.of("Alice"), "Not found");
+
+            assertThat(result.getOrThrow()).isEqualTo("Alice");
+        }
+
+        @Test
+        void givenEmptyOptional_whenOfOptional_thenReturnsErrWithMessage() {
+            var result = Result.<String>ofOptional(Optional.empty(), "Not found");
+
+            assertThatThrownBy(result::getOrThrow).isInstanceOf(JavalidationException.class);
+            assertThat(result.errors().rootErrors().getFirst().message()).isEqualTo("Not found");
         }
     }
 
