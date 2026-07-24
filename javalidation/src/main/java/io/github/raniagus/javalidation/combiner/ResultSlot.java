@@ -20,7 +20,7 @@ sealed interface ResultSlot<T extends @Nullable Object> permits ResultSlot.Value
             if (result instanceof Result.Ok<T>(T v)) {
                 return v;
             }
-            throw new IllegalStateException("Result slot does not contain a success value");
+            return ResultSlot.super.value();
         }
 
         @Override
@@ -30,6 +30,14 @@ sealed interface ResultSlot<T extends @Nullable Object> permits ResultSlot.Value
     }
 
     record Skipped<T extends @Nullable Object>() implements ResultSlot<T> {
+        private static final ResultSlot<?> INSTANCE = new Skipped<>();
+        private static final Result<?> RESULT = Result.error(ValidationErrors.empty());
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Result<T> toResult() {
+            return (Result<T>) RESULT;
+        }
     }
 
     default boolean isOk() {
@@ -40,16 +48,15 @@ sealed interface ResultSlot<T extends @Nullable Object> permits ResultSlot.Value
         throw new IllegalStateException("Result slot does not contain a success value");
     }
 
-    default Result<T> toResult() {
-        return Result.error(ValidationErrors.empty());
-    }
+    Result<T> toResult();
 
     static <T extends @Nullable Object> ResultSlot<T> of(Result<T> result) {
         return new Value<>(result);
     }
 
+    @SuppressWarnings("unchecked")
     static <T extends @Nullable Object> ResultSlot<T> skipped() {
-        return new Skipped<>();
+        return (ResultSlot<T>) Skipped.INSTANCE;
     }
 
     static <T extends @Nullable Object> ResultSlot<T> from(Supplier<Result<T>> supplier) {
@@ -62,7 +69,9 @@ sealed interface ResultSlot<T extends @Nullable Object> permits ResultSlot.Value
 
     static boolean allOk(ResultSlot<?>... slots) {
         for (ResultSlot<?> slot : slots) {
-            if (!slot.isOk()) return false;
+            if (!slot.isOk()) {
+                return false;
+            }
         }
         return true;
     }

@@ -59,6 +59,8 @@ public record ValidationErrors(
         List<TemplateString> rootErrors,
         Map<FieldKey, List<TemplateString>> fieldErrors
 ) {
+    private static final ValidationErrors EMPTY = new ValidationErrors(List.of(), Map.of());
+
     /**
      * Creates an empty {@code ValidationErrors} with no errors.
      * <p>
@@ -71,7 +73,7 @@ public record ValidationErrors(
      * @return an empty validation errors instance
      */
     public static ValidationErrors empty() {
-        return new ValidationErrors(List.of(), Map.of());
+        return EMPTY;
     }
 
     /**
