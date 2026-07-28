@@ -119,6 +119,122 @@ class JakartaValidationsTest {
                         JavaFileObjects.forResource("test/jakarta/" + recordName + "Validator.java"));
     }
 
+    @Test
+    void givenReportAsSingleViolationComposedConstraint_whenAnnotationProcessing_thenGeneratesReusableScalarValidator() {
+        JavaFileObject name = JavaFileObjects.forSourceString("test.composed.Name", """
+                package test.composed;
+                import jakarta.validation.Constraint;
+                import jakarta.validation.ReportAsSingleViolation;
+                import jakarta.validation.constraints.NotBlank;
+                import jakarta.validation.constraints.Pattern;
+                import java.lang.annotation.*;
+                @Constraint(validatedBy = {}) @NotBlank @Pattern(regexp = "[A-Za-z ]+") @ReportAsSingleViolation
+                @Target({ElementType.FIELD, ElementType.TYPE_USE, ElementType.RECORD_COMPONENT}) @Retention(RetentionPolicy.RUNTIME)
+                public @interface Name { String message() default "name.invalid"; Class<?>[] groups() default {}; Class<? extends jakarta.validation.Payload>[] payload() default {}; }
+                """);
+        JavaFileObject record = JavaFileObjects.forSourceString("test.composed.Person", """
+                package test.composed;
+                public record Person(@Name String name) {}
+                """);
+        JavaFileObject trigger = JavaFileObjects.forSourceString("test.composed.Service", """
+                package test.composed;
+                import jakarta.validation.Valid;
+                class Service { void validate(@Valid Person person) {} }
+                """);
+
+        var compilation = javac().withProcessors(new ValidatorProcessor()).compile(name, record, trigger);
+
+        assertThat(compilation).succeeded();
+        assertThat(compilation)
+                .generatedSourceFile("test.composed.PersonValidator")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.composed.PersonValidator", """
+                        package test.composed;
+
+                        import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.validator.InitializableValidator;
+                        import io.github.raniagus.javalidation.validator.ValidatorsHolder;
+                        import javax.annotation.processing.Generated;
+                        import org.jspecify.annotations.NullMarked;
+
+                        @NullMarked
+                        @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
+                        public class PersonValidator implements InitializableValidator<Person> {
+                            private static final NameValidator NAME_NAMEVALIDATOR_VALIDATOR = new NameValidator("name.invalid");
+
+                            @Override
+                            public void initialize(ValidatorsHolder holder) {
+                            }
+
+                            @Override
+                            public void validate(Validation validation, Person root) {
+                                validation.withField("name", () -> {
+                                    var name = root.name();
+                                    NAME_NAMEVALIDATOR_VALIDATOR.validate(validation, name);
+                                });
+                            }
+                        }
+                        """));
+    }
+
+    @Test
+    void givenSizeAndPatternComposition_whenAnnotationProcessing_thenInfersCharSequenceIntersection() {
+        JavaFileObject token = JavaFileObjects.forSourceString("test.composed.SecureToken", """
+                package test.composed;
+                import jakarta.validation.Constraint;
+                import jakarta.validation.constraints.Pattern;
+                import jakarta.validation.constraints.Size;
+                import java.lang.annotation.*;
+                @Constraint(validatedBy = {}) @Size(min = 10) @Pattern(regexp = "^[A-Za-z0-9]+$")
+                @Target({ElementType.FIELD, ElementType.RECORD_COMPONENT, ElementType.TYPE_USE}) @Retention(RetentionPolicy.RUNTIME)
+                public @interface SecureToken { String message() default "invalid token"; Class<?>[] groups() default {}; Class<? extends jakarta.validation.Payload>[] payload() default {}; }
+                """);
+        JavaFileObject record = JavaFileObjects.forSourceString("test.composed.TokenRequest", """
+                package test.composed;
+                public record TokenRequest(@SecureToken String token) {}
+                """);
+        JavaFileObject trigger = JavaFileObjects.forSourceString("test.composed.TokenService", """
+                package test.composed;
+                import jakarta.validation.Valid;
+                class TokenService { void validate(@Valid TokenRequest request) {} }
+                """);
+
+        var compilation = javac().withProcessors(new ValidatorProcessor()).compile(token, record, trigger);
+
+        assertThat(compilation).succeeded();
+        assertThat(compilation)
+                .generatedSourceFile("test.composed.SecureTokenValidator")
+                .hasSourceEquivalentTo(JavaFileObjects.forSourceString("test.composed.SecureTokenValidator", """
+                        package test.composed;
+
+                        import io.github.raniagus.javalidation.Validation;
+                        import io.github.raniagus.javalidation.validator.Validator;
+                        import java.util.regex.Pattern;
+                        import javax.annotation.processing.Generated;
+                        import org.jspecify.annotations.NullMarked;
+
+                        @NullMarked
+                        @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
+                        public class SecureTokenValidator implements Validator<java.lang.CharSequence> {
+                            private static final Pattern VALUE_PATTERN_2 = Pattern.compile("^[A-Za-z0-9]+$");
+
+                            @Override
+                            public void validate(Validation validation, java.lang.CharSequence value) {
+                                validateComposing(validation, value);
+                            }
+
+                            private void validateComposing(Validation validation, java.lang.CharSequence value) {
+                                if (value == null) return;
+                                if (value.length() < 10 || value.length() > 2147483647) {
+                                    validation.addError("io.github.raniagus.javalidation.constraints.Size.message", 10, 2147483647);
+                                }
+                                if (!VALUE_PATTERN_2.matcher(value.toString()).matches()) {
+                                    validation.addError("io.github.raniagus.javalidation.constraints.Pattern.message", "^[A-Za-z0-9]+$");
+                                }
+                            }
+                        }
+                        """));
+    }
+
     // ── @NotNull ──────────────────────────────────────────────────────────────
     @Nested
     class NotNull {

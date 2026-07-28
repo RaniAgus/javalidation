@@ -20,15 +20,19 @@ The `groups` attribute present on all Jakarta constraint annotations is detected
 
 **No plans to support groups.**
 
-## 3. Custom and composed constraints are not yet supported
+## 3. Validator-backed custom constraints are not supported
 
-The processor only recognises the 22 built-in `jakarta.validation.constraints.*` annotations. Support for custom constraints (annotated with `@Constraint`) and composed constraints (e.g., a `@ValidEmail` that meta-annotates `@Email`) has not been implemented. Unrecognised annotations on record fields are silently skipped — no warning or error is emitted.
+The processor supports reusable composed constraints whose `@Constraint(validatedBy = {})` is
+empty, provided their built-in composition has one unambiguous supported scalar type. It generates
+a public `AnnotationNameValidator` in the annotation package. Constraints backed by a custom
+`ConstraintValidator` remain unsupported.
 
-**Workaround:** Break composed constraints into their individual Jakarta counterparts on the record field.
+**Workaround:** Break a validator-backed custom constraint into supported Jakarta counterparts on
+the record field, or implement its validation imperatively.
 
 **Future work:**
-- Recognise and process custom/composed constraints.
-- Emit a compile-time warning when an annotation annotated with `@jakarta.validation.Constraint` is encountered on a record component and is not handled by the processor.
+- Support a wider set of common scalar types and multi-family compositions.
+- Support configuration forwarding for every custom constraint attribute and `@OverridesAttribute`.
 
 ## 4. Sealed interface subtypes must all be records
 

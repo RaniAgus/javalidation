@@ -6,6 +6,10 @@
 APT annotation processor that generates `*Validator` classes and a `Validators` registry from
 records annotated with `jakarta.validation.constraints.*` and `@Valid`.
 
+It also generates a public scalar `AnnotationNameValidator` beside a reusable composed Jakarta
+constraint (`@Constraint(validatedBy = {})`) when its composing built-ins have one supported,
+unambiguous API type. Record validators use static instances of that scalar validator directly.
+
 > ⚠️ This module compiles with `<proc>none</proc>` — it does NOT process its own annotations.
 
 ## Source File Index
@@ -15,6 +19,8 @@ records annotated with `jakarta.validation.constraints.*` and `@Valid`.
 | File | Role |
 |------|------|
 | `ValidatorProcessor.java` | Main `AbstractProcessor`. Entry point. Discovers all classes in source roots, orchestrates writers, persists class names across incremental rounds via `META-INF/.../validators.list`. |
+| `ComposedConstraintClassWriter.java` | Generates reusable public scalar validators for supported composed constraints. |
+| `ComposedConstraintUse.java` | Writes configured static scalar-validator uses in record validators. |
 
 ### Class Writers
 

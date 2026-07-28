@@ -9,7 +9,8 @@ public sealed interface FieldWriter extends ValidationWriter {
     default Stream<String> imports() {
         return Stream.concat(
                 Stream.ofNullable(nullSafeWriter()).flatMap(ValidationWriter::imports),
-                nullUnsafeWriters().stream().flatMap(ValidationWriter::imports)
+                Stream.concat(nullUnsafeWriters().stream().flatMap(ValidationWriter::imports),
+                        composedConstraintUses().stream().flatMap(ValidationWriter::imports))
         );
     }
 
@@ -21,6 +22,9 @@ public sealed interface FieldWriter extends ValidationWriter {
         }
         for (NullUnsafeWriter writer : nullUnsafeWriters()) {
             writer.writePropertiesTo(out);
+        }
+        for (ComposedConstraintUse use : composedConstraintUses()) {
+            use.writePropertiesTo(out);
         }
         out.removeVariable();
     }
@@ -45,11 +49,15 @@ public sealed interface FieldWriter extends ValidationWriter {
 
     List<NullUnsafeWriter> nullUnsafeWriters();
 
+    default List<ComposedConstraintUse> composedConstraintUses() {
+        return List.of();
+    }
+
     @Override
     default void writeBodyTo(ValidationOutput out) {
         NullSafeWriter nullSafeWriter = nullSafeWriter();
         List<NullUnsafeWriter> nullUnsafeWriters = nullUnsafeWriters();
-        if (nullSafeWriter == null && nullUnsafeWriters.isEmpty()) {
+        if (nullSafeWriter == null && nullUnsafeWriters.isEmpty() && composedConstraintUses().isEmpty()) {
             return;
         }
 
@@ -70,22 +78,40 @@ public sealed interface FieldWriter extends ValidationWriter {
 
     record PrimitiveWriter(
             String field,
-            List<NullUnsafeWriter> nullUnsafeWriters
+            List<NullUnsafeWriter> nullUnsafeWriters,
+            List<ComposedConstraintUse> composedConstraintUses
     ) implements FieldWriter {
         @Override
         public void writeNestedFieldsTo(ValidationOutput out) {
             nullUnsafeWriters.forEach(writer -> writer.writeBodyTo(out));
+            composedConstraintUses.forEach(writer -> writer.writeBodyTo(out));
         }
     }
 
     record ObjectWriter(
             String field,
             @Nullable NullSafeWriter nullSafeWriter,
-            List<NullUnsafeWriter> nullUnsafeWriters
+            List<NullUnsafeWriter> nullUnsafeWriters,
+            List<ComposedConstraintUse> composedConstraintUses
     ) implements FieldWriter, WithNestedObjectWriters {
         @Override
         public void writeNestedFieldsTo(ValidationOutput out) {
-            writeNestedFieldsTo(nullSafeWriter, nullUnsafeWriters, out);
+            if (composedConstraintUses.isEmpty()) {
+                writeNestedFieldsTo(nullSafeWriter, nullUnsafeWriters, out);
+                return;
+            }
+            if (nullSafeWriter != null) {
+                nullSafeWriter.writeBodyTo(out);
+            } else if (!nullUnsafeWriters.isEmpty()) {
+                out.write("if (%s == null) {".formatted(out.getVariable()));
+                out.incrementIndentationLevel();
+                composedConstraintUses.forEach(writer -> writer.writeBodyTo(out));
+                out.write("return;");
+                out.decrementIndentationLevel();
+                out.write("}");
+            }
+            nullUnsafeWriters.forEach(writer -> writer.writeBodyTo(out));
+            composedConstraintUses.forEach(writer -> writer.writeBodyTo(out));
         }
     }
 }

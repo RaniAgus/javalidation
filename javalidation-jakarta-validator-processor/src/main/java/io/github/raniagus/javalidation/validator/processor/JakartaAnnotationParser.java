@@ -50,6 +50,43 @@ public final class JakartaAnnotationParser {
         ).flatMap(Function.identity());
     }
 
+    /** Parses one built-in constraint mirror.  This is also used when a built-in is
+     * declared inside a Jakarta composed constraint. */
+    public static @Nullable NullSafeWriter parseNullSafeAnnotation(AnnotationMirror mirror, TypeAdapter type) {
+        return switch (mirror.getAnnotationType().toString()) {
+            case "jakarta.validation.constraints.Null" -> parseNullAnnotation(mirror);
+            case "jakarta.validation.constraints.NotBlank" -> parseNotBlankAnnotation(mirror);
+            case "jakarta.validation.constraints.NotEmpty" -> parseNotEmptyAnnotation(mirror);
+            case "jakarta.validation.constraints.NotNull" -> parseNotNullAnnotation(mirror);
+            default -> null;
+        };
+    }
+
+    /** Parses one non-null built-in constraint mirror. */
+    public static @Nullable NullUnsafeWriter parseNullUnsafeAnnotation(AnnotationMirror mirror, TypeAdapter type, int index) {
+        return switch (mirror.getAnnotationType().toString()) {
+            case "jakarta.validation.constraints.Size" -> parseSizeAnnotation(mirror, type);
+            case "jakarta.validation.constraints.Min" -> parseMinAnnotation(mirror, type);
+            case "jakarta.validation.constraints.Max" -> parseMaxAnnotation(mirror, type);
+            case "jakarta.validation.constraints.Positive" -> parsePositiveAnnotation(mirror, type);
+            case "jakarta.validation.constraints.PositiveOrZero" -> parsePositiveOrZeroAnnotation(mirror, type);
+            case "jakarta.validation.constraints.Negative" -> parseNegativeAnnotation(mirror, type);
+            case "jakarta.validation.constraints.NegativeOrZero" -> parseNegativeOrZeroAnnotation(mirror, type);
+            case "jakarta.validation.constraints.Email" -> parseEmailAnnotation(mirror);
+            case "jakarta.validation.constraints.Pattern" -> parsePatternAnnotation(mirror, index + 1);
+            case "jakarta.validation.constraints.AssertTrue" -> parseAssertTrueAnnotation(mirror);
+            case "jakarta.validation.constraints.AssertFalse" -> parseAssertFalseAnnotation(mirror);
+            case "jakarta.validation.constraints.DecimalMax" -> parseDecimalMaxAnnotation(mirror, type);
+            case "jakarta.validation.constraints.DecimalMin" -> parseDecimalMinAnnotation(mirror, type);
+            case "jakarta.validation.constraints.Digits" -> parseDigitsAnnotation(mirror, type);
+            case "jakarta.validation.constraints.Future" -> parseFutureAnnotation(mirror, type);
+            case "jakarta.validation.constraints.FutureOrPresent" -> parseFutureOrPresentAnnotation(mirror, type);
+            case "jakarta.validation.constraints.Past" -> parsePastAnnotation(mirror, type);
+            case "jakarta.validation.constraints.PastOrPresent" -> parsePastOrPresentAnnotation(mirror, type);
+            default -> null;
+        };
+    }
+
     private static <T> Stream<T> parseRepeatableAnnotation(
             TypeAdapter type,
             Class<? extends Annotation> annotationClass,

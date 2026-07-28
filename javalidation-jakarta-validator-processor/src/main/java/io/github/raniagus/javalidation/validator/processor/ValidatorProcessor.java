@@ -29,6 +29,8 @@ public class ValidatorProcessor extends AbstractProcessor {
     private static final String REGISTRY_RESOURCE = "META-INF/io/github/raniagus/javalidation/validator/validators.list";
 
     private final Set<String> discoveredClassNames = new LinkedHashSet<>();
+    private final Map<String, ComposedConstraintClassWriter> composedConstraintWriters = new LinkedHashMap<>();
+    private final Set<String> writtenComposedConstraintNames = new HashSet<>();
     private boolean generated = false;
     private boolean loaded = false;
 
@@ -40,6 +42,12 @@ public class ValidatorProcessor extends AbstractProcessor {
         }
 
         List<ValidatorClassWriter> classWriters = parseClassWriters(roundEnv);
+
+        for (ComposedConstraintClassWriter classWriter : composedConstraintWriters.values()) {
+            if (writtenComposedConstraintNames.add(classWriter.fullName())) {
+                writeClass(classWriter);
+            }
+        }
 
         for (ValidatorClassWriter classWriter : classWriters) {
             writeClass(classWriter);
@@ -358,15 +366,219 @@ public class ValidatorProcessor extends AbstractProcessor {
         if (component.asType().getKind().isPrimitive()) {
             return new FieldWriter.PrimitiveWriter(
                     component.getSimpleName().toString(),
-                    parseNullUnsafeWriters(typeAdapter)
+                    parseNullUnsafeWriters(typeAdapter),
+                    parseComposedConstraintUses(component)
             );
         }
 
         return new FieldWriter.ObjectWriter(
                 component.getSimpleName().toString(),
                 parseNullSafeWriter(typeAdapter),
-                parseNullUnsafeWriters(typeAdapter)
+                parseNullUnsafeWriters(typeAdapter),
+                parseComposedConstraintUses(component)
+            );
+    }
+
+    private List<ComposedConstraintUse> parseComposedConstraintUses(RecordComponentElement component) {
+        return allAnnotationMirrors(component).stream()
+                .flatMap(this::expandRepeatableContainer)
+                .filter(this::isComposedConstraint)
+                .collect(java.util.stream.Collectors.toMap(
+                        mirror -> mirror.getAnnotationType().toString(),
+                        java.util.function.Function.identity(), (first, ignored) -> first, LinkedHashMap::new))
+                .values().stream()
+                .map(mirror -> composedConstraintUse(mirror, component))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    /** Jakarta repeatable containers are annotations too; expose their contained
+     * annotations so composed constraints have the same discovery behaviour as
+     * the built-ins. */
+    private Stream<AnnotationMirror> expandRepeatableContainer(AnnotationMirror mirror) {
+        Object value = processingEnv.getElementUtils().getElementValuesWithDefaults(mirror).entrySet().stream()
+                .filter(e -> e.getKey().getSimpleName().contentEquals("value"))
+                .map(e -> e.getValue().getValue()).findFirst().orElse(null);
+        if (!(value instanceof List<?> values)) return Stream.of(mirror);
+        List<AnnotationMirror> annotations = values.stream()
+                .filter(AnnotationValue.class::isInstance).map(AnnotationValue.class::cast)
+                .map(AnnotationValue::getValue).filter(AnnotationMirror.class::isInstance)
+                .map(AnnotationMirror.class::cast).toList();
+        return annotations.isEmpty() ? Stream.of(mirror) : annotations.stream();
+    }
+
+    private List<AnnotationMirror> allAnnotationMirrors(RecordComponentElement component) {
+        return Stream.of(component.getAnnotationMirrors(), component.getAccessor().getAnnotationMirrors(), component.asType().getAnnotationMirrors())
+                .flatMap(Collection::stream)
+                .map(AnnotationMirror.class::cast)
+                .toList();
+    }
+
+    private @Nullable ComposedConstraintUse composedConstraintUse(AnnotationMirror use, RecordComponentElement component) {
+        TypeElement annotation = (TypeElement) use.getAnnotationType().asElement();
+        String qualifiedName = annotation.getQualifiedName().toString();
+        ComposedConstraintClassWriter writer = composedConstraintWriters.get(qualifiedName);
+        if (writer == null) {
+            writer = createComposedConstraintWriter(annotation, component, new LinkedHashSet<>());
+            if (writer == null) return null;
+            String validatorName = annotation.getSimpleName() + "Validator";
+            String validatorFullName = processingEnv.getElementUtils().getPackageOf(annotation).getQualifiedName() + "." + validatorName;
+            if (processingEnv.getElementUtils().getTypeElement(validatorFullName) != null) {
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
+                        "Cannot generate composed constraint validator " + validatorFullName + ": type already exists", annotation);
+                return null;
+            }
+            composedConstraintWriters.put(qualifiedName, writer);
+        }
+        return new ComposedConstraintUse(writer.fullName(), annotationMessage(use), writer.reportAsSingleViolation());
+    }
+
+    private @Nullable ComposedConstraintClassWriter createComposedConstraintWriter(
+            TypeElement annotation, RecordComponentElement usage, Set<String> visiting) {
+        String annotationName = annotation.getQualifiedName().toString();
+        if (!visiting.add(annotationName)) {
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
+                    "Composed constraint cycle detected: " + String.join(" -> ", visiting) + " -> " + annotationName, annotation);
+            return null;
+        }
+        List<AnnotationMirror> composing = flattenComposingAnnotations(annotation, visiting);
+        visiting.remove(annotationName);
+        if (composing.isEmpty()) {
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING,
+                    "Skipping composed constraint " + annotationName + ": it has no supported built-in composing constraints", annotation);
+            return null;
+        }
+        String valueType = inferComposedValueType(composing);
+        if (valueType == null) {
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING,
+                    "Skipping composed constraint " + annotationName + ": composing constraints do not have one unambiguous supported value type", annotation);
+            return null;
+        }
+        TypeElement valueTypeElement = processingEnv.getElementUtils().getTypeElement(valueType);
+        TypeAdapter adapter = new TypeAdapter(valueTypeElement.asType(), usage, processingEnv);
+        List<NullSafeWriter> nullSafe = composing.stream()
+                .map(m -> JakartaAnnotationParser.parseNullSafeAnnotation(m, adapter))
+                .filter(Objects::nonNull).toList();
+        List<NullUnsafeWriter> unsafe = new ArrayList<>();
+        for (int index = 0; index < composing.size(); index++) {
+            NullUnsafeWriter parsed = JakartaAnnotationParser.parseNullUnsafeAnnotation(composing.get(index), adapter, index);
+            if (parsed != null) unsafe.add(parsed);
+        }
+        return new ComposedConstraintClassWriter(
+                processingEnv.getElementUtils().getPackageOf(annotation).getQualifiedName().toString(),
+                annotation.getSimpleName() + "Validator", valueType,
+                nullSafe.isEmpty() ? null : nullSafe.getFirst(), unsafe,
+                hasAnnotation(annotation, "jakarta.validation.ReportAsSingleViolation"), annotationMessage(annotation)
         );
+    }
+
+    private List<AnnotationMirror> flattenComposingAnnotations(TypeElement annotation, Set<String> visiting) {
+        List<AnnotationMirror> result = new ArrayList<>();
+        for (AnnotationMirror mirror : annotation.getAnnotationMirrors()) {
+            String name = mirror.getAnnotationType().toString();
+            if (isBuiltInConstraint(name)) {
+                result.add(mirror);
+            } else if (isComposedConstraint(mirror)) {
+                TypeElement nested = (TypeElement) mirror.getAnnotationType().asElement();
+                if (!visiting.add(nested.getQualifiedName().toString())) {
+                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Composed constraint cycle detected at " + nested, nested);
+                    continue;
+                }
+                result.addAll(flattenComposingAnnotations(nested, visiting));
+                visiting.remove(nested.getQualifiedName().toString());
+            }
+        }
+        return result;
+    }
+
+    private static boolean isBuiltInConstraint(String name) {
+        return name.startsWith("jakarta.validation.constraints.");
+    }
+
+    private @Nullable String inferComposedValueType(List<AnnotationMirror> constraints) {
+        EnumSet<ComposedValueFamily> candidates = EnumSet.allOf(ComposedValueFamily.class);
+        for (AnnotationMirror constraint : constraints) {
+            EnumSet<ComposedValueFamily> supported = supportedValueFamilies(constraint.getAnnotationType().toString());
+            if (supported.isEmpty()) return null;
+            candidates.retainAll(supported);
+        }
+        return candidates.size() == 1 ? candidates.iterator().next().apiType() : null;
+    }
+
+    /**
+     * The public scalar-validator type is the intersection of the API type
+     * families accepted by every composing built-in.  For example, Size accepts
+     * character sequences, collections, maps, and arrays; Pattern accepts only
+     * character sequences, so Size + Pattern resolves to CharSequence.
+     */
+    private static EnumSet<ComposedValueFamily> supportedValueFamilies(String constraint) {
+        return switch (constraint) {
+            case "jakarta.validation.constraints.Null", "jakarta.validation.constraints.NotNull" ->
+                    EnumSet.allOf(ComposedValueFamily.class);
+            case "jakarta.validation.constraints.NotBlank", "jakarta.validation.constraints.Pattern",
+                    "jakarta.validation.constraints.Email" -> EnumSet.of(ComposedValueFamily.CHAR_SEQUENCE);
+            case "jakarta.validation.constraints.NotEmpty", "jakarta.validation.constraints.Size" ->
+                    EnumSet.of(ComposedValueFamily.CHAR_SEQUENCE, ComposedValueFamily.COLLECTION,
+                            ComposedValueFamily.MAP, ComposedValueFamily.ARRAY);
+            case "jakarta.validation.constraints.AssertTrue", "jakarta.validation.constraints.AssertFalse" ->
+                    EnumSet.of(ComposedValueFamily.BOOLEAN);
+            case "jakarta.validation.constraints.Min", "jakarta.validation.constraints.Max",
+                    "jakarta.validation.constraints.DecimalMin", "jakarta.validation.constraints.DecimalMax",
+                    "jakarta.validation.constraints.Positive", "jakarta.validation.constraints.PositiveOrZero",
+                    "jakarta.validation.constraints.Negative", "jakarta.validation.constraints.NegativeOrZero",
+                    "jakarta.validation.constraints.Digits" ->
+                    EnumSet.of(ComposedValueFamily.NUMBER, ComposedValueFamily.CHAR_SEQUENCE);
+            default -> EnumSet.noneOf(ComposedValueFamily.class);
+        };
+    }
+
+    private enum ComposedValueFamily {
+        CHAR_SEQUENCE("java.lang.CharSequence"),
+        NUMBER("java.lang.Number"),
+        BOOLEAN("java.lang.Boolean"),
+        COLLECTION("java.util.Collection"),
+        MAP("java.util.Map"),
+        ARRAY("java.lang.Object[]");
+
+        private final String apiType;
+
+        ComposedValueFamily(String apiType) {
+            this.apiType = apiType;
+        }
+
+        String apiType() {
+            return apiType;
+        }
+    }
+
+    private boolean isComposedConstraint(AnnotationMirror mirror) {
+        TypeElement annotation = (TypeElement) mirror.getAnnotationType().asElement();
+        AnnotationMirror constraint = annotation.getAnnotationMirrors().stream()
+                .filter(m -> m.getAnnotationType().toString().equals("jakarta.validation.Constraint"))
+                .findFirst().orElse(null);
+        if (constraint == null) return false;
+        Object validators = processingEnv.getElementUtils().getElementValuesWithDefaults(constraint).entrySet().stream()
+                .filter(e -> e.getKey().getSimpleName().contentEquals("validatedBy"))
+                .map(e -> e.getValue().getValue()).findFirst().orElse(null);
+        return validators instanceof List<?> list && list.isEmpty();
+    }
+
+    private static boolean hasAnnotation(TypeElement element, String qualifiedName) {
+        return element.getAnnotationMirrors().stream().anyMatch(m -> m.getAnnotationType().toString().equals(qualifiedName));
+    }
+
+    private String annotationMessage(AnnotationMirror mirror) {
+        return processingEnv.getElementUtils().getElementValuesWithDefaults(mirror).entrySet().stream()
+                .filter(e -> e.getKey().getSimpleName().contentEquals("message"))
+                .map(e -> e.getValue().getValue()).filter(String.class::isInstance).map(String.class::cast)
+                .findFirst().orElse("io.github.raniagus.javalidation.constraints." + mirror.getAnnotationType().asElement().getSimpleName() + ".message");
+    }
+
+    private String annotationMessage(TypeElement annotation) {
+        return annotation.getEnclosedElements().stream().filter(e -> e instanceof ExecutableElement)
+                .map(e -> (ExecutableElement) e).filter(e -> e.getSimpleName().contentEquals("message"))
+                .map(ExecutableElement::getDefaultValue).filter(Objects::nonNull).map(v -> v.getValue().toString())
+                .findFirst().orElse("io.github.raniagus.javalidation.constraints." + annotation.getSimpleName() + ".message");
     }
 
     private @Nullable NullSafeWriter parseNullSafeWriter(TypeAdapter typeAdapter) {

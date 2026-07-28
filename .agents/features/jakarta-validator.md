@@ -140,7 +140,15 @@ via a bundled `messages.properties`.
 
 - **Records only** — plain classes and non-sealed interfaces are not supported.
 - **No validation groups** — `groups` attribute is silently ignored.
-- **No custom/composed constraints** — only built-in `jakarta.validation.constraints.*`.
+- **Composed constraints** — reusable constraints declared with `@Constraint(validatedBy = {})`
+  are supported when their built-in composition has one unambiguous supported scalar type. The
+  processor generates `MyConstraintValidator` in the annotation package and record validators
+  call a static instance directly; `@ReportAsSingleViolation` emits the outer message. The type is
+  inferred by intersecting the built-ins' supported API families: for example, `@Size` accepts
+  several families but `@Size + @Pattern` resolves to `CharSequence` because `@Pattern` narrows
+  the intersection to that family.
+- **Validator-backed custom constraints** — constraints declaring a `ConstraintValidator` remain
+  unsupported and are skipped with a warning.
 - **Sealed interfaces** — all permitted subtypes must be records.
 
 See `.agents/known-limitations.md` for full details.
