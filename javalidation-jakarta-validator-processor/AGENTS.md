@@ -153,6 +153,11 @@ generated source. Resolution to a human-readable string happens at runtime via
 `TemplateStringFormatter` (backed by `MessageSource` in Spring Boot). Without a configured
 formatter, users will see raw keys in serialized errors.
 
+**Generated Java string literals are escaped at emission time.** Constraint values such as
+`@Pattern` regexps remain in runtime form while parsed, then are escaped when written to
+generated Java source. This applies both to `Pattern.compile(...)` and the `{regexp}` message
+argument.
+
 ## Feature Deep-Dive
 
 - `.agents/features/jakarta-validator.md`

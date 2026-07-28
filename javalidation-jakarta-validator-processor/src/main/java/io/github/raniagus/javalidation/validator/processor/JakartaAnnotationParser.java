@@ -231,7 +231,7 @@ public final class JakartaAnnotationParser {
 
         return new NullUnsafeWriter.Pattern(
                 index,
-                regexp.replace("\\", "\\\\"),
+                regexp,
                 flags,
                 resolveMessage(message, "{regexp}"),
                 regexp

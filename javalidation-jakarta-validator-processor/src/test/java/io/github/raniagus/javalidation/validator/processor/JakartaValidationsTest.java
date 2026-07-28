@@ -1225,7 +1225,7 @@ class JakartaValidationsTest {
         void givenNonMatchingValue_whenValidate_thenHasFieldError() {
             assertThat(validator.validate(new PatternRecord("Hello123")))
                     .hasErrorCount(1)
-                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[a-z]+$");
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[\\p{IsLatin}\\p{M}]+$");
         }
     }
 

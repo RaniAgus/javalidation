@@ -7,6 +7,18 @@ import org.jspecify.annotations.Nullable;
 
 public interface NullUnsafeWriter extends ValidationWriter {
 
+    static String javaStringLiteral(String value) {
+        return "\"" + value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\b", "\\b")
+                .replace("\f", "\\f")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t")
+                + "\"";
+    }
+
     record Size(
             String accessor,
             String message,
@@ -110,7 +122,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
 
         private String formatArg() {
             if (!useValueAsArg) return "";
-            if (value instanceof String) return ", \"" + value + "\"";
+            if (value instanceof String string) return "," + javaStringLiteral(string);
             return ", " + value;
         }
     }
@@ -205,8 +217,8 @@ public interface NullUnsafeWriter extends ValidationWriter {
         public void writePropertiesTo(ValidationOutput out) {
             if (regexp != null) {
                 out.write("""
-                        private static final Pattern %1$s_REGEXP_PATTERN = Pattern.compile("%2$s"%3$s);
-                        """.formatted(out.getVariable().toUpperCase(), regexp, joinPatternFlags(flags)));
+                        private static final Pattern %1$s_REGEXP_PATTERN = Pattern.compile(%2$s%3$s);
+                        """.formatted(out.getVariable().toUpperCase(), javaStringLiteral(regexp), joinPatternFlags(flags)));
             }
         }
 
@@ -244,8 +256,8 @@ public interface NullUnsafeWriter extends ValidationWriter {
         @Override
         public void writePropertiesTo(ValidationOutput out) {
             out.write("""
-                    private static final Pattern %s_PATTERN%s = Pattern.compile("%s"%s);
-                    """.formatted(out.getVariable().toUpperCase(), getIndexSuffix(), regex,
+                    private static final Pattern %s_PATTERN%s = Pattern.compile(%s%s);
+                    """.formatted(out.getVariable().toUpperCase(), getIndexSuffix(), javaStringLiteral(regex),
                             joinPatternFlags(flags)));
         }
 
@@ -265,7 +277,7 @@ public interface NullUnsafeWriter extends ValidationWriter {
         private String formatArgs() {
             if (args.length == 0) return "";
             return Stream.of(args)
-                    .map(arg -> arg instanceof String ? "\"" + arg + "\"" : arg.toString())
+                    .map(arg -> arg instanceof String string ? javaStringLiteral(string) : arg.toString())
                     .collect(Collectors.joining(", ", ",", ""));
         }
 

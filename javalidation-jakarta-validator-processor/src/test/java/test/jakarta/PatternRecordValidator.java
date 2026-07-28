@@ -10,7 +10,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @Generated("io.github.raniagus.javalidation.validator.processor.ValidatorProcessor")
 public class PatternRecordValidator implements InitializableValidator<PatternRecord> {
-    private static final Pattern VALUE_PATTERN = Pattern.compile("^[a-z]+$");
+    private static final Pattern VALUE_PATTERN = Pattern.compile("^[\\p{IsLatin}\\p{M}]+$");
 
     @Override
     public void initialize(ValidatorsHolder holder) {
@@ -22,7 +22,7 @@ public class PatternRecordValidator implements InitializableValidator<PatternRec
             var value = root.value();
             if (value == null) return;
             if (!VALUE_PATTERN.matcher(value.toString()).matches()) {
-                validation.addError("io.github.raniagus.javalidation.constraints.Pattern.message", "^[a-z]+$");
+                validation.addError("io.github.raniagus.javalidation.constraints.Pattern.message", "^[\\p{IsLatin}\\p{M}]+$");
             }
         });
     }
