@@ -104,6 +104,32 @@ validation.check()                       → void | throws JavalidationException
 validation.checkAndGet(supplier)         → T | throws JavalidationException
 ```
 
+### `JavalidationException`
+
+```
+JavalidationException(ValidationErrors)    → public constructor
+JavalidationException.of(ValidationErrors) → factory
+JavalidationException.of(String, args…)   → root error factory
+JavalidationException.at(String, String, args…) → named field error factory
+JavalidationException.at(int, String, args…)    → indexed field error factory
+
+exception.getErrors()                  → ValidationErrors
+exception.withPrefix(String... prefix) → new JavalidationException (original set as cause)
+exception.withPrefix(Number... prefix) → new JavalidationException (original set as cause)
+exception.withPrefix(Object... prefix) → new JavalidationException (original set as cause)
+```
+
+`withPrefix` creates a new exception with the prefixed errors; the original exception is set as
+`getCause()` so the original throw site remains in the stack trace. Typical use:
+
+```java
+try {
+    validateAddress(user.address());
+} catch (JavalidationException e) {
+    throw e.withPrefix("address");
+}
+```
+
 ### `ValidationErrors`
 
 ```

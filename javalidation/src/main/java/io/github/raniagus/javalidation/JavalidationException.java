@@ -50,6 +50,11 @@ public class JavalidationException extends RuntimeException {
         this.errors = errors;
     }
 
+    private JavalidationException(ValidationErrors errors, JavalidationException cause) {
+        super(buildMessage(errors), cause);
+        this.errors = errors;
+    }
+
     /**
      * Creates an exception with the given validation errors.
      *
@@ -101,6 +106,53 @@ public class JavalidationException extends RuntimeException {
      */
     public ValidationErrors getErrors() {
         return this.errors;
+    }
+
+    /**
+     * Returns a new {@code JavalidationException} with all field paths prefixed with the given string segments.
+     * <p>
+     * Useful when catching an exception thrown by a nested validator and rethrowing it with context:
+     * <pre>{@code
+     * try {
+     *     validateAddress(user.address());
+     * } catch (JavalidationException e) {
+     *     throw e.withPrefix("address");
+     *     // field "street" becomes "address.street", root errors become "address"
+     * }
+     * }</pre>
+     * The original exception is set as the {@link #getCause() cause} of the returned one,
+     * so the original throw site remains visible in the stack trace.
+     *
+     * @param prefix the string parts to prepend
+     * @return a new exception wrapping the prefixed errors, with this exception as its cause
+     */
+    public JavalidationException withPrefix(String... prefix) {
+        return new JavalidationException(errors.withPrefix(prefix), this);
+    }
+
+    /**
+     * Returns a new {@code JavalidationException} with all field paths prefixed with the given numeric index segments.
+     * The original exception is set as the cause of the returned one.
+     *
+     * @param prefix the numeric parts to prepend
+     * @return a new exception wrapping the prefixed errors, with this exception as its cause
+     * @see #withPrefix(String...)
+     */
+    public JavalidationException withPrefix(Number... prefix) {
+        return new JavalidationException(errors.withPrefix(prefix), this);
+    }
+
+    /**
+     * Returns a new {@code JavalidationException} with all field paths prefixed with the given mixed segments.
+     * Each element is treated as a string segment unless it is a {@link Number}, which becomes an index segment.
+     * The original exception is set as the cause of the returned one.
+     *
+     * @param prefix the parts to prepend, mixed strings and numbers
+     * @return a new exception wrapping the prefixed errors, with this exception as its cause
+     * @see #withPrefix(String...)
+     */
+    public JavalidationException withPrefix(Object... prefix) {
+        return new JavalidationException(errors.withPrefix(prefix), this);
     }
 
     /**

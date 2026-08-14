@@ -420,6 +420,34 @@ public void processOrder(Order order) {
 }
 ```
 
+### Rethrowing with a Prefix
+
+When a nested validator throws, catch it and rethrow with a prefix to add structural context to its errors.
+The original exception is preserved as the cause, so the original throw site stays visible in the stack trace:
+
+```java
+public void validateOrder(Order order) {
+    try {
+        validateAddress(order.address());  // may throw JavalidationException
+    } catch (JavalidationException e) {
+        throw e.withPrefix("address");
+        // "street" → "address.street", root errors → "address"
+    }
+
+    // Fail-fast per item: stops and rethrows on the first failing item.
+    // For accumulating errors across all items, see the Collecting Stream Results section below.
+    for (int i = 0; i < order.items().size(); i++) {
+        try {
+            validateItem(order.items().get(i));
+        } catch (JavalidationException e) {
+            throw e.withPrefix("items", i);
+        }
+    }
+}
+```
+
+This mirrors `Result.withPrefix()` for the imperative / throw-based style.
+
 ### Collecting Stream Results
 
 Use `toListOrThrow()` to collect stream results imperatively:
@@ -999,12 +1027,13 @@ public void validateItemsList(Validation validation, List<Item> items) {
 
 ### JavalidationException
 
-| Method                                   | Description                       |
-|------------------------------------------|-----------------------------------|
-| `of(ValidationErrors)`                   | Create from ValidationErrors      |
-| `of(String, Object...)`                  | Create with root error            |
-| `at(String / Number, String, Object...)` | Create with field error           |
-| `getErrors()`                            | Get accumulated errors            |
+| Method                                       | Description                                                                |
+|----------------------------------------------|----------------------------------------------------------------------------|
+| `of(ValidationErrors)`                       | Create from ValidationErrors                                               |
+| `of(String, Object...)`                      | Create with root error                                                     |
+| `at(String / Number, String, Object...)`     | Create with field error                                                    |
+| `getErrors()`                                | Get accumulated errors                                                     |
+| `withPrefix(String / Number / Object...)`    | Return new exception with prefixed errors; original set as `getCause()`   |
 
 ## License
 
