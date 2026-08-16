@@ -836,6 +836,7 @@ public class UserDtoValidator implements InitializableValidator<UserDto> {
 > - Messages must have positional arguments, so we use `io.github.raniagus.javalidation.constraints` prefix to avoid conflicts with other libraries.
 > - For `@DecimalMax` and `@DecimalMin`, we use `DecimalMax.exclusive` and `DecimalMin.exclusive` attribute keys when `inclusive` is set to `false`.
 > - Validation groups are not supported. All constraints are always applied, regardless of the `groups` attribute.
+> - Composed constraints (annotations meta-annotated with `@Constraint(validatedBy = {})`) are supported and expanded recursively at compile time. `@ReportAsSingleViolation` and `@OverridesAttribute` are not supported.
 > - Using `@Valid` on a `Map` key results in undefined field error namespacing behavior.
 
 #### Full Example
