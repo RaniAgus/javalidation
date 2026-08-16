@@ -1,7 +1,9 @@
 package io.github.raniagus.javalidation.validator.processor;
 
 import java.lang.annotation.Annotation;
+import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Stream;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -104,6 +106,17 @@ public record TypeAdapter(TypeMirror type, Element element, ProcessingEnvironmen
             }
         }
         return null;
+    }
+
+    public List<AnnotationMirror> getAllElementAnnotationMirrors() {
+        if (element instanceof RecordComponentElement rce) {
+            var seen = new HashSet<String>();
+            return Stream.concat(
+                    element.getAnnotationMirrors().stream(),
+                    rce.getAccessor().getAnnotationMirrors().stream()
+            ).filter(m -> seen.add(m.getAnnotationType().toString())).toList();
+        }
+        return List.copyOf(element.getAnnotationMirrors());
     }
 
     public void printMessage(Diagnostic.Kind kind, String msg, AnnotationMirror annotation) {

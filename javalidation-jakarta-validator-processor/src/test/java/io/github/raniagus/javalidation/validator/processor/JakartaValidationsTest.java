@@ -96,6 +96,8 @@ class JakartaValidationsTest {
             "DigitsCharSequenceRecord",
             "NotNullAndSizeRecord",
             "NotNullAndMinRecord",
+            "ComposedAnnotationRecord",
+            "ComposedAnnotationWithDirectPatternRecord",
     })
     void givenAnnotatedRecords_whenAnnotationProcessing_thenGeneratesExpectedFiles(String recordName) {
         JavaFileObject recordFile = JavaFileObjects.forResource("test/jakarta/" + recordName + ".java");
@@ -1610,6 +1612,74 @@ class JakartaValidationsTest {
             assertThat(validator.validate(record))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Size.message", 1, 10);
+        }
+    }
+
+    // ── Composed annotation (@NotBlank + @Pattern) ────────────────────────────
+    @Nested
+    class ComposedAnnotationRecordValidatorTest {
+        ComposedAnnotationRecordValidator validator = new ComposedAnnotationRecordValidator();
+
+        @Test
+        void givenNullValue_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new ComposedAnnotationRecord(null)))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.NotBlank.message");
+        }
+
+        @Test
+        void givenBlankValue_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new ComposedAnnotationRecord("   ")))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.NotBlank.message");
+        }
+
+        @Test
+        void givenNonLatinValue_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new ComposedAnnotationRecord("abc123")))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[a-zA-Z]+$");
+        }
+
+        @Test
+        void givenValidLatinValue_whenValidate_thenIsEmpty() {
+            assertThat(validator.validate(new ComposedAnnotationRecord("Alice")))
+                    .isEmpty();
+        }
+    }
+
+    // ── Composed annotation with direct @Pattern (index continuity) ───────────
+    @Nested
+    class ComposedAnnotationWithDirectPatternRecordValidatorTest {
+        ComposedAnnotationWithDirectPatternRecordValidator validator = new ComposedAnnotationWithDirectPatternRecordValidator();
+
+        @Test
+        void givenNullValue_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new ComposedAnnotationWithDirectPatternRecord(null)))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.NotBlank.message");
+        }
+
+        @Test
+        void givenValueFailingFirstPattern_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new ComposedAnnotationWithDirectPatternRecord("abc")))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[0-9]+$");
+        }
+
+        @Test
+        void givenValueFailingSecondPattern_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new ComposedAnnotationWithDirectPatternRecord("123")))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[a-zA-Z]+$");
+        }
+
+        @Test
+        void givenValueFailingBothPatterns_whenValidate_thenHasTwoFieldErrors() {
+            assertThat(validator.validate(new ComposedAnnotationWithDirectPatternRecord("123abc!")))
+                    .hasErrorCount(2)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[0-9]+$")
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[a-zA-Z]+$");
         }
     }
 }

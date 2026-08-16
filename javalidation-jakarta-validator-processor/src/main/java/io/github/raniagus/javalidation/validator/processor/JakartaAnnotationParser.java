@@ -2,14 +2,18 @@ package io.github.raniagus.javalidation.validator.processor;
 
 import jakarta.validation.constraints.*;
 import java.lang.annotation.Annotation;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import org.jspecify.annotations.Nullable;
 
@@ -27,7 +31,7 @@ public final class JakartaAnnotationParser {
                 .orElse(null);
     }
 
-    public static Stream<NullUnsafeWriter> parseNullUnsafeWriters(TypeAdapter type) {
+    public static Stream<NullUnsafeWriter> parseNullUnsafeWriters(TypeAdapter type, AtomicInteger nextPatternIndex) {
         return Stream.of(
                 parseRepeatableAnnotation(type, Size.class, Size.List.class, (mirror, i) -> parseSizeAnnotation(mirror, type)),
                 parseRepeatableAnnotation(type, Min.class, Min.List.class, (mirror, i) -> parseMinAnnotation(mirror, type)),
@@ -37,7 +41,7 @@ public final class JakartaAnnotationParser {
                 parseRepeatableAnnotation(type, Negative.class, Negative.List.class, (mirror, i) -> parseNegativeAnnotation(mirror, type)),
                 parseRepeatableAnnotation(type, NegativeOrZero.class, NegativeOrZero.List.class, (mirror, i) -> parseNegativeOrZeroAnnotation(mirror, type)),
                 parseRepeatableAnnotation(type, Email.class, Email.List.class, (mirror, i) -> parseEmailAnnotation(mirror)),
-                parseRepeatableAnnotation(type, Pattern.class, Pattern.List.class, (mirror, i) -> parsePatternAnnotation(mirror, i + 1)),
+                parseRepeatableAnnotation(type, Pattern.class, Pattern.List.class, (mirror, i) -> parsePatternAnnotation(mirror, nextPatternIndex.getAndIncrement())),
                 parseRepeatableAnnotation(type, AssertTrue.class, AssertTrue.List.class, (mirror, i) -> parseAssertTrueAnnotation(mirror)),
                 parseRepeatableAnnotation(type, AssertFalse.class, AssertFalse.List.class, (mirror, i) -> parseAssertFalseAnnotation(mirror)),
                 parseRepeatableAnnotation(type, DecimalMax.class, DecimalMax.List.class, (mirror, i) -> parseDecimalMaxAnnotation(mirror, type)),
@@ -55,7 +59,9 @@ public final class JakartaAnnotationParser {
             Class<? extends Annotation> annotationClass,
             Class<? extends Annotation> listClass,
             BiFunction<AnnotationMirror, Integer, @Nullable T> parser) {
-        var single = type.getAnnotationMirror(annotationClass);
+        var single = type.element() instanceof TypeElement
+                ? type.getElementAnnotationMirror(annotationClass)
+                : type.getAnnotationMirror(annotationClass);
         if (single != null) {
             warnIfGroupsPresent(single, type);
             return Stream.ofNullable(parser.apply(single, 0));
@@ -418,6 +424,52 @@ public final class JakartaAnnotationParser {
             }
         }
         return null;
+    }
+
+    public static @Nullable NullSafeWriter parseComposedNullSafeWriter(TypeAdapter type, Set<String> visited) {
+        return type.getAllElementAnnotationMirrors().stream()
+                .filter(JakartaAnnotationParser::isUserComposedConstraint)
+                .filter(m -> visited.add(m.getAnnotationType().toString()))
+                .map(m -> {
+                    var syntheticAdapter = new TypeAdapter(
+                            type.type(), m.getAnnotationType().asElement(), type.processingEnv());
+                    var direct = parseNullSafeWriter(syntheticAdapter);
+                    if (direct != null) return direct;
+                    return parseComposedNullSafeWriter(syntheticAdapter, visited);
+                })
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public static Stream<NullUnsafeWriter> parseComposedNullUnsafeWriters(
+            TypeAdapter type, AtomicInteger nextPatternIndex, Set<String> visited) {
+        return type.getAllElementAnnotationMirrors().stream()
+                .filter(JakartaAnnotationParser::isUserComposedConstraint)
+                .filter(m -> !visited.contains(m.getAnnotationType().toString()))
+                .flatMap(m -> {
+                    var childVisited = new HashSet<>(visited);
+                    childVisited.add(m.getAnnotationType().toString());
+                    var syntheticAdapter = new TypeAdapter(
+                            type.type(), m.getAnnotationType().asElement(), type.processingEnv());
+                    return Stream.concat(
+                            parseNullUnsafeWriters(syntheticAdapter, nextPatternIndex),
+                            parseComposedNullUnsafeWriters(syntheticAdapter, nextPatternIndex, childVisited)
+                    );
+                });
+    }
+
+    private static boolean isUserComposedConstraint(AnnotationMirror mirror) {
+        if (mirror.getAnnotationType().toString().startsWith("jakarta.validation.constraints.")) {
+            return false;
+        }
+        for (var m : mirror.getAnnotationType().asElement().getAnnotationMirrors()) {
+            if (m.getAnnotationType().toString().equals("jakarta.validation.Constraint")) {
+                Object validatedBy = getAnnotationValue(m, "validatedBy");
+                return validatedBy instanceof List<?> list && list.isEmpty();
+            }
+        }
+        return false;
     }
 
     static void warnIfGroupsPresent(AnnotationMirror annotation, TypeAdapter type) {
