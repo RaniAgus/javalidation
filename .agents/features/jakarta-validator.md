@@ -39,7 +39,7 @@ public record Address(
 
 ### Supported Constraint Annotations
 
-All 22 built-in `jakarta.validation.constraints.*` are supported:
+All 22 built-in `jakarta.validation.constraints.*` are supported, plus user-defined **composed constraints** (see below):
 
 | Constraint | Notes |
 |-----------|-------|
@@ -136,11 +136,35 @@ via a bundled `messages.properties`.
 
 ---
 
+## Composed Constraints
+
+A user-defined annotation annotated with `@Constraint(validatedBy = {})` is treated as a composed constraint and expanded recursively at compile time:
+
+```java
+@Constraint(validatedBy = {})
+@NotBlank
+@Pattern(regexp = "^[a-zA-Z]+$")
+@Target({ElementType.FIELD, ElementType.RECORD_COMPONENT, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface LatinName {
+    String message() default "...";
+    Class<?>[] groups() default {};
+    Class<? extends Payload>[] payload() default {};
+}
+
+public record PersonRequest(@LatinName String name) {}
+```
+
+The generated validator is identical to what `@NotBlank @Pattern(regexp = "^[a-zA-Z]+$")` would produce directly. Composed-of-composed works recursively. `@Pattern` index continuity is preserved when direct and composed patterns appear on the same field.
+
+**Not supported:** `@ReportAsSingleViolation`, `@OverridesAttribute`.
+
+---
+
 ## Limitations
 
 - **Records only** — plain classes and non-sealed interfaces are not supported.
 - **No validation groups** — `groups` attribute is silently ignored.
-- **No custom/composed constraints** — only built-in `jakarta.validation.constraints.*`.
 - **Sealed interfaces** — all permitted subtypes must be records.
 
 See `.agents/known-limitations.md` for full details.

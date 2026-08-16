@@ -96,6 +96,9 @@ class JakartaValidationsTest {
             "DigitsCharSequenceRecord",
             "NotNullAndSizeRecord",
             "NotNullAndMinRecord",
+            "ComposedAnnotationRecord",
+            "ComposedAnnotationWithDirectPatternRecord",
+            "DoubleComposedAnnotationRecord",
     })
     void givenAnnotatedRecords_whenAnnotationProcessing_thenGeneratesExpectedFiles(String recordName) {
         JavaFileObject recordFile = JavaFileObjects.forResource("test/jakarta/" + recordName + ".java");
@@ -1610,6 +1613,122 @@ class JakartaValidationsTest {
             assertThat(validator.validate(record))
                     .hasErrorCount(1)
                     .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Size.message", 1, 10);
+        }
+    }
+
+    // ── Composed annotation (@NotBlank + @Pattern) ────────────────────────────
+    @Nested
+    class ComposedAnnotationRecordValidatorTest {
+        ComposedAnnotationRecordValidator validator = new ComposedAnnotationRecordValidator();
+
+        @Test
+        void givenNullValue_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new ComposedAnnotationRecord(null)))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.NotBlank.message");
+        }
+
+        @Test
+        void givenBlankValue_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new ComposedAnnotationRecord("   ")))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.NotBlank.message");
+        }
+
+        @Test
+        void givenNonLatinValue_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new ComposedAnnotationRecord("abc123")))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[a-zA-Z]+$");
+        }
+
+        @Test
+        void givenValidLatinValue_whenValidate_thenIsEmpty() {
+            assertThat(validator.validate(new ComposedAnnotationRecord("Alice")))
+                    .isEmpty();
+        }
+    }
+
+    // ── Composed annotation with direct @Pattern (index continuity) ───────────
+    @Nested
+    class ComposedAnnotationWithDirectPatternRecordValidatorTest {
+        ComposedAnnotationWithDirectPatternRecordValidator validator = new ComposedAnnotationWithDirectPatternRecordValidator();
+
+        @Test
+        void givenNullValue_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new ComposedAnnotationWithDirectPatternRecord(null)))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.NotBlank.message");
+        }
+
+        @Test
+        void givenValueFailingFirstPattern_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new ComposedAnnotationWithDirectPatternRecord("abc")))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[0-9]+$");
+        }
+
+        @Test
+        void givenValueFailingSecondPattern_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new ComposedAnnotationWithDirectPatternRecord("123")))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[a-zA-Z]+$");
+        }
+
+        @Test
+        void givenValueFailingBothPatterns_whenValidate_thenHasTwoFieldErrors() {
+            assertThat(validator.validate(new ComposedAnnotationWithDirectPatternRecord("123abc!")))
+                    .hasErrorCount(2)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[0-9]+$")
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[a-zA-Z]+$");
+        }
+    }
+
+    // ── Double-composed annotation (@ComposedAnnotation + @Size via @DoubleComposedAnnotation) ─
+    @Nested
+    class DoubleComposedAnnotationRecordValidatorTest {
+        DoubleComposedAnnotationRecordValidator validator = new DoubleComposedAnnotationRecordValidator();
+
+        @Test
+        void givenNullValue_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new DoubleComposedAnnotationRecord(null)))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.NotBlank.message");
+        }
+
+        @Test
+        void givenBlankValue_whenValidate_thenHasFieldError() {
+            assertThat(validator.validate(new DoubleComposedAnnotationRecord("   ")))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.NotBlank.message");
+        }
+
+        @Test
+        void givenTooShortLatinValue_whenValidate_thenHasSizeError() {
+            assertThat(validator.validate(new DoubleComposedAnnotationRecord("A")))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Size.message", 2, 50);
+        }
+
+        @Test
+        void givenNonLatinValue_whenValidate_thenHasPatternError() {
+            assertThat(validator.validate(new DoubleComposedAnnotationRecord("123")))
+                    .hasErrorCount(1)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[a-zA-Z]+$");
+        }
+
+        @Test
+        void givenTooShortNonLatinValue_whenValidate_thenHasTwoErrors() {
+            assertThat(validator.validate(new DoubleComposedAnnotationRecord("1")))
+                    .hasErrorCount(2)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Size.message", 2, 50)
+                    .hasFieldError("value", "io.github.raniagus.javalidation.constraints.Pattern.message", "^[a-zA-Z]+$");
+        }
+
+        @Test
+        void givenValidValue_whenValidate_thenIsEmpty() {
+            assertThat(validator.validate(new DoubleComposedAnnotationRecord("Alice")))
+                    .isEmpty();
         }
     }
 }

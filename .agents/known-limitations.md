@@ -20,15 +20,13 @@ The `groups` attribute present on all Jakarta constraint annotations is detected
 
 **No plans to support groups.**
 
-## 3. Custom and composed constraints are not yet supported
+## 3. Composed constraints are supported; `@ReportAsSingleViolation` and `@OverridesAttribute` are not
 
-The processor only recognises the 22 built-in `jakarta.validation.constraints.*` annotations. Support for custom constraints (annotated with `@Constraint`) and composed constraints (e.g., a `@ValidEmail` that meta-annotates `@Email`) has not been implemented. Unrecognised annotations on record fields are silently skipped — no warning or error is emitted.
+User-defined annotations annotated with `@Constraint(validatedBy = {})` are expanded recursively into the same writers their meta-constraints would produce when applied directly. Pattern index continuity is preserved across direct and composed patterns on the same field. Cycle detection via a visited set prevents infinite loops from circular composition.
 
-**Workaround:** Break composed constraints into their individual Jakarta counterparts on the record field.
-
-**Future work:**
-- Recognise and process custom/composed constraints.
-- Emit a compile-time warning when an annotation annotated with `@jakarta.validation.Constraint` is encountered on a record component and is not handled by the processor.
+**Not supported:**
+- `@ReportAsSingleViolation` — composed constraints always report each violated meta-constraint individually, regardless of this annotation.
+- `@OverridesAttribute` — attribute overrides on composed constraints are silently ignored; the meta-constraint's own attribute values are used as-is.
 
 ## 4. Sealed interface subtypes must all be records
 

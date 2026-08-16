@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.NoSuchFileException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -370,12 +371,18 @@ public class ValidatorProcessor extends AbstractProcessor {
     }
 
     private @Nullable NullSafeWriter parseNullSafeWriter(TypeAdapter typeAdapter) {
-        return JakartaAnnotationParser.parseNullSafeWriter(typeAdapter);
+        var direct = JakartaAnnotationParser.parseNullSafeWriter(typeAdapter);
+        if (direct != null) return direct;
+        return JakartaAnnotationParser.parseComposedNullSafeWriter(typeAdapter, new HashSet<>());
     }
 
     private List<NullUnsafeWriter> parseNullUnsafeWriters(TypeAdapter typeAdapter) {
+        var nextPatternIndex = new AtomicInteger(1);
         return Stream.concat(
-                JakartaAnnotationParser.parseNullUnsafeWriters(typeAdapter),
+                Stream.concat(
+                        JakartaAnnotationParser.parseNullUnsafeWriters(typeAdapter, nextPatternIndex),
+                        JakartaAnnotationParser.parseComposedNullUnsafeWriters(typeAdapter, nextPatternIndex, new HashSet<>())
+                ),
                 Stream.of(parseNested(typeAdapter.type()), parseIterable(typeAdapter), parseMap(typeAdapter)).filter(Objects::nonNull)
         ).toList();
     }
