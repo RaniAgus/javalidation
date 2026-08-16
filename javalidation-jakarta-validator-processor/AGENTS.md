@@ -48,7 +48,7 @@ records annotated with `jakarta.validation.constraints.*` and `@Valid`.
 
 ## Supported Jakarta Constraints
 
-The processor recognises all 22 built-in `jakarta.validation.constraints.*` annotations:
+The processor recognises all 22 built-in `jakarta.validation.constraints.*` annotations, plus user-defined composed constraints (see below):
 
 | Constraint | Applicable Types |
 |-----------|-----------------|
@@ -74,6 +74,19 @@ The processor recognises all 22 built-in `jakarta.validation.constraints.*` anno
 | `@FutureOrPresent` | temporal types |
 | `@AssertTrue` | `boolean`/`Boolean` |
 | `@AssertFalse` | `boolean`/`Boolean` |
+
+### Composed Constraints
+
+Any annotation annotated with `@Constraint(validatedBy = {})` that is **not** in `jakarta.validation.constraints.*` is treated as a user-defined composed constraint. Its meta-annotations are expanded recursively into the same writers direct application would produce. The expansion is handled in `JakartaAnnotationParser.parseComposedNullSafeWriter` / `parseComposedNullUnsafeWriters`, wired at the `ValidatorProcessor` call site.
+
+Key implementation details:
+- A synthetic `TypeAdapter` is created with `type = original field's TypeMirror` (for numeric/temporal kind) and `element = composed annotation's TypeElement` (for annotation mirror lookup).
+- `parseRepeatableAnnotation` branches on `element instanceof TypeElement`: synthetic adapters use element-level mirror lookup only; regular field adapters use type-use lookup.
+- `getAllElementAnnotationMirrors()` on `TypeAdapter` deduplicates by annotation type name to avoid processing annotations that appear on both the record component and its accessor.
+- A `Set<String> visited` prevents infinite loops from circular composition.
+- A shared `AtomicInteger nextPatternIndex` ensures `@Pattern` indices from direct and composed constraints never collide.
+
+Not supported: `@ReportAsSingleViolation`, `@OverridesAttribute`.
 
 **See `.agents/known-limitations.md` for what is not supported.**
 
