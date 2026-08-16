@@ -14,7 +14,7 @@ records annotated with `jakarta.validation.constraints.*` and `@Valid`.
 
 | File | Role |
 |------|------|
-| `ValidatorProcessor.java` | Main `AbstractProcessor`. Entry point. Discovers all classes in source roots, orchestrates writers, persists class names across incremental rounds via `META-INF/.../validators.list`. |
+| `ValidatorProcessor.java` | Main `AbstractProcessor`. Entry point. Discovers all classes in source roots, orchestrates writers, emits the registry in the normal round after it generates validator sources, and persists class names via `META-INF/.../validators.list`. |
 
 ### Class Writers
 
@@ -170,6 +170,11 @@ formatter, users will see raw keys in serialized errors.
 `@Pattern` regexps remain in runtime form while parsed, then are escaped when written to
 generated Java source. This applies both to `Pattern.compile(...)` and the `{regexp}` message
 argument.
+
+**The `Validators` registry is generated one round after individual validators.** Writing one or
+more `*Validator` sources marks the registry as pending; the processor writes it in the following
+normal round. This lets javac process `Validators.java` in a later round and avoids the warning
+caused by creating a source file during `processingOver()`.
 
 ## Feature Deep-Dive
 

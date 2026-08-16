@@ -14,7 +14,8 @@ to generate type-safe validators via the APT annotation processor.
 1. You annotate your `record` with standard Jakarta constraint annotations.
 2. The annotation processor (`ValidatorProcessor`) runs at compile-time and generates:
    - `MyRecordValidator.java` — implements `InitializableValidator<MyRecord>`
-   - `Validators.java` — a static registry replacing the stub
+   - `Validators.java` — a static registry replacing the stub, emitted in the next normal
+     processing round after the individual validators
 3. At runtime, call `Validators.validate(myRecord)` → `ValidationErrors`.
 
 ---

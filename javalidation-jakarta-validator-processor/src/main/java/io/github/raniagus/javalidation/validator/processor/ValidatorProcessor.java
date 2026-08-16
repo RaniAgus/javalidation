@@ -30,27 +30,29 @@ public class ValidatorProcessor extends AbstractProcessor {
     private static final String REGISTRY_RESOURCE = "META-INF/io/github/raniagus/javalidation/validator/validators.list";
 
     private final Set<String> discoveredClassNames = new LinkedHashSet<>();
-    private boolean generated = false;
-    private boolean loaded = false;
+    private boolean registryLoaded = false;
+    private boolean registryPending = false;
+    private boolean registryGenerated = false;
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        if (!generated && !loaded) {
+        if (!registryLoaded && !registryGenerated) {
             loadPersistedClassNames();
-            loaded = true;
+            registryLoaded = true;
         }
 
         List<ValidatorClassWriter> classWriters = parseClassWriters(roundEnv);
 
-        for (ValidatorClassWriter classWriter : classWriters) {
-            writeClass(classWriter);
-            discoveredClassNames.add(classWriter.fullName());
-        }
-
-        if (roundEnv.processingOver() && !generated && !discoveredClassNames.isEmpty()) {
+        if (!classWriters.isEmpty()) {
+            for (ValidatorClassWriter classWriter : classWriters) {
+                writeClass(classWriter);
+                discoveredClassNames.add(classWriter.fullName());
+            }
+            registryPending = true;
+        } else if (!roundEnv.processingOver() && registryPending && !registryGenerated) {
             persistClassNames();
             writeClass(new ValidatorsClassWriter(reconstructWriters()));
-            generated = true;
+            registryGenerated = true;
         }
 
         return false;
