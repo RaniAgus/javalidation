@@ -15,6 +15,7 @@ javalidation in a Spring MVC application.
 | `JavalidationValidatorAutoConfiguration.java` | Spring MVC validator auto-config. Registers `JavalidationSpringValidator` as `@Primary` and wires it into `WebMvcConfigurer`. |
 | `JavalidationProperties.java` | `@ConfigurationProperties(prefix = "io.github.raniagus.javalidation")`. Three properties: `key-notation`, `use-message-source`, `flatten-errors`. |
 | `JavalidationSpringValidator.java` | Implements Spring's `Validator` interface. Bridges `Validators.validate(...)` → Spring `Errors`. Also provides `toValidationErrors(Errors)` for the reverse. |
+| `JavalidationRuntimeHints.java` | Registers GraalVM native-image resource and reflection hints for library message bundles and Jackson structured-result DTOs. |
 | `MessageSourceTemplateStringFormatter.java` | `TemplateStringFormatter` backed by Spring `MessageSource`. Falls back to `MessageFormat` if key not found. |
 | `KeyNotation.java` | Enum: `PROPERTY_PATH` (default), `DOTS`, `BRACKETS`. |
 | `EnableJavalidation.java` | `@ImportAutoConfiguration` annotation for test slices (`@WebMvcTest`, etc.) that disable auto-config. |
@@ -87,6 +88,15 @@ When `use-message-source=true` (default), the starter:
 3. This provides all 22 constraint keys with default English strings out of the box
 4. User's own `messages.properties` takes precedence (it is higher in the hierarchy)
 5. `MessageSourceTemplateStringFormatter` tries `MessageSource` first; falls back to raw `MessageFormat.format(key, args)` if the key is not found
+
+## GraalVM Native Image
+
+`JavalidationAutoConfiguration` imports `JavalidationRuntimeHints`, which registers the
+`io.github.raniagus.javalidation.messages` resource bundle and the complete Jackson metadata used
+by the library: `ValidationErrors` property methods, `ValidationErrorsMixIn` method annotations,
+and internal structured-result DTOs. Application DTOs used as `Result<T>` values remain the
+consuming application's responsibility; Spring Boot normally infers their binding hints from
+controller signatures.
 
 ## Test Conventions
 

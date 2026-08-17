@@ -16,10 +16,12 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.HierarchicalMessageSource;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ImportRuntimeHints;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
 @AutoConfiguration
 @EnableConfigurationProperties(JavalidationProperties.class)
+@ImportRuntimeHints(JavalidationRuntimeHints.class)
 public class JavalidationAutoConfiguration {
 
     // -- FieldKey formatting --

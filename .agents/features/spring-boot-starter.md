@@ -97,6 +97,16 @@ public class UserController {
 ValidationErrors errors = JavalidationSpringValidator.toValidationErrors(bindingResult);
 ```
 
+## GraalVM Native Image
+
+The starter imports a `RuntimeHintsRegistrar` from its core auto-configuration. It includes the
+library message bundle (`io.github.raniagus.javalidation.messages`) and all Jackson runtime
+introspection used by the library: `ValidationErrors` properties, the `ValidationErrorsMixIn`
+annotations that exclude computed properties, and the internal DTOs used by structured `Result<T>`
+deserialization. Consumers must still make their own `T` types available for JSON binding when
+Spring Boot cannot infer them (for example, when using `RestClient` directly rather than controller
+method signatures).
+
 ---
 
 ## MessageSource Integration Details
