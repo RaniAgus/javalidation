@@ -15,7 +15,7 @@ javalidation in a Spring MVC application.
 | `JavalidationValidatorAutoConfiguration.java` | Spring MVC validator auto-config. Registers `JavalidationSpringValidator` as `@Primary` and wires it into `WebMvcConfigurer`. |
 | `JavalidationProperties.java` | `@ConfigurationProperties(prefix = "io.github.raniagus.javalidation")`. Three properties: `key-notation`, `use-message-source`, `flatten-errors`. |
 | `JavalidationSpringValidator.java` | Implements Spring's `Validator` interface. Bridges `Validators.validate(...)` → Spring `Errors`. Also provides `toValidationErrors(Errors)` for the reverse. |
-| `JavalidationRuntimeHints.java` | Registers GraalVM native-image resource and reflection hints for library message bundles and Jackson structured-result DTOs. |
+| `JavalidationRuntimeHints.java` | Registers the GraalVM native-image resource hint for the library message bundle. |
 | `MessageSourceTemplateStringFormatter.java` | `TemplateStringFormatter` backed by Spring `MessageSource`. Falls back to `MessageFormat` if key not found. |
 | `KeyNotation.java` | Enum: `PROPERTY_PATH` (default), `DOTS`, `BRACKETS`. |
 | `EnableJavalidation.java` | `@ImportAutoConfiguration` annotation for test slices (`@WebMvcTest`, etc.) that disable auto-config. |
@@ -92,9 +92,9 @@ When `use-message-source=true` (default), the starter:
 ## GraalVM Native Image
 
 `JavalidationAutoConfiguration` imports `JavalidationRuntimeHints`, which registers the
-`io.github.raniagus.javalidation.messages` resource bundle and the complete Jackson metadata used
-by the library: `ValidationErrors` property methods, `ValidationErrorsMixIn` method annotations,
-and internal structured-result DTOs. Application DTOs used as `Result<T>` values remain the
+`io.github.raniagus.javalidation.messages` resource bundle. The `javalidation-jackson` artifact
+embeds its own Jackson reflection metadata under `META-INF/native-image`, so it also works for
+non-Spring native-image applications. Application DTOs used as `Result<T>` values remain the
 consuming application's responsibility; Spring Boot normally infers their binding hints from
 controller signatures.
 

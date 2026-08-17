@@ -1,0 +1,28 @@
+[
+  {
+    "name": "io.github.raniagus.javalidation.ValidationErrors",
+    "allPublicMethods": true
+  },
+  {
+    "name": "io.github.raniagus.javalidation.jackson.ValidationErrorsMixIn",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "io.github.raniagus.javalidation.jackson.StructuredErrorDto",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "io.github.raniagus.javalidation.jackson.StructuredFieldErrorDto",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "io.github.raniagus.javalidation.jackson.StructuredValidationErrorsDto",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  }
+]

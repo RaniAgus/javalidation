@@ -24,6 +24,7 @@ Provides a `JavalidationModule` for registering serializers/deserializers that h
 | `StructuredErrorDto.java` | DTO for the structured errors representation during deserialization. |
 | `StructuredFieldErrorDto.java` | DTO for individual field error entries during deserialization. |
 | `StructuredValidationErrorsDto.java` | DTO combining root errors and field errors for deserialization. |
+| `src/main/resources/META-INF/native-image/.../reflect-config.json` | GraalVM reflection metadata for Jackson's internal deserialization types. |
 
 ## Key Public API
 
@@ -103,3 +104,10 @@ JsonMapper mapper = JsonMapper.builder()
 ## Feature Deep-Dive
 
 - `.agents/features/jackson-integration.md`
+
+## GraalVM Native Image
+
+The artifact embeds reachability metadata under `META-INF/native-image`, so its Jackson-specific
+reflection requirements work for any GraalVM native-image consumer, without requiring Spring Boot.
+It covers `ValidationErrors`, `ValidationErrorsMixIn`, and the internal structured-result DTOs.
+Application types used as `Result<T>` values remain the consuming application's responsibility.

@@ -190,6 +190,20 @@ io.github.raniagus.javalidation:
 
 ---
 
+## GraalVM Native Image
+
+`javalidation-jackson` ships GraalVM reachability metadata in
+`META-INF/native-image/io.github.raniagus/javalidation-jackson/reflect-config.json`. GraalVM
+automatically reads this metadata from the dependency JAR, so the module's internal Jackson
+deserialization types work in native images on every supported framework, including standalone
+Jackson use.
+
+The metadata covers the `ValidationErrors` mixin path and the internal structured-result DTOs.
+Consumers must still supply native-image metadata for their own application DTOs used as
+`Result<T>` values.
+
+---
+
 ## Builder Reference
 
 ```java
