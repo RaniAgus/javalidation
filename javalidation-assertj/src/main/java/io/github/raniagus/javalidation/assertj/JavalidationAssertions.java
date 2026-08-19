@@ -4,6 +4,8 @@ import io.github.raniagus.javalidation.PartialResult;
 import io.github.raniagus.javalidation.Result;
 import io.github.raniagus.javalidation.Validation;
 import io.github.raniagus.javalidation.ValidationErrors;
+import java.util.Objects;
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 
 /**
  * Entry point for all Javalidation AssertJ assertions.
@@ -30,6 +32,11 @@ import io.github.raniagus.javalidation.ValidationErrors;
  *     .hasFieldError("email", "invalid format");
  * assertThat(partial).hasNoErrors()
  *     .success().isEqualTo(expected);
+ *
+ * // Thrown validation exceptions
+ * assertThatThrownBy(validation::check)
+ *     .isJavalidationException()
+ *     .hasFieldError("email", "invalid format");
  * }</pre>
  */
 public final class JavalidationAssertions {
@@ -89,5 +96,25 @@ public final class JavalidationAssertions {
      */
     public static <T> PartialResultAssert<T> assertThat(PartialResult<T> actual) {
         return new PartialResultAssert<>(actual);
+    }
+
+    /**
+     * Executes {@code callable}, asserting that it throws an exception.
+     *
+     * <p>Call {@link JavalidationThrowableAssert#isJavalidationException()} to verify that the
+     * exception is a {@code JavalidationException} and continue with validation-error assertions.
+     *
+     * @param callable code expected to throw
+     * @return an assertion over the thrown exception
+     * @throws AssertionError if {@code callable} completes normally
+     */
+    public static JavalidationThrowableAssert assertThatThrownBy(ThrowingCallable callable) {
+        Objects.requireNonNull(callable, "callable must not be null");
+        try {
+            callable.call();
+        } catch (Throwable throwable) {
+            return new JavalidationThrowableAssert(throwable);
+        }
+        throw new AssertionError("Expecting code to raise a throwable.");
     }
 }

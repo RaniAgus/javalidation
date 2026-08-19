@@ -10,6 +10,7 @@ Provides fluent AssertJ assertions for `Result<T>`, `ValidationErrors`, `Validat
 | File | Role |
 |------|------|
 | `JavalidationAssertions.java` | Entry-point. Static `assertThat(...)` overloads for all four types. |
+| `JavalidationThrowableAssert.java` | Assertions for exceptions thrown via `assertThatThrownBy(...)`. |
 | `ResultAssert.java` | Assertions for `Result<T>`. `.isOk()` → `OkResultAssert`; `.isErr()` → `ValidationErrorsAssert`. |
 | `OkResultAssert.java` | Assertions on the unwrapped success value (delegates to standard AssertJ). |
 | `ValidationErrorsAssert.java` | Assertions for `ValidationErrors` (and transitively for `Validation` and `Result.Err`). |
@@ -27,6 +28,7 @@ assertThat(Result<T> actual)          → ResultAssert<T>
 assertThat(ValidationErrors actual)   → ValidationErrorsAssert
 assertThat(Validation actual)         → ValidationErrorsAssert  // calls actual.finish()
 assertThat(PartialResult<T> actual)   → PartialResultAssert<T>
+assertThatThrownBy(ThrowingCallable)  → JavalidationThrowableAssert
 ```
 
 ### `ResultAssert<T>`
@@ -34,6 +36,13 @@ assertThat(PartialResult<T> actual)   → PartialResultAssert<T>
 ```
 .isOk()     → OkResultAssert<T>  (fails if Err)
 .isErr()    → ValidationErrorsAssert  (fails if Ok)
+```
+
+### `JavalidationThrowableAssert`
+
+```
+.isJavalidationException() → ValidationErrorsAssert  (fails for another exception type)
+.isNotJavalidationException() → standard AssertJ throwable assertion
 ```
 
 ### `OkResultAssert<T>`
@@ -107,6 +116,15 @@ assertThat(result).isOk().isEqualTo(expectedValue);
 assertThat(result).isErr()
     .hasRootError("some.message.key")
     .hasNoFieldErrors();
+
+// Exception assertions
+assertThatThrownBy(validation::check)
+    .isJavalidationException()
+    .hasFieldError("email", "invalid.format");
+
+assertThatThrownBy(() -> service.call())
+    .isNotJavalidationException()
+    .isInstanceOf(IllegalStateException.class);
 
 // Nested path assertion
 assertThat(errors)

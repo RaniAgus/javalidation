@@ -13,10 +13,35 @@ Always use the javalidation-specific entry point, not AssertJ's standard one:
 
 ```java
 import static io.github.raniagus.javalidation.assertj.JavalidationAssertions.assertThat;
+import static io.github.raniagus.javalidation.assertj.JavalidationAssertions.assertThatThrownBy;
 ```
 
 > In `JakartaValidationsTest`, two `assertThat` imports coexist — one from `JavalidationAssertions`
 > and one from `CompilationSubject`. Both must be kept; do not collapse them.
+
+---
+
+## `JavalidationException` Assertions
+
+`assertThatThrownBy` runs code expected to throw. Use `.isJavalidationException()` to verify the
+exception type and continue with the usual `ValidationErrorsAssert` API on its errors.
+
+```java
+assertThatThrownBy(validation::check)
+    .isJavalidationException()
+    .hasErrorCount(1)
+    .hasFieldError("email", "invalid.format");
+```
+
+For a non-validation exception, `.isNotJavalidationException()` returns AssertJ's normal throwable
+assertion, so its standard exception matchers remain available.
+
+```java
+assertThatThrownBy(() -> service.call())
+    .isNotJavalidationException()
+    .isInstanceOf(IllegalStateException.class)
+    .hasMessage("service unavailable");
+```
 
 ---
 

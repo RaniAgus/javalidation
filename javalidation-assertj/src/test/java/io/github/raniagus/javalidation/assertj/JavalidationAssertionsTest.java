@@ -7,6 +7,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
 
 import io.github.raniagus.javalidation.FieldKey;
+import io.github.raniagus.javalidation.JavalidationException;
 import io.github.raniagus.javalidation.PartialResult;
 import io.github.raniagus.javalidation.Result;
 import io.github.raniagus.javalidation.Validation;
@@ -15,6 +16,55 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class JavalidationAssertionsTest {
+
+    @Nested
+    class JavalidationThrowableAssertTest {
+
+        @Test
+        void givenJavalidationException_whenIsJavalidationException_thenReturnsValidationErrorsAssert() {
+            JavalidationAssertions.assertThatThrownBy(() -> {
+                throw JavalidationException.at("email", "invalid format");
+            })
+                    .isJavalidationException()
+                    .hasFieldError("email", "invalid format")
+                    .hasNoRootErrors();
+        }
+
+        @Test
+        void givenOtherException_whenIsJavalidationException_thenFails() {
+            assertThatThrownBy(() -> JavalidationAssertions.assertThatThrownBy(() -> {
+                throw new IllegalStateException("unexpected");
+            }).isJavalidationException())
+                    .isInstanceOf(AssertionError.class)
+                    .hasMessageContaining("JavalidationException");
+        }
+
+        @Test
+        void givenOtherException_whenIsNotJavalidationException_thenReturnsStandardThrowableAssert() {
+            JavalidationAssertions.assertThatThrownBy(() -> {
+                throw new IllegalStateException("unexpected");
+            })
+                    .isNotJavalidationException()
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("unexpected");
+        }
+
+        @Test
+        void givenJavalidationException_whenIsNotJavalidationException_thenFails() {
+            assertThatThrownBy(() -> JavalidationAssertions.assertThatThrownBy(() -> {
+                throw JavalidationException.of("invalid");
+            }).isNotJavalidationException())
+                    .isInstanceOf(AssertionError.class)
+                    .hasMessageContaining("not to be a JavalidationException");
+        }
+
+        @Test
+        void givenNoException_whenAssertThatThrownBy_thenFails() {
+            assertThatThrownBy(() -> JavalidationAssertions.assertThatThrownBy(() -> {}))
+                    .isInstanceOf(AssertionError.class)
+                    .hasMessageContaining("raise a throwable");
+        }
+    }
 
 
     @Nested
